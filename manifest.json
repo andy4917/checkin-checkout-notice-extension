@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "입/퇴실 안내문 생성기",
+  "version": "1.2",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuRBgfUxC1+FbbCn+PeksTi4ZhwMMEuj6/tpv9CKiPNTz7OOxpQg/FYcj2OsULqXZMQWcvoSmzBdpkb/Bc3xc8MMA3PRnvye1JrZ3KFaKdykLSm0Znns6vZxaYZdzzLbWW876w1Evv+chHiYpcJ/A5d0cYp1CTF05P6z5CM8X6n5l2U8jsaO2ksdsIkLbxRVVtRrDG2WelXc79blVENd3NGqI8Wg1v9Smo5IufqpGmAWcrB+qAHgjml4ebdO7DoFKZ2kpUEQyKPf4xSqlECoeXR9y6zMawu1RntrW6mG95FJq3jUkoFVGHb929iQ+S5Bb/YXwyQugV4PnjaVZH1dNdQIDAQAB",
+  "icons": {
+    "16": "icons/logo-16.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo-128.png"
+  },
+  "action": {
+    "default_title": "PMS 사이드바 열기",
+    "default_icon": {
+      "16": "icons/logo-16.png",
+      "48": "icons/logo-48.png",
+      "128": "icons/logo-128.png"
+    }
+  },
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://pms.sanhait.com/*",
+    "https://partner.booking.naver.com/*",
+    "https://admin.admin-stationbyuhc.com/*",
+    "https://api.admin-stationbyuhc.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/assets/background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "dist/sidepanel.html"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "checkin-checkout-notice-extension",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && tsx scripts/write-extension-manifest.ts",
+    "check:syntax": "npm run typecheck",
+    "extension:id": "tsx scripts/print-extension-id.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run build && npm test"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@types/chrome": "^0.1.40",
+    "@types/node": "^25.6.0",
+    "svelte": "^5.55.5",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}
