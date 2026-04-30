@@ -67,6 +67,9 @@
     seolleung: "The Seolleung",
   };
 
+  const homeMenuGroups = menuGroups;
+  const homeSettingsMenu = settingsMenu;
+
   const branchOptions = getBranchOptions().map((branch) => ({
     ...branch,
     label: branchDisplayLabels[branch.id],
@@ -915,7 +918,7 @@
     </section>
 
     <nav class="menu-stack" aria-label="상위 업무 메뉴">
-      {#each menuGroups as group}
+      {#each homeMenuGroups as group}
         <section class="menu-group" aria-label={group.title}>
           <h2>{group.title}</h2>
           <div class="menu-grid">
@@ -936,10 +939,10 @@
 
     <section class="settings-entry" aria-label="설정">
       <button class="settings-menu-button" type="button" onclick={() => openMenu("SETTINGS")}>
-        <span class="menu-icon" aria-hidden="true">{settingsMenu.icon}</span>
+        <span class="menu-icon" aria-hidden="true">{homeSettingsMenu.icon}</span>
         <span class="menu-text">
-          <strong>{settingsMenu.title}</strong>
-          <small>{settingsMenu.description}</small>
+          <strong>{homeSettingsMenu.title}</strong>
+          <small>{homeSettingsMenu.description}</small>
         </span>
         <em>{menuCount("SETTINGS")}</em>
       </button>
