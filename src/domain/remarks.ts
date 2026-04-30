@@ -1,4 +1,4 @@
-export type RemarkType = "cardKeys" | "rentals" | "airportVan" | "medicalBloom" | "stoneHouse";
+export type RemarkType = "cardKeys" | "rentals" | "medicalBloom" | "stoneHouse";
 
 export type RemarkValues = Record<string, string | number | null | undefined>;
 
@@ -10,11 +10,6 @@ const REMARK_FORMATS: Record<RemarkType, { prefix: string; render(values: Remark
   rentals: {
     prefix: "- 대여물품 :",
     render: (values) => `- 대여물품 : ${value(values.items)}`,
-  },
-  airportVan: {
-    prefix: "- 공항 밴 :",
-    render: (values) =>
-      `- 공항 밴 : ${value(values.direction)} / 이용일 : ${value(values.useDateTime)} / 배차번호 : ${value(values.dispatchNo)}`,
   },
   medicalBloom: {
     prefix: "- 메디컬블룸 :",
@@ -31,7 +26,6 @@ const REMARK_FORMATS: Record<RemarkType, { prefix: string; render(values: Remark
 const BUILT_IN_REMARK_TYPES: Readonly<Record<string, RemarkType>> = Object.freeze({
   "remark-card-keys": "cardKeys",
   "remark-rentals": "rentals",
-  "remark-airport-van": "airportVan",
   "remark-medical-bloom": "medicalBloom",
   "remark-stone-house": "stoneHouse",
 });

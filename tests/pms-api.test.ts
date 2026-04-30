@@ -169,6 +169,7 @@ test("PMS rows normalize into template-free guest records", () => {
     {
       GUEST_NAME: "Kim",
       ROOM_NO: "1302",
+      ROOM_TYPE_NAME: "Grand Suite",
       DEPT_DATE: "20260427",
       RSVN_STATUS_CODE: "CI",
       RSVN_NO: "R1",
@@ -185,6 +186,8 @@ test("PMS rows normalize into template-free guest records", () => {
     guestName: "Kim",
     roomNo: "1302",
     displayRoom: "A302",
+    roomType: "Grand Suite",
+    roomTypeName: "Grand Suite",
     departureDate: "20260427",
     statusCode: "CI",
     statusLabel: "재실 중",

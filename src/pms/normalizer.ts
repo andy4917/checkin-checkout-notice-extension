@@ -9,6 +9,7 @@ export function normalizePmsGuestRow(
 ): PmsGuestRecord {
   const guestName = text(row.GUEST_NAME);
   const roomNo = text(row.ROOM_NO);
+  const roomTypeName = text(row.ROOM_TYPE_NAME ?? row.ROOM_TYPE ?? row.ROOM_TYPE_CODE);
   const departureDate = text(row.DEPT_DATE);
   const statusCode = text(row.RSVN_STATUS_CODE);
   const displayRoom = convertRoomNo(roomNo);
@@ -31,6 +32,7 @@ export function normalizePmsGuestRow(
       guestName,
       roomNo,
       displayRoom,
+      roomTypeName,
       departureDate,
       statusCode,
       statusLabel: status.text,
@@ -53,6 +55,7 @@ function createTemplateValueBag(input: {
   guestName: string;
   roomNo: string;
   displayRoom: string;
+  roomTypeName: string;
   departureDate: string;
   statusCode: string;
   statusLabel: string;
@@ -65,6 +68,8 @@ function createTemplateValueBag(input: {
     guestName: input.guestName,
     roomNo: input.roomNo,
     displayRoom: input.displayRoom,
+    roomType: input.roomTypeName,
+    roomTypeName: input.roomTypeName,
     departureDate: input.departureDate,
     statusCode: input.statusCode,
     statusLabel: input.statusLabel,

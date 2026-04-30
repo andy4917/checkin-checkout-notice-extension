@@ -4,6 +4,11 @@
   import { guardRequiredContext } from "../application/context-guard.js";
   import { syncGuests } from "../application/sync-guests.js";
   import {
+    addLaundryRecord,
+    queryLaundryRecords,
+    updateLaundryStatus,
+  } from "../application/laundry-records.js";
+  import {
     getAvailableTemplateLanguages,
     hasTemplateLanguage,
     renderTemplate,
@@ -45,6 +50,7 @@
   } from "../platform/chrome-storage.js";
   import { getActiveTabContext, type TabContext, EMPTY_TAB_CONTEXT } from "../platform/tab-context.js";
   import type { BranchId, Language, PmsGuestRecord, TabMode } from "../types.js";
+  import type { LaundryRecord, LaundryStatus } from "../laundry/types.js";
   import { DEFAULT_EXTENSION_STATE } from "../platform/storage-schema.js";
   import type {
     StoredExtensionState,
@@ -57,8 +63,8 @@
 
   const branchDisplayLabels: Record<BranchId, string> = {
     coex: "The Coex",
-    gangnam: "Gangnam",
-    seolleung: "Seolleung",
+    gangnam: "The Gangnam",
+    seolleung: "The Seolleung",
   };
 
   const branchOptions = getBranchOptions().map((branch) => ({
@@ -74,7 +80,7 @@
   ];
 
   const categoryOptions: Array<{ id: TemplateCategory; label: string }> = [
-    { id: "CUSTOMER_RECORDS", label: "객실 리마크 & 메모" },
+    { id: "CUSTOMER_RECORDS", label: "객실 정보 메모" },
     { id: "GUEST_NOTICE", label: "고객 안내문" },
     { id: "QUICK_REPLY", label: "빠른 문의 답변" },
     { id: "WORK_TEMPLATE", label: "업무보고 생성" },
@@ -83,7 +89,7 @@
   const audienceOptions: Array<{ id: TemplateAudience; label: string }> = [
     { id: "guest", label: "고객" },
     { id: "internal", label: "내부" },
-    { id: "pmsRemark", label: "리마크" },
+    { id: "pmsRemark", label: "객실 메모" },
   ];
 
   const contextOptions: Array<{ id: TemplateContextRequirement; label: string }> = [
@@ -116,6 +122,14 @@
   let pmsRecords: PmsGuestRecord[] = [];
   let pmsSearchTerm = "";
   let pmsLoading = false;
+  let selectedPmsRecordId = "";
+  let templateDraftValues: Record<string, Record<string, string>> = {};
+  let laundryRecords: LaundryRecord[] = [];
+  let laundryItemSummary = "";
+  let laundryNote = "";
+  let laundrySearchTerm = "";
+  let laundryStatusFilter: LaundryStatus | "ALL" = "ALL";
+  let laundryLoading = false;
   let otaLoading = false;
   let otaPreview: OtaReservationInputPreview | null = null;
 
@@ -158,6 +172,21 @@
     selectedLanguage = getFirstAvailableLanguage(activeTemplates) || selectedLanguage;
   }
   $: visiblePmsRecords = filterPmsGuestRecords(pmsRecords, pmsSearchTerm);
+  $: selectedPmsRecord =
+    pmsRecords.find((record) => record.id === selectedPmsRecordId) || null;
+  $: filteredLaundryRecords = laundryRecords.filter((record) => {
+    if (laundryStatusFilter !== "ALL" && record.status !== laundryStatusFilter) return false;
+    const term = laundrySearchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return [
+      record.guestName,
+      record.roomNo,
+      record.displayRoom,
+      record.itemSummary,
+      record.note,
+      laundryStatusLabel(record.status),
+    ].join(" ").toLowerCase().includes(term);
+  });
 
   onMount(async () => {
     activeMenu = null;
@@ -180,14 +209,15 @@
   async function handleBranchChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     selectedBranchId = isBranchId(target.value) ? target.value : "";
+    resetRoomContextState();
     if (selectedBranchId) {
       await setLastBranchId(selectedBranchId);
       statusMessage = "선택 지점을 저장했습니다.";
-      if (activeMenu && activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT") {
-        await syncPmsGuestRecords();
+      if (activeMenu === "LAUNDRY_MANAGEMENT") {
+        await loadLaundryRecords();
       }
     } else {
-      pmsRecords = [];
+      laundryRecords = [];
       statusMessage = "지점을 선택해주세요.";
     }
   }
@@ -211,6 +241,9 @@
     if (menuId === "OTA_RESERVATION_INPUT") {
       otaPreview = null;
     }
+    if (menuId === "LAUNDRY_MANAGEMENT") {
+      void loadLaundryRecords();
+    }
     statusMessage =
       menuId === "SETTINGS"
         ? "수정할 항목을 선택해주세요."
@@ -218,9 +251,6 @@
           ? "OTA 상세 예약 탭에서 예약정보를 가져오세요."
           : "템플릿을 선택해 복사하세요.";
     scrollToTop();
-    if (menuId !== "SETTINGS" && menuId !== "OTA_RESERVATION_INPUT" && selectedBranchId) {
-      void syncPmsGuestRecords();
-    }
   }
 
   function goBack() {
@@ -248,6 +278,8 @@
   async function selectPmsMode(mode: TabMode) {
     if (pmsMode === mode) return;
     pmsMode = mode;
+    selectedPmsRecordId = "";
+    templateDraftValues = {};
     await syncPmsGuestRecords();
   }
 
@@ -259,7 +291,7 @@
     }
 
     pmsLoading = true;
-    statusMessage = "PMS 데이터를 동기화하는 중입니다.";
+    statusMessage = "객실 목록을 불러오는 중입니다.";
     try {
       const result = await syncGuests({
         date: pmsQueryDate,
@@ -268,7 +300,11 @@
         searchTerm: pmsSearchTerm,
       });
       pmsRecords = result.records;
-      statusMessage = `PMS ${result.records.length}건을 동기화했습니다.`;
+      if (!pmsRecords.some((record) => record.id === selectedPmsRecordId)) {
+        selectedPmsRecordId = "";
+        templateDraftValues = {};
+      }
+      statusMessage = `객실 ${result.records.length}건을 불러왔습니다.`;
     } catch (error) {
       pmsRecords = [];
       statusMessage = error instanceof Error ? error.message : String(error);
@@ -279,6 +315,82 @@
 
   function handlePmsSearchChange(event: Event) {
     pmsSearchTerm = (event.target as HTMLInputElement).value;
+  }
+
+  function selectPmsRecord(record: PmsGuestRecord) {
+    if (selectedPmsRecordId !== record.id) {
+      templateDraftValues = {};
+      copiedTemplateId = "";
+    }
+    selectedPmsRecordId = record.id;
+    if (!laundryItemSummary && activeMenu === "LAUNDRY_MANAGEMENT") {
+      laundryNote = laundryNote || record.guestName;
+    }
+    statusMessage = `${record.displayRoom || record.roomNo} ${record.guestName || ""}`.trim()
+      ? `${record.displayRoom || record.roomNo} ${record.guestName || ""}`.trim() + " 선택"
+      : "객실을 선택했습니다.";
+  }
+
+  async function loadLaundryRecords() {
+    laundryLoading = true;
+    try {
+      laundryRecords = await queryLaundryRecords({
+        branchId: selectedBranchId || undefined,
+      });
+      statusMessage = `세탁물 ${laundryRecords.length}건을 불러왔습니다.`;
+    } catch (error) {
+      laundryRecords = [];
+      statusMessage = error instanceof Error ? error.message : String(error);
+    } finally {
+      laundryLoading = false;
+    }
+  }
+
+  async function addLaundry() {
+    if (!selectedBranchId) {
+      statusMessage = "지점을 선택해주세요.";
+      return;
+    }
+    if (!laundryItemSummary.trim()) {
+      statusMessage = "세탁물 내용을 입력해주세요.";
+      return;
+    }
+
+    laundryLoading = true;
+    try {
+      await addLaundryRecord({
+        branchId: selectedBranchId,
+        guestName: selectedPmsRecord?.guestName || templateDraftValue("laundry-complete-message", "guestName"),
+        roomNo: selectedPmsRecord?.roomNo || templateDraftValue("laundry-complete-message", "roomNo"),
+        displayRoom:
+          selectedPmsRecord?.displayRoom ||
+          templateDraftValue("laundry-complete-message", "roomNo"),
+        itemSummary: laundryItemSummary,
+        note: laundryNote,
+        sourcePmsGuestId: selectedPmsRecord?.id,
+      });
+      laundryItemSummary = "";
+      laundryNote = "";
+      await loadLaundryRecords();
+      statusMessage = "세탁물 기록을 추가했습니다.";
+    } catch (error) {
+      statusMessage = error instanceof Error ? error.message : String(error);
+    } finally {
+      laundryLoading = false;
+    }
+  }
+
+  async function setLaundryStatus(record: LaundryRecord, status: LaundryStatus) {
+    laundryLoading = true;
+    try {
+      await updateLaundryStatus(record.id, status);
+      await loadLaundryRecords();
+      statusMessage = "세탁물 상태를 변경했습니다.";
+    } catch (error) {
+      statusMessage = error instanceof Error ? error.message : String(error);
+    } finally {
+      laundryLoading = false;
+    }
   }
 
   async function loadOtaReservation() {
@@ -319,7 +431,7 @@
   }
 
   async function copyTemplate(template: TemplateDefinition) {
-    const guard = guardRequiredContext(template.requiresContext, tabContext);
+    const guard = guardRequiredContext(template.requiresContext, currentWorkContext());
     if (!guard.ok) {
       statusMessage = guard.message;
       return;
@@ -332,9 +444,10 @@
     try {
       const remarkType =
         template.audience === "pmsRemark" ? getBuiltInRemarkType(template.id) : null;
+      const values = templateValues(template);
       const text = remarkType
-        ? createRemarkLine(remarkType, defaultValues())
-        : renderTemplate(template, selectedLanguage, defaultValues());
+        ? createRemarkLine(remarkType, values)
+        : renderTemplate(template, selectedLanguage, values);
       await navigator.clipboard.writeText(text);
       copiedTemplateId = template.id;
       statusMessage = "복사되었습니다.";
@@ -359,18 +472,23 @@
           title: editTitle.trim() || template.title,
           branchScope,
           languages: { ...(previous.languages || {}), [selectedLanguage]: languageBody },
+          variables: mergeTemplateVariables(template.variables, extractTemplateVariables(languageBody)),
           defaultValue: languageBody || template.defaultValue,
         };
       } else {
         nextState.customTemplates = nextState.customTemplates.map((item) =>
           item.id === template.id
-            ? validateTemplateDefinitionForSave({
+            ? (() => {
+                const languages = { ...item.languages, [selectedLanguage]: languageBody };
+                return validateTemplateDefinitionForSave({
                 ...item,
                 title: editTitle.trim() || item.title,
                 branchScope,
-                languages: { ...item.languages, [selectedLanguage]: languageBody },
+                languages,
+                variables: extractTemplateVariablesFromLanguages(languages),
                 defaultValue: languageBody || item.defaultValue,
-              })
+              });
+            })()
             : item,
         );
       }
@@ -421,7 +539,7 @@
         title: newTitle.trim(),
         branchScope: getSelectedBranches(newBranchScope),
         languages: { [selectedLanguage]: newBody },
-        variables: [],
+        variables: extractTemplateVariables(newBody),
         attachments: [],
         requiresContext: newContext,
         defaultValue: newBody,
@@ -453,10 +571,15 @@
     const branchLabel =
       branchOptions.find((branch) => branch.id === selectedBranchId)?.label || "";
     return {
+      ...(selectedPmsRecord?.templateValues || {}),
       reportDate: formatToday(),
       branchName: branchLabel,
-      guestName: "",
-      roomNo: "",
+      hotelName: branchLabel,
+      guestName: selectedPmsRecord?.guestName || "",
+      roomNo: selectedPmsRecord?.displayRoom || selectedPmsRecord?.roomNo || "",
+      roomType: selectedPmsRecord?.templateValues.roomType || "",
+      roomTypeName: selectedPmsRecord?.templateValues.roomTypeName || "",
+      rentalItemName: "",
       staffName: "",
       count: "",
       items: "",
@@ -465,6 +588,104 @@
       dispatchNo: "",
       courseName: "",
       status: "",
+    };
+  }
+
+  function templateValues(template: TemplateDefinition): Record<string, string> {
+    return {
+      ...defaultValues(),
+      ...(templateDraftValues[template.id] || {}),
+    };
+  }
+
+  function templateDraftValue(templateId: string, variableName: string): string {
+    return templateDraftValues[templateId]?.[variableName] || "";
+  }
+
+  function templateInputValue(template: TemplateDefinition, variableName: string): string {
+    return templateDraftValues[template.id]?.[variableName] || defaultValues()[variableName] || "";
+  }
+
+  function handleTemplateVariableInput(templateId: string, variableName: string, event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    templateDraftValues = {
+      ...templateDraftValues,
+      [templateId]: {
+        ...(templateDraftValues[templateId] || {}),
+        [variableName]: value,
+      },
+    };
+  }
+
+  function resetRoomContextState() {
+    pmsRecords = [];
+    pmsSearchTerm = "";
+    selectedPmsRecordId = "";
+    templateDraftValues = {};
+    copiedTemplateId = "";
+  }
+
+  function extractTemplateVariables(body: string) {
+    const tokens = [
+      ...Array.from(body.matchAll(/\{([a-zA-Z0-9_]+)\}/g), (match) => match[1]),
+      ...Array.from(body.matchAll(/\[([^\]]+)\]/g), (match) => match[1].trim()),
+    ];
+    return Array.from(new Set(tokens.map(templateVariableName))).map((name) => ({
+      name,
+      label: templateVariableLabel(name),
+      kind: "manualOptional" as const,
+    }));
+  }
+
+  function extractTemplateVariablesFromLanguages(languages: Partial<Record<Language, string>>) {
+    return mergeTemplateVariables(
+      [],
+      Object.values(languages).flatMap((body) => extractTemplateVariables(body || "")),
+    );
+  }
+
+  function mergeTemplateVariables(baseVariables: readonly TemplateDefinition["variables"][number][], nextVariables: readonly TemplateDefinition["variables"][number][]) {
+    const merged = [...baseVariables];
+    for (const variable of nextVariables) {
+      if (!merged.some((item) => item.name === variable.name)) {
+        merged.push(variable);
+      }
+    }
+    return merged;
+  }
+
+  function templateVariableName(labelOrName: string): string {
+    const names: Record<string, string> = {
+      지점명: "branchName",
+      호텔명: "hotelName",
+      고객명: "guestName",
+      객실번호: "roomNo",
+      "객실 타입": "roomType",
+      객실타입: "roomType",
+      "대여 물품명": "rentalItemName",
+      대여물품명: "rentalItemName",
+    };
+    return names[labelOrName] || labelOrName;
+  }
+
+  function templateVariableLabel(name: string): string {
+    const labels: Record<string, string> = {
+      branchName: "지점명",
+      hotelName: "호텔명",
+      guestName: "고객명",
+      roomNo: "객실번호",
+      roomType: "객실 타입",
+      roomTypeName: "객실 타입",
+      rentalItemName: "대여 물품명",
+    };
+    return labels[name] || name;
+  }
+
+  function currentWorkContext() {
+    const hasSelectedRoom = Boolean(selectedPmsRecord);
+    return {
+      isPmsPage: tabContext.isPmsPage || hasSelectedRoom,
+      isGuestRecord: tabContext.isGuestRecord || hasSelectedRoom,
     };
   }
 
@@ -581,7 +802,7 @@
   }
 
   function templateTypeLabel(template: TemplateDefinition): string {
-    if (template.audience === "pmsRemark") return "WINGS 리마크";
+    if (template.audience === "pmsRemark") return "객실 메모";
     if (template.audience === "internal") return "내부";
     return template.requiresContext === "none" ? "고객" : "고객 · WINGS";
   }
@@ -589,6 +810,28 @@
   function branchScopeLabel(template: TemplateDefinition): string {
     if (template.branchScope.length >= 3) return "전 지점";
     return template.branchScope.map((branchId) => branchDisplayLabels[branchId]).join(", ");
+  }
+
+  function visibleTemplateVariables(template: TemplateDefinition) {
+    return template.variables.filter((variable) => variable.kind !== "computed");
+  }
+
+  function laundryStatusLabel(status: LaundryStatus): string {
+    const labels: Record<LaundryStatus, string> = {
+      RECEIVED: "접수",
+      IN_PROGRESS: "처리중",
+      READY: "수령 가능",
+      PICKED_UP: "수령 완료",
+      CANCELLED: "취소",
+    };
+    return labels[status];
+  }
+
+  function nextLaundryStatus(status: LaundryStatus): LaundryStatus {
+    if (status === "RECEIVED") return "IN_PROGRESS";
+    if (status === "IN_PROGRESS") return "READY";
+    if (status === "READY") return "PICKED_UP";
+    return status;
   }
 
   function hasAnyTemplateForLanguage(
@@ -654,6 +897,15 @@
         {/each}
       </select>
     </label>
+
+    {#if activeMenu !== null && selectedPmsRecord}
+      <div class="selected-room-header" aria-label="선택 객실">
+        <strong>{selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo}</strong>
+        {#if selectedPmsRecord.guestName}
+          <span>{selectedPmsRecord.guestName}</span>
+        {/if}
+      </div>
+    {/if}
   </header>
 
   {#if activeMenu === null}
@@ -897,19 +1149,164 @@
         </div>
       </section>
     {:else}
-      <section class="pms-panel" aria-label="PMS 고객 데이터">
+      {#if activeMenu === "LAUNDRY_MANAGEMENT"}
+        <section class="laundry-panel" aria-label="세탁물 관리">
+          <div class="pms-panel-header">
+            <div>
+              <p class="eyebrow">세탁물</p>
+              <h2>세탁물 기록</h2>
+            </div>
+            <button type="button" disabled={laundryLoading} onclick={loadLaundryRecords}>
+              {laundryLoading ? "불러오는 중" : "새로고침"}
+            </button>
+          </div>
+
+          <div class="laundry-form">
+            <label>
+              <span>세탁물 내용</span>
+              <input
+                bind:value={laundryItemSummary}
+                placeholder="예: 셔츠 2 / 바지 1"
+              />
+            </label>
+            <label>
+              <span>메모</span>
+              <input bind:value={laundryNote} placeholder="특이사항" />
+            </label>
+            <button type="button" disabled={laundryLoading || !selectedBranchId} onclick={addLaundry}>
+              추가
+            </button>
+          </div>
+
+          <div class="laundry-filters">
+            <div class="segmented-control" aria-label="세탁물 상태">
+              {#each ["ALL", "RECEIVED", "IN_PROGRESS", "READY", "PICKED_UP"] as status}
+                <button
+                  class:active={laundryStatusFilter === status}
+                  type="button"
+                  onclick={() => (laundryStatusFilter = status as LaundryStatus | "ALL")}
+                >
+                  {status === "ALL" ? "전체" : laundryStatusLabel(status as LaundryStatus)}
+                </button>
+              {/each}
+            </div>
+            <label>
+              <span>검색</span>
+              <input bind:value={laundrySearchTerm} />
+            </label>
+          </div>
+
+          <div class="laundry-list">
+            {#if !selectedBranchId}
+              <article class="pms-record empty">지점을 선택해주세요.</article>
+            {:else if filteredLaundryRecords.length === 0}
+              <article class="pms-record empty">세탁물 기록이 없습니다.</article>
+            {:else}
+              {#each filteredLaundryRecords as record}
+                <article class="laundry-record">
+                  <div class="laundry-record-main">
+                    <strong>{record.displayRoom || record.roomNo || "객실 미지정"}</strong>
+                    <span>{record.guestName || "고객명 미입력"}</span>
+                    <p>{record.itemSummary}</p>
+                    {#if record.note}
+                      <small>{record.note}</small>
+                    {/if}
+                  </div>
+                  <div class="laundry-record-actions">
+                    <span>{laundryStatusLabel(record.status)}</span>
+                    {#if nextLaundryStatus(record.status) !== record.status}
+                      <button
+                        type="button"
+                        disabled={laundryLoading}
+                        onclick={() => setLaundryStatus(record, nextLaundryStatus(record.status))}
+                      >
+                        다음
+                      </button>
+                    {/if}
+                    <button
+                      class="secondary"
+                      type="button"
+                      disabled={laundryLoading || record.status === "CANCELLED"}
+                      onclick={() => setLaundryStatus(record, "CANCELLED")}
+                    >
+                      취소
+                    </button>
+                  </div>
+                </article>
+              {/each}
+            {/if}
+          </div>
+        </section>
+      {/if}
+
+      <section class="template-list" aria-label="템플릿 목록">
+        {#each activeTemplates as template}
+          {@const guard = guardRequiredContext(template.requiresContext, currentWorkContext())}
+          {@const languageAvailable = hasTemplateLanguage(template, selectedLanguage)}
+          <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
+            <div class="template-main">
+              <div class="template-meta">
+                <span>{templateTypeLabel(template)}</span>
+                <span>{branchScopeLabel(template)}</span>
+                <span>{getAvailableTemplateLanguages(template).join(", ")}</span>
+              </div>
+              <h2>{template.title}</h2>
+              <p class="template-summary">{templateSummary(template)}</p>
+              {#if !guard.ok}
+                <p class="guard-message">{guard.message}</p>
+              {:else if !languageAvailable}
+                <p class="guard-message">선택한 언어의 번역본이 없어 비활성화되었습니다.</p>
+              {/if}
+              {#if visibleTemplateVariables(template).length > 0}
+                <div class="template-variable-grid">
+                  {#each visibleTemplateVariables(template) as variable}
+                    <label>
+                      <span>{variable.label}</span>
+                      <input
+                        value={templateInputValue(template, variable.name)}
+                        placeholder={variable.kind === "pmsRequired" ? "객실 선택값" : ""}
+                        oninput={(event) => handleTemplateVariableInput(template.id, variable.name, event)}
+                      />
+                    </label>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            <button type="button" disabled={!guard.ok || !languageAvailable} onclick={() => copyTemplate(template)}>
+              {copiedTemplateId === template.id ? "복사됨" : "복사"}
+            </button>
+          </article>
+        {/each}
+      </section>
+    {/if}
+  {/if}
+
+  {#if activeMenu !== null && activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT"}
+    <section class="room-bottom-bar" aria-label="객실 선택">
+      <div class="room-bottom-summary">
+        <span>선택 객실</span>
+        <strong>
+          {selectedPmsRecord
+            ? selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo
+            : "미선택"}
+        </strong>
+        {#if selectedPmsRecord?.guestName}
+          <small>{selectedPmsRecord.guestName}</small>
+        {/if}
+      </div>
+      <div class="room-bottom-panel">
         <div class="pms-panel-header">
           <div>
-            <p class="eyebrow">PMS 값</p>
+            <p class="eyebrow">객실 선택</p>
             <h2>{pmsMode === "ARRIVAL" ? "입실 예정" : "퇴실 예정"}</h2>
           </div>
           <button type="button" disabled={pmsLoading || !selectedBranchId} onclick={syncPmsGuestRecords}>
-            {pmsLoading ? "동기화 중" : "동기화"}
+            {pmsLoading ? "불러오는 중" : "객실 불러오기"}
           </button>
         </div>
 
         <div class="pms-controls">
-          <div class="segmented-control" aria-label="PMS 조회 모드">
+          <div class="segmented-control" aria-label="객실 조회 모드">
             <button
               class:active={pmsMode === "ARRIVAL"}
               type="button"
@@ -936,11 +1333,18 @@
         <div class="pms-record-list">
           {#if !selectedBranchId}
             <article class="pms-record empty">지점을 선택해주세요.</article>
+          {:else if pmsRecords.length === 0 && !pmsLoading}
+            <article class="pms-record empty">객실을 불러오세요.</article>
           {:else}
             {#each visiblePmsRecords as record}
-              <article class="pms-record">
+              <button
+                class:active={selectedPmsRecordId === record.id}
+                class="pms-record pms-record-button"
+                type="button"
+                onclick={() => selectPmsRecord(record)}
+              >
                 <div>
-                  <strong>{record.displayRoom}</strong>
+                  <strong>{record.displayRoom || record.roomNo}</strong>
                   {#if record.guestName}
                     <span>{record.guestName}</span>
                   {/if}
@@ -953,37 +1357,11 @@
                     <span>{record.departureDate}</span>
                   {/if}
                 </div>
-              </article>
+              </button>
             {/each}
           {/if}
         </div>
-      </section>
-
-      <section class="template-list" aria-label="템플릿 목록">
-        {#each activeTemplates as template}
-          {@const guard = guardRequiredContext(template.requiresContext, tabContext)}
-          {@const languageAvailable = hasTemplateLanguage(template, selectedLanguage)}
-          <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
-            <div class="template-main">
-              <div class="template-meta">
-                <span>{templateTypeLabel(template)}</span>
-                <span>{branchScopeLabel(template)}</span>
-                <span>{getAvailableTemplateLanguages(template).join(", ")}</span>
-              </div>
-              <h2>{template.title}</h2>
-              <p class="template-summary">{templateSummary(template)}</p>
-              {#if !guard.ok}
-                <p class="guard-message">{guard.message}</p>
-              {:else if !languageAvailable}
-                <p class="guard-message">선택한 언어의 번역본이 없어 비활성화되었습니다.</p>
-              {/if}
-            </div>
-            <button type="button" disabled={!guard.ok || !languageAvailable} onclick={() => copyTemplate(template)}>
-              {copiedTemplateId === template.id ? "복사됨" : "복사"}
-            </button>
-          </article>
-        {/each}
-      </section>
-    {/if}
+      </div>
+    </section>
   {/if}
 </main>

@@ -6,8 +6,8 @@ body {
   width: 100%;
   min-width: 320px;
   margin: 0;
-  background: #f5f6f8;
-  color: #20242a;
+  background: #f7f4ef;
+  color: #333d4b;
   font-family: "Malgun Gothic", "Segoe UI", sans-serif;
 }
 
@@ -28,10 +28,11 @@ select:disabled {
 .app-shell {
   width: 100%;
   min-height: 100vh;
-  padding: 14px;
+  padding: 14px 14px 86px;
 }
 
 .app-header {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(128px, 0.95fr);
   align-items: center;
@@ -58,7 +59,7 @@ select:disabled {
 
 .brand-lockup strong {
   overflow: hidden;
-  color: #14171f;
+  color: #333d4b;
   font-size: 14px;
   font-weight: 900;
   line-height: 1.1;
@@ -86,7 +87,7 @@ select:disabled {
   border: 1px solid #d8dde7;
   border-radius: 6px;
   background: #fff;
-  color: #20242a;
+  color: #333d4b;
   padding: 8px 10px;
 }
 
@@ -103,7 +104,7 @@ select:disabled {
   border: 1px solid #d8dde7;
   border-radius: 8px;
   background: #fff;
-  color: #20242a;
+  color: #333d4b;
   font-size: 28px;
   line-height: 1;
   cursor: pointer;
@@ -182,7 +183,7 @@ h1 {
   border: 1px solid #d8dde7;
   border-radius: 8px;
   background: #fff;
-  color: #20242a;
+  color: #333d4b;
   padding: 10px;
   text-align: left;
   cursor: pointer;
@@ -194,8 +195,8 @@ h1 {
 
 .menu-button:hover,
 .settings-menu-button:hover {
-  border-color: #2563eb;
-  background: #eef4ff;
+  border-color: #333d4b;
+  background: #f4f0e8;
   transform: translateY(-1px);
 }
 
@@ -207,8 +208,8 @@ h1 {
   place-items: center;
   border: 1px solid #d8dde7;
   border-radius: 8px;
-  background: #f6f7f9;
-  color: #2563eb;
+  background: #f7f4ef;
+  color: #333d4b;
   font-size: 16px;
   font-weight: 900;
 }
@@ -234,7 +235,7 @@ h1 {
 
 .menu-button em,
 .settings-menu-button em {
-  color: #2563eb;
+  color: #333d4b;
   font-size: 12px;
   font-style: normal;
   font-weight: 900;
@@ -319,8 +320,8 @@ h1 {
 }
 
 .tab-bar button.active {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: #333d4b;
+  background: #333d4b;
   color: #fff;
 }
 
@@ -358,9 +359,9 @@ h1 {
 .pms-panel-header button,
 .segmented-control button {
   min-height: 34px;
-  border: 1px solid #2563eb;
+  border: 1px solid #333d4b;
   border-radius: 6px;
-  background: #2563eb;
+  background: #333d4b;
   color: #fff;
   padding: 6px 10px;
   font-size: 12px;
@@ -410,8 +411,8 @@ h1 {
 }
 
 .segmented-control button.active {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: #333d4b;
+  background: #333d4b;
   color: #fff;
 }
 
@@ -433,6 +434,17 @@ h1 {
   padding: 9px;
 }
 
+.pms-record-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pms-record-button.active {
+  border-color: #333d4b;
+  background: #f4f0e8;
+}
+
 .pms-record div {
   display: grid;
   min-width: 0;
@@ -447,7 +459,7 @@ h1 {
 }
 
 .pms-record strong {
-  color: #20242a;
+  color: #333d4b;
   font-weight: 900;
 }
 
@@ -473,7 +485,7 @@ h1 {
 .template-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 10px;
 }
 
@@ -524,6 +536,37 @@ h1 {
   line-height: 1.45;
 }
 
+.template-variable-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.template-variable-grid label,
+.laundry-form label,
+.laundry-filters label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: #6f6a61;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.template-variable-grid input,
+.laundry-form input,
+.laundry-filters input {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid #d8dde7;
+  border-radius: 6px;
+  background: #fff;
+  color: #333d4b;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 .guard-message {
   color: #a15c20;
   font-weight: 800;
@@ -532,9 +575,9 @@ h1 {
 .template-card button {
   min-width: 62px;
   min-height: 36px;
-  border: 1px solid #2563eb;
+  border: 1px solid #333d4b;
   border-radius: 6px;
-  background: #2563eb;
+  background: #333d4b;
   color: #fff;
   font-weight: 900;
   cursor: pointer;
@@ -543,6 +586,112 @@ h1 {
 .settings-panel {
   display: grid;
   gap: 12px;
+}
+
+.laundry-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #d8dde7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.laundry-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.laundry-form button,
+.laundry-record-actions button {
+  min-height: 34px;
+  border: 1px solid #333d4b;
+  border-radius: 6px;
+  background: #333d4b;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.laundry-record-actions button.secondary {
+  background: #fff;
+  color: #333d4b;
+}
+
+.laundry-filters {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: end;
+  gap: 8px;
+}
+
+.laundry-list {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.laundry-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e1e5ed;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 9px;
+}
+
+.laundry-record-main {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.laundry-record-main strong,
+.laundry-record-main span,
+.laundry-record-main p,
+.laundry-record-main small {
+  overflow-wrap: anywhere;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.laundry-record-main strong {
+  color: #333d4b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.laundry-record-main span,
+.laundry-record-main small {
+  color: #6f6a61;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.laundry-record-main p {
+  color: #333d4b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.laundry-record-actions {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.laundry-record-actions span {
+  color: #333d4b;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .settings-editor {
@@ -630,9 +779,9 @@ h1 {
 .settings-actions button {
   min-width: 64px;
   min-height: 36px;
-  border: 1px solid #2563eb;
+  border: 1px solid #333d4b;
   border-radius: 6px;
-  background: #2563eb;
+  background: #333d4b;
   color: #fff;
   font-weight: 900;
   cursor: pointer;
@@ -640,7 +789,89 @@ h1 {
 
 .settings-actions button.secondary {
   background: #fff;
-  color: #2563eb;
+  color: #333d4b;
+}
+
+.selected-room-header {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  display: grid;
+  max-width: 112px;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.selected-room-header strong {
+  overflow: hidden;
+  color: #333d4b;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-room-header span {
+  overflow: hidden;
+  color: #6f6a61;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-bottom-bar {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  left: 12px;
+  z-index: 20;
+  display: grid;
+  border: 1px solid #d6d0c6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.room-bottom-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.room-bottom-summary span,
+.room-bottom-summary small {
+  color: #6f6a61;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.room-bottom-summary strong {
+  overflow: hidden;
+  color: #333d4b;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-bottom-panel {
+  display: none;
+  gap: 10px;
+  max-height: 70vh;
+  overflow: hidden;
+  border-top: 1px solid #e3ded5;
+  padding: 10px;
+}
+
+.room-bottom-bar:hover .room-bottom-panel,
+.room-bottom-bar:focus-within .room-bottom-panel {
+  display: grid;
 }
 
 @media (max-width: 390px) {
@@ -653,8 +884,18 @@ h1 {
     justify-self: start;
   }
 
+  .selected-room-header {
+    position: static;
+    max-width: none;
+    transform: none;
+  }
+
   .menu-grid,
   .settings-row,
+  .template-variable-grid,
+  .laundry-form,
+  .laundry-filters,
+  .laundry-record,
   .pms-controls,
   .pms-record,
   .branch-scope-options {

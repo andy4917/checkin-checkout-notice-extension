@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   filterTemplatesForMenu,
+  getMenu,
   matchesTemplateTab,
 } from "../src/catalog/menu-routing.js";
 import type { UnifiedTemplateDefinition } from "../src/catalog/template-types.js";
@@ -51,4 +52,9 @@ test("menu routing uses catalog metadata instead of text heuristics", () => {
   assert.equal(matchesTemplateTab("SALES_MANAGEMENT", "dodine", dodineSales), true);
   assert.equal(matchesTemplateTab("WORK_REPORT", "reservation", reservationReport), true);
   assert.equal(matchesTemplateTab("WORK_REPORT", "daily", reservationReport), false);
+});
+
+test("user-facing operations labels keep current business terms", () => {
+  assert.equal(getMenu("SALES_MANAGEMENT").title, "매지출 관리");
+  assert.equal(getMenu("ROOM_REMARK_MEMO").title, "객실 정보 메모");
 });

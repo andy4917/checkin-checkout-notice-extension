@@ -52,14 +52,14 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
       }),
       Object.freeze({
         id: "SALES_MANAGEMENT",
-        title: "매출 관리",
-        description: "매출과 드오디네 기록",
+        title: "매지출 관리",
+        description: "매지출과 드오디네 기록",
         icon: "₩",
       }),
       Object.freeze({
         id: "ROOM_REMARK_MEMO",
-        title: "객실 리마크 & 메모",
-        description: "WINGS 리마크 작성",
+        title: "객실 정보 메모",
+        description: "객실 정보 메모 작성",
         icon: "≡",
       }),
       Object.freeze({
@@ -108,12 +108,12 @@ const MENU_TABS: Readonly<Record<TemplateMenuId, readonly TemplateTab[]>> = Obje
   ]),
   SALES_MANAGEMENT: Object.freeze([
     Object.freeze({ id: "all", label: "전체" }),
-    Object.freeze({ id: "sales", label: "매출" }),
+    Object.freeze({ id: "sales", label: "매지출" }),
     Object.freeze({ id: "dodine", label: "드오디네" }),
   ]),
   ROOM_REMARK_MEMO: Object.freeze([
     Object.freeze({ id: "all", label: "전체" }),
-    Object.freeze({ id: "remark", label: "리마크" }),
+    Object.freeze({ id: "remark", label: "객실 메모" }),
     Object.freeze({ id: "reservation", label: "예약" }),
   ]),
   WORK_REPORT: Object.freeze([

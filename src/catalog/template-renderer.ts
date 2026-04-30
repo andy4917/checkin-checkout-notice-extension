@@ -18,6 +18,13 @@ export class TemplateLanguageUnavailableError extends Error {
   }
 }
 
+export class ManualRequiredValueMissingError extends Error {
+  constructor(variableName: string) {
+    super(`필수 입력값을 입력해주세요: ${variableName}`);
+    this.name = "ManualRequiredValueMissingError";
+  }
+}
+
 export function renderTemplate(
   template: TemplateDefinition,
   lang: string,
@@ -30,16 +37,43 @@ export function renderTemplate(
     throw new TemplateLanguageUnavailableError(template.id, language);
   }
 
-  return body.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, variableName: string) => {
-    const variable = template.variables.find((item) => item.name === variableName);
-    const value = values[variableName];
+  return replaceTemplateVariables(body, /\{([a-zA-Z0-9_]+)\}/g, template, values).replace(
+    /\[([^\]]+)\]/g,
+    (match, variableName: string) => replaceOneVariable(match, variableName, template, values),
+  );
+}
 
-    if (variable?.kind === "pmsRequired" && isBlank(value)) {
-      throw new PmsRequiredValueMissingError(variableName);
-    }
+function replaceTemplateVariables(
+  body: string,
+  pattern: RegExp,
+  template: TemplateDefinition,
+  values: Record<string, string | number | null | undefined>,
+): string {
+  return body.replace(pattern, (match, variableName: string) =>
+    replaceOneVariable(match, variableName, template, values),
+  );
+}
 
-    return isBlank(value) ? "" : String(value);
-  });
+function replaceOneVariable(
+  match: string,
+  variableName: string,
+  template: TemplateDefinition,
+  values: Record<string, string | number | null | undefined>,
+): string {
+  const variable = template.variables.find(
+    (item) => item.name === variableName || item.label === variableName,
+  );
+  if (!variable) return match;
+  const value = values[variable.name] ?? values[variable.label];
+
+  if (variable?.kind === "pmsRequired" && isBlank(value)) {
+    throw new PmsRequiredValueMissingError(variableName);
+  }
+  if (variable?.kind === "manualRequired" && isBlank(value)) {
+    throw new ManualRequiredValueMissingError(variableName);
+  }
+
+  return isBlank(value) ? "" : String(value);
 }
 
 export function getAvailableTemplateLanguages(template: TemplateDefinition): Language[] {
