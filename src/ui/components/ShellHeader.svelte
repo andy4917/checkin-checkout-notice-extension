@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { BranchId, PmsGuestRecord } from "../../types.js";
   import type { MenuId } from "../../catalog/menu-routing.js";
+  import * as HomeIconModule from "./HomeIcon.svelte";
 
   export let activeMenu: MenuId | null;
   export let branchOptions: Array<{ id: BranchId; label: string; locationLabel?: string }>;
@@ -10,6 +11,7 @@
   export let onBack: () => void;
   export let onBranchChange: (event: Event) => void;
 
+  const HomeIcon = HomeIconModule.default;
   const logoUrl = new URL("../../assets/logo.png", import.meta.url).href;
   let branchMenuOpen = false;
 
@@ -59,7 +61,9 @@
       onclick={toggleBranchMenu}
     >
       <span>{selectedBranch ? selectedBranch.label : "지점 선택"}</span>
-      <span class="branch-chevron" aria-hidden="true">⌄</span>
+      <span class="branch-chevron" aria-hidden="true">
+        <HomeIcon name="chevron-down" size={18} strokeWidth={2.3} />
+      </span>
     </button>
 
     {#if branchMenuOpen}
@@ -79,7 +83,7 @@
               {/if}
             </span>
             {#if selectedBranchId === branch.id}
-              <b aria-hidden="true">✓</b>
+              <b aria-hidden="true"><HomeIcon name="check" size={24} strokeWidth={2.4} /></b>
             {/if}
           </button>
         {/each}
@@ -89,7 +93,7 @@
 
   <div class="header-date" aria-label="오늘 날짜">
     <span>{headerDate}</span>
-    <span aria-hidden="true">▣</span>
+    <span aria-hidden="true"><HomeIcon name="calendar" size={24} strokeWidth={2.15} /></span>
   </div>
 
   {#if activeMenu !== null && selectedPmsRecord}

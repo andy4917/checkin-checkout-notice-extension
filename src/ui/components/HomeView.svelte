@@ -1,5 +1,9 @@
 <script lang="ts">
   import type { MenuGroup, MenuId, MenuItem } from "../../catalog/menu-routing.js";
+  import * as HomeIconModule from "./HomeIcon.svelte";
+  import type { HomeIconName } from "./HomeIcon.svelte";
+
+  const HomeIcon = HomeIconModule.default;
 
   export let groups: readonly MenuGroup[];
   export let settingsMenu: MenuItem;
@@ -9,7 +13,7 @@
     id: MenuId;
     title: string;
     description: string;
-    icon: string;
+    icon: HomeIconName;
     tone?: "primary";
   };
 
@@ -17,38 +21,38 @@
     CUSTOMER_NOTICE: {
       title: "Guidance",
       description: "Essential information for guests",
-      icon: "i",
+      icon: "info",
       tone: "primary",
     },
     QUICK_REPLY: {
       title: "Inquiry",
       description: "24/7 guest support center",
-      icon: "□",
+      icon: "message",
     },
     ROOM_REMARK_MEMO: {
       title: "Room Info",
       description: "객실 정보 메모",
-      icon: "▤",
+      icon: "rooms",
     },
     LAUNDRY_MANAGEMENT: {
       title: "Laundry",
       description: "세탁물 관리",
-      icon: "◫",
+      icon: "laundry",
     },
     OTA_RESERVATION_INPUT: {
       title: "Airport Van",
       description: "OTA 예약 입력",
-      icon: "▱",
+      icon: "plane",
     },
     SALES_MANAGEMENT: {
       title: "Expenditure",
       description: "매지출 관리",
-      icon: "▣",
+      icon: "receipt",
     },
     WORK_REPORT: {
       title: "Work Report",
       description: "업무보고 생성",
-      icon: "▧",
+      icon: "clipboard",
     },
   };
 
@@ -83,12 +87,16 @@
         type="button"
         onclick={() => onOpenMenu(menu.id)}
       >
-        <span class="priority-icon" aria-hidden="true">{menu.icon}</span>
+        <span class="priority-icon" aria-hidden="true">
+          <HomeIcon name={menu.icon} size={32} strokeWidth={2.35} />
+        </span>
         <span class="menu-text">
           <strong>{menu.title}</strong>
           <small>{menu.description}</small>
         </span>
-        <span class="menu-arrow" aria-hidden="true">›</span>
+        <span class="menu-arrow" aria-hidden="true">
+          <HomeIcon name="chevron-right" size={24} strokeWidth={2.6} />
+        </span>
       </button>
     {/each}
   </section>
@@ -98,9 +106,13 @@
     <div class="home-list-card">
       {#each serviceRecordEntries as menu}
         <button type="button" onclick={() => onOpenMenu(menu.id)}>
-          <span class="list-icon" aria-hidden="true">{menu.icon}</span>
+          <span class="list-icon" aria-hidden="true">
+            <HomeIcon name={menu.icon} size={22} strokeWidth={2} />
+          </span>
           <span>{menu.title}</span>
-          <b aria-hidden="true">›</b>
+          <b aria-hidden="true">
+            <HomeIcon name="chevron-right" size={20} strokeWidth={2.6} />
+          </b>
         </button>
       {/each}
     </div>
@@ -111,9 +123,13 @@
     <div class="home-list-card">
       {#each workFormEntries as menu}
         <button type="button" onclick={() => onOpenMenu(menu.id)}>
-          <span class="list-icon" aria-hidden="true">{menu.icon}</span>
+          <span class="list-icon" aria-hidden="true">
+            <HomeIcon name={menu.icon} size={22} strokeWidth={2} />
+          </span>
           <span>{menu.title}</span>
-          <b aria-hidden="true">›</b>
+          <b aria-hidden="true">
+            <HomeIcon name="chevron-right" size={20} strokeWidth={2.6} />
+          </b>
         </button>
       {/each}
     </div>
@@ -123,9 +139,13 @@
     <h2>User Settings</h2>
     <div class="home-list-card">
       <button type="button" onclick={() => onOpenMenu(settingsMenu.id)}>
-        <span class="list-icon" aria-hidden="true">⌘</span>
+        <span class="list-icon" aria-hidden="true">
+          <HomeIcon name="settings" size={22} strokeWidth={1.9} />
+        </span>
         <span>Template Edit</span>
-        <b aria-hidden="true">›</b>
+        <b aria-hidden="true">
+          <HomeIcon name="chevron-right" size={20} strokeWidth={2.6} />
+        </b>
       </button>
     </div>
   </section>
@@ -133,19 +153,19 @@
 
 <nav class="home-bottom-bar" aria-label="빠른 실행">
   <button type="button">
-    <span aria-hidden="true">↪</span>
+    <span aria-hidden="true"><HomeIcon name="log-in" size={24} strokeWidth={2.25} /></span>
     <strong>WINGS LOGIN</strong>
   </button>
   <button type="button">
-    <span aria-hidden="true">☼</span>
+    <span aria-hidden="true"><HomeIcon name="sun" size={24} strokeWidth={2.1} /></span>
     <strong>LIGHT</strong>
   </button>
   <button type="button">
-    <span aria-hidden="true">☾</span>
+    <span aria-hidden="true"><HomeIcon name="moon" size={24} strokeWidth={2.1} /></span>
     <strong>DARK</strong>
   </button>
   <button type="button" onclick={() => onOpenMenu("CUSTOMER_NOTICE")}>
-    <span aria-hidden="true">▤</span>
+    <span aria-hidden="true"><HomeIcon name="rooms" size={24} strokeWidth={2.1} /></span>
     <strong>객실 선택</strong>
   </button>
 </nav>
