@@ -10,13 +10,14 @@ html {
 }
 
 body {
-  --panel-min-width: 420px;
-  --panel-pad-left: 20px;
-  --panel-pad-right: 20px;
-  --sidepanel-right-rail: 0px;
+  --panel-width: min(400px, 100dvw);
+  --panel-pad-left: 16px;
+  --panel-pad-right: 16px;
+  --sidepanel-right-rail: 4px;
   --bottom-bar-gap: max(14px, env(safe-area-inset-bottom));
-  --font-display: "Manrope", "Inter", "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
-  --font-body: "Inter", "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
+  --font-ui: "Pretendard", "Manrope", "Inter", "Segoe UI", "Malgun Gothic", sans-serif;
+  --font-display: var(--font-ui);
+  --font-body: var(--font-ui);
   --color-canvas: #f9f9f8;
   --color-surface: #fff;
   --color-primary: #1d2734;
@@ -26,9 +27,9 @@ body {
   --color-line: #e5e8eb;
   --color-icon: #8b95a1;
 
-  width: var(--panel-min-width);
+  width: var(--panel-width);
   max-width: none;
-  min-width: var(--panel-min-width);
+  min-width: 0;
   min-height: 100%;
   margin: 0;
   background: var(--color-canvas);
@@ -43,9 +44,9 @@ body {
 }
 
 #app {
-  width: var(--panel-min-width);
+  width: var(--panel-width);
   max-width: 100%;
-  min-width: var(--panel-min-width);
+  min-width: 0;
   min-height: 100dvh;
   overflow-x: hidden;
 }
@@ -54,8 +55,8 @@ body::-webkit-scrollbar,
 .pms-record-list::-webkit-scrollbar,
 .laundry-list::-webkit-scrollbar,
 .tab-bar::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 
 body::-webkit-scrollbar-track,
@@ -67,7 +68,7 @@ body::-webkit-scrollbar-track,
 }
 
 body::-webkit-scrollbar-track {
-  margin-top: 76px;
+  margin-top: 56px;
   margin-bottom: 86px;
 }
 
@@ -105,8 +106,8 @@ select:disabled {
 }
 
 .app-shell {
-  width: var(--panel-min-width);
-  min-width: var(--panel-min-width);
+  width: var(--panel-width);
+  min-width: 0;
   min-height: 100dvh;
   margin: 0;
   padding: 0 calc(var(--panel-pad-right) + var(--sidepanel-right-rail)) calc(96px + var(--bottom-bar-gap)) var(--panel-pad-left);
@@ -126,7 +127,7 @@ select:disabled {
   grid-template-columns: minmax(0, auto) minmax(40px, 1fr) auto;
   align-items: center;
   column-gap: 12px;
-  min-height: 68px;
+  min-height: 56px;
   margin: 0 calc(-1 * (var(--panel-pad-right) + var(--sidepanel-right-rail))) 22px calc(-1 * var(--panel-pad-left));
   border-bottom: 1px solid var(--color-line);
   background: var(--color-surface);
@@ -155,8 +156,8 @@ select:disabled {
 }
 
 .brand-logo {
-  width: 96px;
-  max-height: 30px;
+  width: 78px;
+  max-height: 24px;
   height: auto;
   flex: 0 0 auto;
   object-fit: contain;
@@ -199,7 +200,7 @@ select:disabled {
 
 .branch-trigger {
   display: inline-flex;
-  max-width: 126px;
+  max-width: 118px;
   min-height: 44px;
   align-items: center;
   gap: 6px;
@@ -208,8 +209,8 @@ select:disabled {
   color: var(--color-primary);
   padding: 0 2px;
   font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
 }
@@ -236,7 +237,7 @@ select:disabled {
   top: calc(100% + 10px);
   left: max(calc(-1 * var(--panel-pad-left)), -74px);
   z-index: 50;
-  width: min(380px, calc(100dvw - var(--panel-pad-left) - var(--panel-pad-right) - var(--sidepanel-right-rail) - 2px));
+  width: calc(var(--panel-width) - var(--panel-pad-left) - var(--panel-pad-right) - var(--sidepanel-right-rail));
   overflow: hidden;
   border: 1px solid #dfe3ea;
   border-radius: 8px;
@@ -302,7 +303,7 @@ select:disabled {
 .header-date {
   display: inline-flex;
   min-width: 0;
-  max-width: 104px;
+  max-width: 98px;
   align-items: center;
   justify-content: end;
   color: #7f8a99;
@@ -376,7 +377,7 @@ h1 {
 
 .home-surface {
   display: grid;
-  gap: clamp(30px, 5vh, 46px);
+  gap: 40px;
   padding-bottom: 12px;
 }
 
@@ -392,7 +393,7 @@ h1 {
   grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
-  min-height: clamp(96px, 14vh, 122px);
+  min-height: 96px;
   border: 1px solid rgb(51 61 75 / 10%);
   border-radius: 12px;
   background: var(--color-surface);
@@ -441,15 +442,15 @@ h1 {
 
 .priority-card .menu-text strong {
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 700;
   line-height: 1.15;
   text-wrap: balance;
 }
 
 .priority-card .menu-text small {
   color: var(--color-on-surface-variant, #44474c);
-  font-size: 14px;
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -479,9 +480,9 @@ h1 {
   margin: 0;
   color: #333942;
   font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -499,7 +500,7 @@ h1 {
   grid-template-columns: 32px minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  min-height: clamp(58px, 8vh, 68px);
+  min-height: 58px;
   border: 0;
   border-bottom: 1px solid #e5e8eb;
   background: var(--color-surface);
@@ -531,7 +532,7 @@ h1 {
 .home-list-card span:not(.list-icon) {
   overflow: hidden;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -549,7 +550,7 @@ h1 {
   right: auto;
   bottom: var(--bottom-bar-gap);
   left: var(--panel-pad-left);
-  width: calc(var(--panel-min-width) - var(--panel-pad-left) - var(--panel-pad-right));
+  width: calc(var(--panel-width) - var(--panel-pad-left) - var(--panel-pad-right) - var(--sidepanel-right-rail));
   z-index: 25;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -592,8 +593,8 @@ h1 {
 .home-bottom-bar strong {
   max-width: 100%;
   overflow: hidden;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: 700;
   line-height: 1.05;
   text-align: center;
   white-space: nowrap;
@@ -1267,7 +1268,7 @@ h1 {
   right: auto;
   bottom: 10px;
   left: var(--panel-pad-left);
-  width: calc(var(--panel-min-width) - var(--panel-pad-left) - var(--panel-pad-right));
+  width: calc(var(--panel-width) - var(--panel-pad-left) - var(--panel-pad-right) - var(--sidepanel-right-rail));
   z-index: 20;
   display: grid;
   border: 1px solid #d6d0c6;
@@ -1316,9 +1317,10 @@ h1 {
 
 @media (max-width: 460px) {
   body {
-    --panel-pad-left: 18px;
-    --panel-pad-right: 18px;
-    --sidepanel-right-rail: 0px;
+    --panel-width: 100dvw;
+    --panel-pad-left: 16px;
+    --panel-pad-right: 16px;
+    --sidepanel-right-rail: 4px;
   }
 
   .app-header,
@@ -1329,7 +1331,7 @@ h1 {
   }
 
   .brand-logo {
-    width: 82px;
+    width: 74px;
   }
 
   .branch-trigger {

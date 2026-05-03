@@ -21,7 +21,7 @@
   let branchMenuOpen = false;
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
-  $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "Select branch";
+  $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "Branch";
   $: headerDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
