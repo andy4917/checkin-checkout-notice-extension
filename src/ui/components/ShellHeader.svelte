@@ -22,11 +22,7 @@
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
   $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "Branch";
-  $: headerDate = new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
+  $: headerDate = formatHeaderDate(new Date());
 
   function toggleBranchMenu() {
     if (navigationLocked) return;
@@ -36,6 +32,16 @@
   function chooseBranch(branchId: BranchId) {
     onBranchChange({ target: { value: branchId } } as unknown as Event);
     branchMenuOpen = false;
+  }
+
+  function formatHeaderDate(date: Date): string {
+    const parts = new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const valueByType = new Map(parts.map((part) => [part.type, part.value]));
+    return `${valueByType.get("year") || ""}.${valueByType.get("month") || ""}.${valueByType.get("day") || ""}`;
   }
 </script>
 

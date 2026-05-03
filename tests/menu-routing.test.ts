@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   filterTemplatesForMenu,
+  getHomeMenuSections,
   getMenu,
+  homeQuickActions,
   matchesTemplateTab,
 } from "../src/catalog/menu-routing.js";
 import type { UnifiedTemplateDefinition } from "../src/catalog/template-types.js";
@@ -57,4 +59,19 @@ test("menu routing uses catalog metadata instead of text heuristics", () => {
 test("user-facing operations labels keep current business terms", () => {
   assert.equal(getMenu("SALES_MANAGEMENT").title, "매지출 관리");
   assert.equal(getMenu("ROOM_REMARK_MEMO").title, "객실 정보 메모");
+});
+
+test("home menu presentation comes from routing catalog metadata", () => {
+  const sections = getHomeMenuSections();
+  const primary = sections.find((section) => section.id === "primary");
+  const roomOperations = sections.find((section) => section.id === "room-operations");
+  const otaMenu = roomOperations?.items.find((item) => item.id === "OTA_RESERVATION_INPUT");
+
+  assert.deepEqual(
+    primary?.items.map((item) => item.id),
+    ["CUSTOMER_NOTICE", "QUICK_REPLY"],
+  );
+  assert.equal(otaMenu?.home?.title, "OTA 예약 입력");
+  assert.equal(otaMenu?.home?.icon, "file-text");
+  assert.equal(homeQuickActions.find((action) => action.id === "room-select")?.menuId, "CUSTOMER_NOTICE");
 });

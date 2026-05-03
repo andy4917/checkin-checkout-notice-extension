@@ -12,8 +12,8 @@ import {
   branchOptions,
   categoryOptions,
   contextOptions,
-  homeMenuGroups,
-  homeSettingsMenu,
+  homeFooterActions,
+  homeMenuSections,
   languageOptions as languages,
 } from "./ui-options.js";
 import {
@@ -707,8 +707,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     branchOptions,
     categoryOptions,
     contextOptions,
-    homeMenuGroups,
-    homeSettingsMenu,
+    homeFooterActions,
+    homeMenuSections,
     languages,
     hasAnyTemplateForLanguage,
     laundryStatusLabel,

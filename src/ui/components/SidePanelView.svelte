@@ -34,8 +34,8 @@
 
   {#if controller.activeMenu === null}
     <HomeView
-      groups={controller.homeMenuGroups}
-      settingsMenu={controller.homeSettingsMenu}
+      footerActions={controller.homeFooterActions}
+      sections={controller.homeMenuSections}
       onOpenMenu={controller.openMenu}
     />
   {:else}
