@@ -3,12 +3,32 @@
   import type { MenuId } from "../../catalog/menu-routing.js";
 
   export let activeMenu: MenuId | null;
-  export let branchOptions: Array<{ id: BranchId; label: string }>;
+  export let branchOptions: Array<{ id: BranchId; label: string; locationLabel?: string }>;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
   export let selectedPmsRecord: PmsGuestRecord | null;
   export let onBack: () => void;
   export let onBranchChange: (event: Event) => void;
+
+  const logoUrl = new URL("../../assets/logo.png", import.meta.url).href;
+  let branchMenuOpen = false;
+
+  $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
+  $: headerDate = new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date());
+
+  function toggleBranchMenu() {
+    if (navigationLocked) return;
+    branchMenuOpen = !branchMenuOpen;
+  }
+
+  function chooseBranch(branchId: BranchId) {
+    onBranchChange({ target: { value: branchId } } as unknown as Event);
+    branchMenuOpen = false;
+  }
 </script>
 
 <header class="app-header">
@@ -26,18 +46,51 @@
   {/if}
 
   <div class="brand-lockup">
-    <img class="brand-logo" src="logo.png" alt="UH Suite" />
-    <strong>UH SUITE</strong>
+    <img class="brand-logo" src={logoUrl} alt="UH Suite" />
   </div>
 
-  <label class="branch-picker" aria-label="지점 선택">
-    <select value={selectedBranchId} onchange={onBranchChange}>
-      <option value="">지점 선택</option>
-      {#each branchOptions as branch}
-        <option value={branch.id}>{branch.label}</option>
-      {/each}
-    </select>
-  </label>
+  <div class="branch-selector">
+    <button
+      class="branch-trigger"
+      type="button"
+      aria-haspopup="listbox"
+      aria-expanded={branchMenuOpen}
+      disabled={navigationLocked}
+      onclick={toggleBranchMenu}
+    >
+      <span>{selectedBranch ? selectedBranch.label : "지점 선택"}</span>
+      <span class="branch-chevron" aria-hidden="true">⌄</span>
+    </button>
+
+    {#if branchMenuOpen}
+      <div class="branch-menu" role="listbox" aria-label="지점 선택">
+        {#each branchOptions as branch}
+          <button
+            class:active={selectedBranchId === branch.id}
+            type="button"
+            role="option"
+            aria-selected={selectedBranchId === branch.id}
+            onclick={() => chooseBranch(branch.id)}
+          >
+            <span>
+              <strong>{branch.label}</strong>
+              {#if branch.locationLabel}
+                <small>{branch.locationLabel}</small>
+              {/if}
+            </span>
+            {#if selectedBranchId === branch.id}
+              <b aria-hidden="true">✓</b>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div class="header-date" aria-label="오늘 날짜">
+    <span>{headerDate}</span>
+    <span aria-hidden="true">▣</span>
+  </div>
 
   {#if activeMenu !== null && selectedPmsRecord}
     <div class="selected-room-header" aria-label="선택 객실">

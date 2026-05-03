@@ -43,6 +43,42 @@ const hotelName: TemplateVariable = {
   kind: "manualOptional",
 };
 
+const checkInTime: TemplateVariable = {
+  name: "checkInTime",
+  label: "체크인 시간",
+  kind: "manualOptional",
+};
+
+const checkOutTime: TemplateVariable = {
+  name: "checkOutTime",
+  label: "체크아웃 시간",
+  kind: "manualOptional",
+};
+
+const frontDeskLocation: TemplateVariable = {
+  name: "frontDeskLocation",
+  label: "프런트 위치",
+  kind: "manualOptional",
+};
+
+const hotelAddress: TemplateVariable = {
+  name: "hotelAddress",
+  label: "호텔 주소",
+  kind: "manualOptional",
+};
+
+const representativePhone: TemplateVariable = {
+  name: "representativePhone",
+  label: "대표 연락처",
+  kind: "manualOptional",
+};
+
+const emergencyContact: TemplateVariable = {
+  name: "emergencyContact",
+  label: "비상 연락처",
+  kind: "manualOptional",
+};
+
 const roomType: TemplateVariable = {
   name: "roomType",
   label: "객실 타입",
@@ -52,6 +88,78 @@ const roomType: TemplateVariable = {
 const rentalItemName: TemplateVariable = {
   name: "rentalItemName",
   label: "대여 물품명",
+  kind: "manualOptional",
+};
+
+const lostItemName: TemplateVariable = {
+  name: "lostItemName",
+  label: "분실 물품명",
+  kind: "manualOptional",
+};
+
+const visitTime: TemplateVariable = {
+  name: "visitTime",
+  label: "방문 예정 시간",
+  kind: "manualOptional",
+};
+
+const expectedArrivalTime: TemplateVariable = {
+  name: "expectedArrivalTime",
+  label: "도착예정시간",
+  kind: "manualOptional",
+};
+
+const selfCheckinTime: TemplateVariable = {
+  name: "selfCheckinTime",
+  label: "셀프 체크인 적용 시간",
+  kind: "manualOptional",
+};
+
+const entranceLockTime: TemplateVariable = {
+  name: "entranceLockTime",
+  label: "현관 잠금 기준 시간",
+  kind: "manualOptional",
+};
+
+const entrancePassword: TemplateVariable = {
+  name: "entrancePassword",
+  label: "현관 비밀번호",
+  kind: "manualOptional",
+};
+
+const keyStorageLocation: TemplateVariable = {
+  name: "keyStorageLocation",
+  label: "키 보관 위치",
+  kind: "manualOptional",
+};
+
+const roomNumberCheckMethod: TemplateVariable = {
+  name: "roomNumberCheckMethod",
+  label: "객실번호 확인 방법",
+  kind: "manualOptional",
+};
+
+const parkingAvailability: TemplateVariable = {
+  name: "parkingAvailability",
+  label: "주차 가능 여부",
+  kind: "manualOptional",
+};
+
+const parkingAppName: TemplateVariable = {
+  name: "parkingAppName",
+  label: "주차 앱명",
+  kind: "manualOptional",
+};
+
+const walkingDistance: TemplateVariable = {
+  name: "walkingDistance",
+  label: "도보 거리",
+  kind: "manualOptional",
+};
+
+const replyDeadlineCondition: TemplateVariable = {
+  name: "replyDeadlineCondition",
+  label: "회신 마감 조건",
   kind: "manualOptional",
 };
 
@@ -169,6 +277,377 @@ export const WORKFLOW_TEMPLATE_CATALOG: readonly TemplateDefinition[] = Object.f
     requiresContext: "none",
     editable: true,
     defaultValue: "문의주신 {rentalItemName}은 프론트에서 대여하실 수 있습니다.",
+  }),
+  defineTemplate({
+    id: "quick-lost-item-inquiry",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "분실물 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `현재 저희가 보관 중인 분실물 중에서는 {lostItemName}이/가 확인되지 않았습니다.
+
+다만 정확한 확인을 위해 하우스키핑팀에 재확인 후 다시 안내드리겠습니다.
+
+추후 해당 물품이 발견될 경우 바로 연락드리겠습니다.`,
+      EN: `At this time, {lostItemName} has not been found among the lost items currently in our possession.
+
+For a more accurate check, we will reconfirm with our housekeeping team and get back to you.
+
+If the item is found later, we will contact you right away.`,
+      JP: `現在、当施設で保管しているお忘れ物の中には、{lostItemName}は確認されておりません。
+
+念のため、ハウスキーピングチームにも再確認のうえ、改めてご案内いたします。
+
+今後、該当のお品物が見つかった場合は、すぐにご連絡いたします。`,
+      CN: `目前，我们保管的遗失物品中尚未确认有{lostItemName}。
+
+为确保准确，我们将再次向客房清洁团队确认，并随后再与您联系。
+
+若之后找到该物品，我们会立即通知您。`,
+    },
+    variables: [lostItemName],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "현재 저희가 보관 중인 분실물 중에서는 {lostItemName}이/가 확인되지 않았습니다.",
+  }),
+  defineTemplate({
+    id: "quick-room-visit-notice",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "객실 방문 예정",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `네, 확인했습니다.
+
+요청하신 건과 관련하여 직원이 {visitTime} 이내로 객실에 방문할 예정입니다.
+
+방문을 원하지 않으실 경우 말씀 부탁드립니다.
+
+감사합니다.`,
+      EN: `Certainly, we have confirmed your request.
+
+A staff member will visit your room within {visitTime} regarding your request.
+
+If you would prefer not to have a staff member visit your room, please let us know.
+
+Thank you.`,
+      JP: `承知いたしました。
+
+ご依頼の件につきまして、スタッフが{visitTime}以内にお部屋へお伺いする予定でございます。
+
+お部屋への訪問をご希望されない場合は、お知らせくださいませ。
+
+ありがとうございます。`,
+      CN: `好的，已确认。
+
+关于您提出的事项，工作人员预计将在{visitTime}以内前往您的客房。
+
+如果您不希望工作人员前往客房，请告知我们。
+
+谢谢。`,
+    },
+    variables: [visitTime],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "요청하신 건과 관련하여 직원이 {visitTime} 이내로 객실에 방문할 예정입니다.",
+  }),
+  defineTemplate({
+    id: "early-checkin-inquiry",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "얼리 체크인 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하세요, {guestName}님.
+
+체크인은 {checkInTime}부터 가능하며, 얼리 체크인은 당일 객실 상황에 따라 달라질 수 있어 사전 확정이 어려운 점 양해 부탁드립니다.
+
+다만 체크인 이전에 방문하실 경우, 고객님의 짐을 안전하게 보관해 드리고 있으니 언제든 편하게 방문하셔서 짐을 맡겨주시기 바랍니다.
+
+감사합니다.
+
+{hotelName} 드림`,
+      EN: `Dear {guestName},
+
+Check-in is available from {checkInTime}. Please understand that early check-in is subject to room availability on the day of arrival and cannot be guaranteed in advance.
+
+However, if you arrive before check-in time, we will be happy to store your luggage safely for you.
+
+Thank you.
+
+{hotelName}`,
+      JP: `{guestName} 様
+
+チェックインは{checkInTime}から可能でございます。アーリーチェックインにつきましては、当日の客室状況により異なるため、事前の確約が難しい点、何卒ご了承くださいませ。
+
+なお、チェックイン前にお越しいただいた場合は、お客様のお荷物を安全にお預かりいたします。
+
+ありがとうございます。
+
+{hotelName} より`,
+      CN: `尊敬的 {guestName}，您好。
+
+入住时间为{checkInTime}以后。提前入住需视当天客房情况而定，因此较难提前确认，敬请谅解。
+
+不过，如您在入住时间前到店，我们可以为您安全保管行李。
+
+谢谢。
+
+{hotelName} 敬上`,
+    },
+    variables: [manualGuestName, hotelName, checkInTime],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "체크인은 {checkInTime}부터 가능하며, 얼리 체크인은 사전 확정이 어렵습니다.",
+  }),
+  defineTemplate({
+    id: "parking-guide",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "주차 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하십니까, 고객님.
+
+{hotelName}입니다.
+
+예약 플랫폼에 안내된 내용과 동일하게, 당 호텔은 {parkingAvailability}입니다. 아래와 같이 인근 유료 주차장을 참고용으로 안내드립니다.
+
+- 외부 주차장 이용으로 발생하는 주차 요금은 호텔에서 부담하지 않습니다.
+- 요금, 운영 시간, 입출차, 정산 등 주차장 이용 관련 문의는 해당 주차장에 직접 확인 부탁드립니다.
+- 주변 주차장 요금과 주소는 {parkingAppName} 앱에서도 확인하실 수 있습니다.
+
+투숙객분들이 주로 이용하시는 {walkingDistance} 이내 인근 주차장을 참고 부탁드립니다.
+
+감사합니다.`,
+      EN: `Dear Guest,
+
+This is {hotelName}.
+
+As stated on the reservation platform, our hotel's parking availability is as follows: {parkingAvailability}. For your reference, please check nearby paid parking options.
+
+- Parking fees incurred at external parking facilities are not covered by the hotel.
+- For inquiries regarding fees, operating hours, entry/exit, or payment, please contact the parking facility directly.
+- You may also check nearby parking rates and addresses through the {parkingAppName} app.
+
+Please refer to nearby parking facilities commonly used by guests within {walkingDistance}.
+
+Thank you for your understanding.`,
+      JP: `お客様
+
+{hotelName}でございます。
+
+予約プラットフォームに記載のとおり、当ホテルの駐車場利用可否は{parkingAvailability}でございます。参考情報として、近隣の有料駐車場をご確認ください。
+
+- 外部駐車場のご利用により発生する駐車料金は、ホテルでは負担いたしかねます。
+- 料金、営業時間、入出庫、精算などに関するお問い合わせは、該当駐車場へ直接ご確認ください。
+- 周辺駐車場の料金や住所は、{parkingAppName}アプリでもご確認いただけます。
+
+ご宿泊のお客様がよくご利用される{walkingDistance}以内の近隣駐車場をご参考ください。
+
+ご確認のほどよろしくお願いいたします。`,
+      CN: `尊敬的客人，您好。
+
+这里是{hotelName}。
+
+与预订平台上的说明一致，本酒店的停车情况为：{parkingAvailability}。请参考附近收费停车场信息。
+
+- 使用外部停车场产生的停车费用由客人自行承担，酒店不予承担。
+- 关于费用、营业时间、进出场、结算等停车场使用相关问题，请直接咨询该停车场。
+- 您也可以通过{parkingAppName}应用查询周边停车场费用及地址。
+
+请参考客人常用的{walkingDistance}以内附近停车场。
+
+谢谢。`,
+    },
+    variables: [hotelName, parkingAvailability, parkingAppName, walkingDistance],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "{hotelName} 주차 가능 여부: {parkingAvailability}",
+  }),
+  defineTemplate({
+    id: "prestay-same-day-guide",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "투숙 사전 및 당일 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `{guestName}님, 안녕하세요.
+
+{hotelName}입니다. 다가오는 투숙과 관련하여 주요 안내 사항을 전달드립니다.
+
+- 체크인 시간: {checkInTime}
+- 체크아웃 시간: {checkOutTime}
+- 프런트 데스크 위치: {frontDeskLocation}
+- 주소: {hotelAddress}
+
+객실 준비를 위해 가능하시다면 도착 예정 시간({expectedArrivalTime})을 미리 알려주시면 감사하겠습니다.
+
+{selfCheckinTime} 이후 도착 예정이신 경우, 사전에 셀프 체크인 안내를 제공해 드립니다.
+
+{entranceLockTime} 이후에는 현관문이 잠길 수 있습니다. 필요 시 {entrancePassword}를 입력해 주시기 바랍니다.
+
+감사합니다.
+{hotelName}`,
+      EN: `Dear {guestName},
+
+This is {hotelName}. We would like to share important information regarding your upcoming stay.
+
+- Check-in Time: {checkInTime}
+- Check-out Time: {checkOutTime}
+- Front Desk Location: {frontDeskLocation}
+- Address: {hotelAddress}
+
+To help us prepare your room, we would appreciate it if you could let us know your expected arrival time: {expectedArrivalTime}.
+
+If you plan to arrive after {selfCheckinTime}, we will provide self check-in instructions in advance.
+
+The entrance door may be locked after {entranceLockTime}. If needed, please enter {entrancePassword}.
+
+Thank you.
+{hotelName}`,
+      JP: `{guestName} 様
+
+{hotelName}でございます。ご滞在に関する主なご案内をお送りいたします。
+
+- チェックイン時間: {checkInTime}
+- チェックアウト時間: {checkOutTime}
+- フロントデスクの場所: {frontDeskLocation}
+- 住所: {hotelAddress}
+
+お部屋の準備のため、可能でございましたら到着予定時間（{expectedArrivalTime}）を事前にお知らせいただけますと幸いです。
+
+{selfCheckinTime}以降にご到着予定の場合は、事前にセルフチェックイン方法をご案内いたします。
+
+{entranceLockTime}以降は入口ドアが施錠される場合がございます。必要な場合は{entrancePassword}をご入力ください。
+
+ありがとうございます。
+{hotelName}`,
+      CN: `尊敬的 {guestName}，您好。
+
+这里是{hotelName}。关于您即将入住的相关事项，特此发送以下主要说明。
+
+- 入住时间：{checkInTime}
+- 退房时间：{checkOutTime}
+- 前台位置：{frontDeskLocation}
+- 地址：{hotelAddress}
+
+为了更好地准备客房，如方便，请提前告知您的预计到达时间：{expectedArrivalTime}。
+
+如您预计在{selfCheckinTime}之后到达，我们将提前提供自助入住指南。
+
+{entranceLockTime}之后，入口门可能会自动上锁。如有需要，请输入{entrancePassword}。
+
+谢谢。
+{hotelName}`,
+    },
+    variables: [
+      manualGuestName,
+      hotelName,
+      checkInTime,
+      checkOutTime,
+      frontDeskLocation,
+      hotelAddress,
+      expectedArrivalTime,
+      selfCheckinTime,
+      entranceLockTime,
+      entrancePassword,
+    ],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "{guestName}님, {hotelName} 투숙 안내드립니다.",
+  }),
+  defineTemplate({
+    id: "self-checkin-guide",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "셀프 체크인 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `{guestName}님, 안녕하세요.
+
+{hotelName}입니다. {selfCheckinTime} 이후 도착하시는 고객님을 위해 셀프 체크인 방법을 안내드립니다.
+
+- 키 보관 위치: {keyStorageLocation}
+- 객실번호 확인 방법: {roomNumberCheckMethod}
+- 체크아웃 시간: {checkOutTime}
+- 리셉션 운영 시간: {receptionHours}
+- 문의 연락처: {representativePhone}
+- 비상 연락처: {emergencyContact}
+
+{entranceLockTime} 이후에는 현관문이 자동으로 잠길 수 있습니다. 입장이 필요하신 경우 {entrancePassword}를 입력해 주세요.
+
+감사합니다.
+{hotelName}`,
+      EN: `Dear {guestName},
+
+This is {hotelName}. For guests arriving after {selfCheckinTime}, please refer to the self check-in instructions below.
+
+- Key Location: {keyStorageLocation}
+- How to Check Your Room Number: {roomNumberCheckMethod}
+- Check-out Time: {checkOutTime}
+- Reception Hours: {receptionHours}
+- Contact Number: {representativePhone}
+- Emergency Contact: {emergencyContact}
+
+The entrance door may be locked automatically after {entranceLockTime}. If you need to enter, please input {entrancePassword}.
+
+Thank you.
+{hotelName}`,
+      JP: `{guestName} 様
+
+{hotelName}でございます。{selfCheckinTime}以降にご到着のお客様へ、セルフチェックイン方法をご案内いたします。
+
+- 鍵の保管場所: {keyStorageLocation}
+- 客室番号の確認方法: {roomNumberCheckMethod}
+- チェックアウト時間: {checkOutTime}
+- レセプション営業時間: {receptionHours}
+- お問い合わせ先: {representativePhone}
+- 緊急連絡先: {emergencyContact}
+
+{entranceLockTime}以降は入口ドアが自動で施錠される場合がございます。入館が必要な場合は{entrancePassword}をご入力ください。
+
+ありがとうございます。
+{hotelName}`,
+      CN: `尊敬的 {guestName}，您好。
+
+这里是{hotelName}。如您将在{selfCheckinTime}之后抵达，请参考以下自助入住指南。
+
+- 钥匙保管位置：{keyStorageLocation}
+- 房号确认方法：{roomNumberCheckMethod}
+- 退房时间：{checkOutTime}
+- 前台营业时间：{receptionHours}
+- 咨询电话：{representativePhone}
+- 紧急联系方式：{emergencyContact}
+
+{entranceLockTime}之后，入口门可能会自动上锁。如需进入，请输入{entrancePassword}。
+
+谢谢。
+{hotelName}`,
+    },
+    variables: [
+      manualGuestName,
+      hotelName,
+      selfCheckinTime,
+      keyStorageLocation,
+      roomNumberCheckMethod,
+      checkOutTime,
+      { name: "receptionHours", label: "리셉션 운영시간", kind: "manualOptional" },
+      representativePhone,
+      emergencyContact,
+      entranceLockTime,
+      entrancePassword,
+    ],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "{selfCheckinTime} 이후 도착 고객님께 셀프 체크인 방법을 안내드립니다.",
   }),
   defineTemplate({
     id: "laundry-complete-message",
@@ -511,6 +990,171 @@ Thank you.`,
     requiresContext: "none",
     editable: true,
     defaultValue: "공항밴 배차 완료 안내",
+  }),
+  defineTemplate({
+    id: "room-upgrade-offer",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "룸업그레이드 제안 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하세요, {guestName}님.
+{hotelName}입니다.
+
+고객님께서 예약하신 {currentRoomType} ({currentBaseOccupancy}) 예약이 확인되었습니다.
+
+이번에 고객님께 {upgradeCondition}으로 더 넓은 객실인 {upgradeRoomType} ({upgradeBaseOccupancy})을 제안드리고자 합니다.
+
+해당 업그레이드 객실은 다음과 같이 구성되어 있습니다.
+
+- {roomFeature1}
+- {roomFeature2}
+- {roomFeature3}
+
+단, 기존 예약 객실과 비교하여 {upgradeNotice}이 있는 점 참고 부탁드립니다.
+
+업그레이드를 원하실 경우 저희에게 회신 부탁드립니다.
+
+※ {replyDeadlineCondition}
+
+감사합니다.`,
+      EN: `Dear {guestName},
+
+This is {hotelName}.
+
+We have confirmed your reservation for {currentRoomType} ({currentBaseOccupancy}).
+
+We would like to offer you {upgradeCondition} to a more spacious room: {upgradeRoomType} ({upgradeBaseOccupancy}).
+
+The upgraded room includes the following.
+
+- {roomFeature1}
+- {roomFeature2}
+- {roomFeature3}
+
+Please note the following difference compared with your current room: {upgradeNotice}.
+
+If you would like to accept this upgrade, please reply to us.
+
+※ {replyDeadlineCondition}
+
+Thank you.`,
+      JP: `{guestName} 様
+
+{hotelName}でございます。
+
+お客様がご予約された{currentRoomType}（{currentBaseOccupancy}）のご予約を確認いたしました。
+
+この度、{upgradeCondition}として、より広い客室である{upgradeRoomType}（{upgradeBaseOccupancy}）をご提案させていただきます。
+
+アップグレード客室の構成は以下のとおりです。
+
+- {roomFeature1}
+- {roomFeature2}
+- {roomFeature3}
+
+ただし、現在ご予約の客室と比較して{upgradeNotice}がございますので、あらかじめご了承くださいませ。
+
+アップグレードをご希望の場合はご返信くださいませ。
+
+※ {replyDeadlineCondition}
+
+ありがとうございます。`,
+      CN: `尊敬的 {guestName}，您好。
+
+这里是{hotelName}。
+
+我们已确认您预订的{currentRoomType}（{currentBaseOccupancy}）。
+
+这次我们想以{upgradeCondition}为您提供更宽敞的房型：{upgradeRoomType}（{upgradeBaseOccupancy}）。
+
+升级房型包含以下配置。
+
+- {roomFeature1}
+- {roomFeature2}
+- {roomFeature3}
+
+请注意，与您当前预订的房型相比，存在以下差异：{upgradeNotice}。
+
+如您希望接受此次升级，请回复我们。
+
+※ {replyDeadlineCondition}
+
+谢谢。`,
+    },
+    variables: [
+      manualGuestName,
+      hotelName,
+      { name: "currentRoomType", label: "현재 객실 타입", kind: "manualOptional" },
+      { name: "currentBaseOccupancy", label: "현재 기준 인원", kind: "manualOptional" },
+      { name: "upgradeCondition", label: "업그레이드 조건", kind: "manualOptional" },
+      { name: "upgradeRoomType", label: "업그레이드 객실 타입", kind: "manualOptional" },
+      { name: "upgradeBaseOccupancy", label: "업그레이드 기준 인원", kind: "manualOptional" },
+      { name: "roomFeature1", label: "객실 구성 1", kind: "manualOptional" },
+      { name: "roomFeature2", label: "객실 구성 2", kind: "manualOptional" },
+      { name: "roomFeature3", label: "객실 구성 3", kind: "manualOptional" },
+      { name: "upgradeNotice", label: "유의 차이점", kind: "manualOptional" },
+      replyDeadlineCondition,
+    ],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "{guestName}님, {upgradeCondition}으로 {upgradeRoomType} 업그레이드를 제안드립니다.",
+  }),
+  defineTemplate({
+    id: "room-upgrade-closed-followup",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "룸업그레이드 마감 후속 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하세요, {guestName}님.
+
+해당 업그레이드 기회는 {offerMethod}으로 안내드렸으며, {otherGuestConfirmedAt}에 다른 고객님의 회신이 먼저 확인되어 제공이 어려워졌습니다.
+
+좋은 기회를 제공해 드리지 못하게 되어 아쉽게 생각합니다.
+다음 투숙 시 다시 좋은 기회를 안내드릴 수 있도록 하겠습니다.
+
+감사합니다.
+{hotelName}`,
+      EN: `Dear {guestName},
+
+The upgrade opportunity was offered under the following process: {offerMethod}. Unfortunately, another guest's reply was confirmed first at {otherGuestConfirmedAt}, and the upgrade is no longer available.
+
+We regret that we are unable to offer you this opportunity this time.
+We hope to provide you with another good opportunity during your next stay.
+
+Thank you.
+{hotelName}`,
+      JP: `{guestName} 様
+
+該当アップグレードの機会は{offerMethod}にてご案内しておりましたが、{otherGuestConfirmedAt}に別のお客様から先にご返信をいただいたため、ご提供が難しくなりました。
+
+この度は良い機会をご提供できず、残念に存じます。
+次回ご宿泊の際には、また良い機会をご案内できるよう努めてまいります。
+
+ありがとうございます。
+{hotelName}`,
+      CN: `尊敬的 {guestName}，您好。
+
+该升级机会是按照{offerMethod}进行通知的。很遗憾，我们已于{otherGuestConfirmedAt}先收到其他客人的回复，因此目前无法继续提供该升级。
+
+未能为您提供此次机会，我们深感遗憾。
+希望在您下次入住时，我们能再次为您提供更好的机会。
+
+谢谢。
+{hotelName}`,
+    },
+    variables: [
+      manualGuestName,
+      hotelName,
+      { name: "offerMethod", label: "제공 방식", kind: "manualOptional" },
+      { name: "otherGuestConfirmedAt", label: "다른 고객 확정 일시", kind: "manualOptional" },
+    ],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "{offerMethod}으로 안내드린 업그레이드는 {otherGuestConfirmedAt}에 마감되었습니다.",
   }),
   defineTemplate({
     id: "remark-card-keys",

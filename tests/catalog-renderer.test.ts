@@ -51,11 +51,19 @@ test("guest notices and quick replies render through the same catalog renderer",
   const notice = getWorkflowTemplate("guest-arrival-notice");
   const reply = getWorkflowTemplate("quick-room-upgrade");
   const rentalReply = getWorkflowTemplate("quick-rental-item-inquiry");
+  const lostItemReply = getWorkflowTemplate("quick-lost-item-inquiry");
+  const roomVisitReply = getWorkflowTemplate("quick-room-visit-notice");
+  const selfCheckinGuide = getWorkflowTemplate("self-checkin-guide");
+  const roomUpgradeOffer = getWorkflowTemplate("room-upgrade-offer");
   const airportVanRequest = getWorkflowTemplate("airport-van-request-guide");
 
   assert.ok(notice);
   assert.ok(reply);
   assert.ok(rentalReply);
+  assert.ok(lostItemReply);
+  assert.ok(roomVisitReply);
+  assert.ok(selfCheckinGuide);
+  assert.ok(roomUpgradeOffer);
   assert.ok(airportVanRequest);
 
   assert.equal(notice.requiresContext, "pmsPage");
@@ -70,6 +78,41 @@ test("guest notices and quick replies render through the same catalog renderer",
     /The Coex.*Suite 객실 업그레이드/,
   );
   assert.match(renderTemplate(rentalReply, "KO", { rentalItemName: "다리미" }), /다리미/);
+  assert.match(renderTemplate(lostItemReply, "KO", { lostItemName: "충전기" }), /충전기/);
+  assert.match(renderTemplate(roomVisitReply, "KO", { visitTime: "15분" }), /15분 이내/);
+  assert.match(
+    renderTemplate(selfCheckinGuide, "KO", {
+      guestName: "Kim",
+      hotelName: "UH Suite",
+      selfCheckinTime: "22:00",
+      keyStorageLocation: "프론트 보관함",
+      roomNumberCheckMethod: "문자 안내",
+      checkOutTime: "11:00",
+      receptionHours: "09:00-22:00",
+      representativePhone: "대표 연락처",
+      emergencyContact: "비상 연락처",
+      entranceLockTime: "22:00",
+      entrancePassword: "1234",
+    }),
+    /프론트 보관함.*1234/s,
+  );
+  assert.match(
+    renderTemplate(roomUpgradeOffer, "KO", {
+      guestName: "Kim",
+      hotelName: "UH Suite",
+      currentRoomType: "스튜디오",
+      currentBaseOccupancy: "2인",
+      upgradeCondition: "무료",
+      upgradeRoomType: "스위트",
+      upgradeBaseOccupancy: "4인",
+      roomFeature1: "침실",
+      roomFeature2: "거실",
+      roomFeature3: "욕실",
+      upgradeNotice: "층수 차이",
+      replyDeadlineCondition: "18시까지 회신",
+    }),
+    /무료.*스위트.*18시까지 회신/s,
+  );
 });
 
 test("renderer preserves required PMS failure while allowing intentional manual blanks", () => {

@@ -1,13 +1,22 @@
 <script lang="ts">
-  import HomeView from "./HomeView.svelte";
-  import LaundryPanel from "./LaundryPanel.svelte";
-  import OtaReservationPanel from "./OtaReservationPanel.svelte";
-  import RoomBottomBar from "./RoomBottomBar.svelte";
-  import SettingsPanel from "./SettingsPanel.svelte";
-  import ShellHeader from "./ShellHeader.svelte";
-  import TemplateList from "./TemplateList.svelte";
-  import WorkHeader from "./WorkHeader.svelte";
+  import * as HomeViewModule from "./HomeView.svelte";
+  import * as LaundryPanelModule from "./LaundryPanel.svelte";
+  import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
+  import * as RoomBottomBarModule from "./RoomBottomBar.svelte";
+  import * as SettingsPanelModule from "./SettingsPanel.svelte";
+  import * as ShellHeaderModule from "./ShellHeader.svelte";
+  import * as TemplateListModule from "./TemplateList.svelte";
+  import * as WorkHeaderModule from "./WorkHeader.svelte";
   import type { createSidePanelController } from "../side-panel-controller.svelte.js";
+
+  const HomeView = HomeViewModule.default;
+  const LaundryPanel = LaundryPanelModule.default;
+  const OtaReservationPanel = OtaReservationPanelModule.default;
+  const RoomBottomBar = RoomBottomBarModule.default;
+  const SettingsPanel = SettingsPanelModule.default;
+  const ShellHeader = ShellHeaderModule.default;
+  const TemplateList = TemplateListModule.default;
+  const WorkHeader = WorkHeaderModule.default;
 
   export let controller: ReturnType<typeof createSidePanelController>;
 </script>

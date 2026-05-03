@@ -14,12 +14,18 @@ import { WORKFLOW_TEMPLATE_CATALOG, applyStoredTemplateState } from "../src/cata
 
 test("unified catalog supplies menu type and source metadata for runtime templates", () => {
   const arrival = getUnifiedTemplate("guest-arrival-notice");
+  const selfCheckin = getUnifiedTemplate("self-checkin-guide");
+  const roomVisit = getUnifiedTemplate("quick-room-visit-notice");
   const laundry = getUnifiedTemplate("laundry-complete-message");
   const airportVan = getUnifiedTemplate("airport-van-request-guide");
 
   assert.equal(arrival?.menuId, "CUSTOMER_NOTICE");
   assert.equal(arrival?.typeId, "arrival_notice");
   assert.equal(arrival?.sourceRefs.some((source) => source.includes("workflow-catalog")), true);
+  assert.equal(selfCheckin?.typeId, "self_checkin");
+  assert.equal(selfCheckin?.sourceRefs.some((source) => source.includes("14_셀프_체크인")), true);
+  assert.equal(roomVisit?.menuId, "QUICK_REPLY");
+  assert.equal(roomVisit?.typeId, "room_visit");
   assert.equal(laundry?.menuId, "LAUNDRY_MANAGEMENT");
   assert.equal(laundry?.typeId, "laundry_complete");
   assert.equal(laundry?.duplicateGroupId, "laundry-complete-strong-similar");
