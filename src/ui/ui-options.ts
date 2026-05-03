@@ -25,7 +25,7 @@ export const categoryOptions: Array<{ id: TemplateCategory; label: string }> = [
   { id: "CUSTOMER_RECORDS", label: "객실 정보 메모" },
   { id: "GUEST_NOTICE", label: "고객 안내문" },
   { id: "QUICK_REPLY", label: "빠른 문의 답변" },
-  { id: "WORK_TEMPLATE", label: "업무보고 생성" },
+  { id: "WORK_TEMPLATE", label: "업무 관리" },
 ];
 
 export const audienceOptions: Array<{ id: TemplateAudience; label: string }> = [

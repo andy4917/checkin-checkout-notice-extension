@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { BranchId } from "../../types.js";
   import type { OtaReservationInputPreview } from "../../application/ota-reservation-input.js";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
+
+  const MaterialIcon = MaterialIconModule.default;
 
   export let otaLoading: boolean;
   export let otaPreview: OtaReservationInputPreview | null;
@@ -14,7 +17,10 @@
   <div class="pms-panel-header">
     <div>
       <p class="eyebrow">OTA</p>
-      <h2>네이버/스테이션 예약 입력</h2>
+      <h2>
+        <MaterialIcon name="travel_explore" size={19} filled />
+        네이버/스테이션 예약 입력
+      </h2>
     </div>
     <button type="button" disabled={otaLoading || !selectedBranchId} onclick={onLoadOtaReservation}>
       {otaLoading ? "처리 중" : "예약정보 가져오기"}
@@ -49,6 +55,7 @@
           {/if}
         </div>
         <button type="button" disabled={otaLoading} onclick={onFillWingsReservation}>
+          <MaterialIcon name="login" size={18} />
           WINGS에 입력
         </button>
       </article>

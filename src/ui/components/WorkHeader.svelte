@@ -1,69 +1,75 @@
 <script lang="ts">
   import type { Language } from "../../types.js";
-  import type { MenuId, MenuItem, TemplateTab } from "../../catalog/menu-routing.js";
+  import type { MenuId, MenuItem } from "../../catalog/menu-routing.js";
   import type { TemplateDefinition } from "../../catalog/template-types.js";
+  import * as LanguageSegmentedControlModule from "./LanguageSegmentedControl.svelte";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
+
+  const LanguageSegmentedControl = LanguageSegmentedControlModule.default;
+  const MaterialIcon = MaterialIconModule.default;
 
   export let activeMenu: MenuId;
-  export let activeTabs: TemplateTab[];
   export let activeTemplates: TemplateDefinition[];
   export let languages: Array<{ id: Language; label: string }>;
   export let navigationLocked: boolean;
   export let selectedLanguage: Language;
   export let selectedMenu: MenuItem | null;
-  export let selectedTabId: string;
   export let hasAnyTemplateForLanguage: (
     templates: readonly TemplateDefinition[],
     language: Language,
   ) => boolean;
   export let onGoHome: () => void;
-  export let onLanguageChange: (event: Event) => void;
-  export let onSelectTab: (tabId: string) => void;
+  export let onSelectLanguage: (language: Language) => void;
+
+  $: workIconName = selectedMenu?.home?.icon || "design_services";
 </script>
 
 <section class="work-header">
-  <div class="work-title-row">
-    <span class="work-icon" aria-hidden="true">{selectedMenu?.icon}</span>
-    <div class="work-title-copy">
-      <p class="eyebrow">선택 메뉴</p>
-      <h1>{selectedMenu?.title}</h1>
-    </div>
+  <div class="work-topbar">
     <button
-      class="menu-return-button"
+      class="work-nav-button"
       type="button"
+      aria-label="뒤로가기"
       disabled={navigationLocked}
       onclick={onGoHome}
     >
-      메뉴
+      <MaterialIcon name="arrow_back" size={20} />
     </button>
+    <h1>{selectedMenu?.title}</h1>
+    <button
+      class="work-nav-button"
+      type="button"
+      aria-label="홈"
+      disabled={navigationLocked}
+      onclick={onGoHome}
+    >
+      <MaterialIcon name="home" size={20} />
+    </button>
+  </div>
+
+  <div class="work-context-card">
+    <span class="work-icon" aria-hidden="true">
+      <MaterialIcon name={workIconName} size={22} filled />
+    </span>
+    <div class="work-title-copy">
+      <p class="eyebrow">작업 메뉴</p>
+      <h2>{selectedMenu?.title}</h2>
+      <span>{selectedMenu?.description}</span>
+    </div>
+    {#if activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT"}
+      <div class="work-count" aria-label="템플릿 수">{activeTemplates.length}개</div>
+    {/if}
   </div>
 
   {#if activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT"}
     <div class="work-controls">
-      <label>
-        <span>언어</span>
-        <select value={selectedLanguage} onchange={onLanguageChange}>
-          {#each languages as lang}
-            <option value={lang.id} disabled={!hasAnyTemplateForLanguage(activeTemplates, lang.id)}>
-              {lang.label}
-            </option>
-          {/each}
-        </select>
-      </label>
-      <div class="work-count" aria-label="템플릿 수">{activeTemplates.length}개</div>
+      <LanguageSegmentedControl
+        {languages}
+        {selectedLanguage}
+        isLanguageDisabled={(language) => !hasAnyTemplateForLanguage(activeTemplates, language)}
+        onSelectLanguage={onSelectLanguage}
+      />
     </div>
 
-    <div class="tab-bar" role="tablist" aria-label="하위 메뉴">
-      {#each activeTabs as tab}
-        <button
-          class:active={selectedTabId === tab.id}
-          type="button"
-          role="tab"
-          aria-selected={selectedTabId === tab.id}
-          onclick={() => onSelectTab(tab.id)}
-        >
-          {tab.label}
-        </button>
-      {/each}
-    </div>
   {/if}
 </section>

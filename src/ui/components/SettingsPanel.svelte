@@ -6,6 +6,11 @@
     TemplateContextRequirement,
     TemplateDefinition,
   } from "../../catalog/template-types.js";
+  import * as LanguageSegmentedControlModule from "./LanguageSegmentedControl.svelte";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
+
+  const LanguageSegmentedControl = LanguageSegmentedControlModule.default;
+  const MaterialIcon = MaterialIconModule.default;
 
   export let audienceOptions: Array<{ id: TemplateAudience; label: string }>;
   export let branchOptions: Array<{ id: BranchId; label: string }>;
@@ -32,7 +37,7 @@
   export let onEditBodyChange: (value: string) => void;
   export let onEditBranchScopeChange: (branchId: BranchId, checked: boolean) => void;
   export let onEditTitleChange: (value: string) => void;
-  export let onLanguageChange: (event: Event) => void;
+  export let onSelectLanguage: (language: Language) => void;
   export let onNewAudienceChange: (value: TemplateAudience) => void;
   export let onNewBodyChange: (value: string) => void;
   export let onNewBranchScopeChange: (branchId: BranchId, checked: boolean) => void;
@@ -45,11 +50,21 @@
 </script>
 
 <section class="settings-panel">
-  <h2>설정</h2>
+  <div class="settings-hero">
+    <span aria-hidden="true">
+      <MaterialIcon name="design_services" size={24} filled />
+    </span>
+    <div>
+      <p class="eyebrow">템플릿 설정</p>
+      <h2>템플릿 설정</h2>
+    </div>
+  </div>
   <div class="settings-editor">
+    <h3>기존 항목 수정</h3>
     <label>
       <span>수정 항목</span>
       <select
+        name="settings-template"
         value={settingsTemplateId}
         onchange={onSettingsTemplateChange}
         disabled={navigationLocked}
@@ -59,17 +74,15 @@
         {/each}
       </select>
     </label>
-    <label>
-      <span>언어</span>
-      <select value={selectedLanguage} onchange={onLanguageChange}>
-        {#each languages as lang}
-          <option value={lang.id}>{lang.label}</option>
-        {/each}
-      </select>
-    </label>
+    <LanguageSegmentedControl
+      {languages}
+      {selectedLanguage}
+      onSelectLanguage={onSelectLanguage}
+    />
     <label>
       <span>제목</span>
       <input
+        name="settings-edit-title"
         value={editTitle}
         oninput={(event) => onEditTitleChange((event.target as HTMLInputElement).value)}
       />
@@ -77,6 +90,7 @@
     <label>
       <span>내용</span>
       <textarea
+        name="settings-edit-body"
         value={editBody}
         oninput={(event) => onEditBodyChange((event.target as HTMLTextAreaElement).value)}
       ></textarea>
@@ -107,11 +121,12 @@
   </div>
 
   <div class="settings-editor">
-    <h3>새 항목</h3>
+    <h3>새 항목 추가</h3>
     <div class="settings-row">
       <label>
         <span>메뉴</span>
         <select
+          name="settings-new-category"
           value={newCategory}
           onchange={(event) =>
             onNewCategoryChange((event.target as HTMLSelectElement).value as TemplateCategory)}
@@ -124,6 +139,7 @@
       <label>
         <span>대상</span>
         <select
+          name="settings-new-audience"
           value={newAudience}
           onchange={(event) =>
             onNewAudienceChange((event.target as HTMLSelectElement).value as TemplateAudience)}
@@ -137,6 +153,7 @@
     <label>
       <span>필요 화면</span>
       <select
+        name="settings-new-context"
         value={newContext}
         onchange={(event) =>
           onNewContextChange(
@@ -167,6 +184,7 @@
     <label>
       <span>제목</span>
       <input
+        name="settings-new-title"
         value={newTitle}
         oninput={(event) => onNewTitleChange((event.target as HTMLInputElement).value)}
       />
@@ -174,6 +192,7 @@
     <label>
       <span>내용</span>
       <textarea
+        name="settings-new-body"
         value={newBody}
         oninput={(event) => onNewBodyChange((event.target as HTMLTextAreaElement).value)}
       ></textarea>

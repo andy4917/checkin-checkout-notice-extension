@@ -1,10 +1,4 @@
-import {
-  filterTemplatesForMenu,
-  getTabsForMenu,
-  matchesTemplateTab,
-  type MenuId,
-  type TemplateTab,
-} from "../catalog/menu-routing.js";
+import { filterTemplatesForMenu, type MenuId } from "../catalog/menu-routing.js";
 import { scopeUnifiedTemplateForBranch } from "../catalog/template-catalog.js";
 import { ALL_BRANCH_IDS } from "../catalog/template-schema.js";
 import type { TemplateDefinition, UnifiedTemplateDefinition } from "../catalog/template-types.js";
@@ -38,10 +32,6 @@ export function resolveMenuTemplates(
   return isTemplateMenu(activeMenu) ? filterTemplatesForMenu(activeMenu, catalogTemplates) : [];
 }
 
-export function resolveTabs(activeMenu: MenuId | null): TemplateTab[] {
-  return isTemplateMenu(activeMenu) ? getTabsForMenu(activeMenu) : [];
-}
-
 export function resolveScopedTemplates(
   templates: readonly UnifiedTemplateDefinition[],
   selectedBranchId: BranchId | "",
@@ -55,10 +45,9 @@ export function resolveScopedTemplates(
 export function resolveActiveTemplates(
   activeMenu: MenuId | null,
   scopedTemplates: readonly UnifiedTemplateDefinition[],
-  selectedTabId: string,
 ): UnifiedTemplateDefinition[] {
   if (!isTemplateMenu(activeMenu)) return [];
-  return scopedTemplates.filter((template) => matchesTemplateTab(activeMenu, selectedTabId, template));
+  return [...scopedTemplates];
 }
 
 export function selectPmsRecord(

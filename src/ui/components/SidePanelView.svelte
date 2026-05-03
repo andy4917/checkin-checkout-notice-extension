@@ -3,6 +3,7 @@
   import * as LaundryPanelModule from "./LaundryPanel.svelte";
   import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
   import * as RoomBottomBarModule from "./RoomBottomBar.svelte";
+  import * as RoomsSettingsBarModule from "./RoomsSettingsBar.svelte";
   import * as SettingsPanelModule from "./SettingsPanel.svelte";
   import * as ShellHeaderModule from "./ShellHeader.svelte";
   import * as TemplateListModule from "./TemplateList.svelte";
@@ -13,6 +14,7 @@
   const LaundryPanel = LaundryPanelModule.default;
   const OtaReservationPanel = OtaReservationPanelModule.default;
   const RoomBottomBar = RoomBottomBarModule.default;
+  const RoomsSettingsBar = RoomsSettingsBarModule.default;
   const SettingsPanel = SettingsPanelModule.default;
   const ShellHeader = ShellHeaderModule.default;
   const TemplateList = TemplateListModule.default;
@@ -21,37 +23,36 @@
   export let controller: ReturnType<typeof createSidePanelController>;
 </script>
 
-<main class:home-mode={controller.activeMenu === null} class="app-shell">
+<main
+  class:home-mode={controller.activeMenu === null}
+  class:roomBottomMode={controller.activeMenu !== null &&
+    controller.activeMenu !== "SETTINGS" &&
+    controller.activeMenu !== "OTA_RESERVATION_INPUT"}
+  class="app-shell"
+>
   <ShellHeader
-    activeMenu={controller.activeMenu}
     branchOptions={controller.branchOptions}
     navigationLocked={controller.navigationLocked}
     selectedBranchId={controller.selectedBranchId}
-    selectedPmsRecord={controller.selectedPmsRecord}
-    onBack={controller.goBack}
     onBranchChange={controller.handleBranchChange}
   />
 
   {#if controller.activeMenu === null}
     <HomeView
-      footerActions={controller.homeFooterActions}
       sections={controller.homeMenuSections}
       onOpenMenu={controller.openMenu}
     />
   {:else}
     <WorkHeader
       activeMenu={controller.activeMenu}
-      activeTabs={controller.activeTabs}
       activeTemplates={controller.activeTemplates}
       languages={controller.languages}
       navigationLocked={controller.navigationLocked}
       selectedLanguage={controller.selectedLanguage}
       selectedMenu={controller.selectedMenu}
-      selectedTabId={controller.selectedTabId}
       hasAnyTemplateForLanguage={controller.hasAnyTemplateForLanguage}
       onGoHome={controller.goHome}
-      onLanguageChange={controller.handleLanguageChange}
-      onSelectTab={controller.selectTab}
+      onSelectLanguage={controller.handleLanguageSelect}
     />
 
     <section class="status-bar" aria-live="polite">
@@ -85,7 +86,7 @@
         onEditBodyChange={controller.setEditBody}
         onEditBranchScopeChange={controller.setEditBranchScope}
         onEditTitleChange={controller.setEditTitle}
-        onLanguageChange={controller.handleLanguageChange}
+        onSelectLanguage={controller.handleLanguageSelect}
         onNewAudienceChange={controller.setNewAudience}
         onNewBodyChange={controller.setNewBody}
         onNewBranchScopeChange={controller.setNewBranchScope}
@@ -160,4 +161,9 @@
       onSyncPmsGuestRecords={controller.syncPmsGuestRecords}
     />
   {/if}
+
+  <RoomsSettingsBar
+    footerActions={controller.homeFooterActions}
+    onOpenMenu={controller.openMenu}
+  />
 </main>

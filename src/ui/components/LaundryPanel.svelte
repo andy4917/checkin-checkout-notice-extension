@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { BranchId, PmsGuestRecord } from "../../types.js";
   import type { LaundryRecord, LaundryStatus } from "../../laundry/types.js";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
+
+  const MaterialIcon = MaterialIconModule.default;
 
   const statusOptions: Array<LaundryStatus | "ALL"> = [
     "ALL",
@@ -36,7 +39,10 @@
   <div class="pms-panel-header">
     <div>
       <p class="eyebrow">세탁물</p>
-      <h2>세탁물 기록</h2>
+      <h2>
+        <MaterialIcon name="local_laundry_service" size={19} filled />
+        세탁물 기록
+      </h2>
     </div>
     <button type="button" disabled={laundryLoading} onclick={onLoadLaundryRecords}>
       {laundryLoading ? "불러오는 중" : "새로고침"}
@@ -47,6 +53,7 @@
     <label>
       <span>세탁물 내용</span>
       <input
+        name="laundry-item-summary"
         value={laundryItemSummary}
         oninput={(event) => onLaundryItemSummaryChange((event.target as HTMLInputElement).value)}
       />
@@ -54,6 +61,7 @@
     <label>
       <span>메모</span>
       <input
+        name="laundry-note"
         value={laundryNote}
         oninput={(event) => onLaundryNoteChange((event.target as HTMLInputElement).value)}
       />
@@ -78,6 +86,7 @@
     <label>
       <span>검색</span>
       <input
+        name="laundry-search"
         value={laundrySearchTerm}
         oninput={(event) => onLaundrySearchTermChange((event.target as HTMLInputElement).value)}
       />

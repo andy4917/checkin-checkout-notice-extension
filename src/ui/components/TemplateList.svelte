@@ -3,6 +3,9 @@
   import { guardRequiredContext } from "../../application/context-guard.js";
   import type { Language } from "../../types.js";
   import type { TemplateDefinition } from "../../catalog/template-types.js";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
+
+  const MaterialIcon = MaterialIconModule.default;
 
   type WorkContext = {
     isPmsPage: boolean;
@@ -26,18 +29,55 @@
   export let visibleTemplateVariables: (
     template: TemplateDefinition,
   ) => TemplateDefinition["variables"];
+
+  function getTemplateGuard(template: TemplateDefinition) {
+    return guardRequiredContext(template.requiresContext, currentWorkContext());
+  }
+
+  function isLanguageAvailable(template: TemplateDefinition) {
+    return hasTemplateLanguage(template, selectedLanguage);
+  }
+
+  function availableLanguageLabel(template: TemplateDefinition) {
+    return getAvailableTemplateLanguages(template).join(", ");
+  }
+
+  const templateIconByType: Readonly<Record<string, string>> = {
+    airport_van: "airport_shuttle",
+    day_night_report: "assignment",
+    dodine_sales: "payments",
+    laundry_complete: "local_laundry_service",
+    partner_service: "room_service",
+    reservation_report: "event_note",
+    room_remark: "edit_note",
+    room_sales: "payments",
+  };
+
+  function templateIcon(template: TemplateDefinition) {
+    if (templateIconByType[template.typeId]) return templateIconByType[template.typeId];
+    if (template.id.includes("wifi")) return "wifi";
+    if (template.id.includes("parking")) return "local_parking";
+    if (template.id.includes("late") || template.id.includes("early")) return "schedule";
+    if (template.id.includes("breakfast")) return "restaurant";
+    if (template.id.includes("luggage")) return "luggage";
+    if (template.id.includes("key")) return "vpn_key";
+    return "description";
+  }
 </script>
 
 <section class="template-list" aria-label="템플릿 목록">
   {#each activeTemplates as template}
-    {@const guard = guardRequiredContext(template.requiresContext, currentWorkContext())}
-    {@const languageAvailable = hasTemplateLanguage(template, selectedLanguage)}
+    {@const guard = getTemplateGuard(template)}
+    {@const languageAvailable = isLanguageAvailable(template)}
     <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
+      <span class="template-card-icon" aria-hidden="true">
+        <MaterialIcon name={templateIcon(template)} size={22} filled />
+      </span>
       <div class="template-main">
         <div class="template-meta">
           <span>{templateTypeLabel(template)}</span>
           <span>{branchScopeLabel(template)}</span>
-          <span>{getAvailableTemplateLanguages(template).join(", ")}</span>
+          <span>{availableLanguageLabel(template)}</span>
         </div>
         <h2>{template.title}</h2>
         <p class="template-summary">{templateSummary(template)}</p>
@@ -52,6 +92,7 @@
               <label>
                 <span>{variable.label}</span>
                 <input
+                  name={`${template.id}-${variable.name}`}
                   value={templateInputValue(template, variable.name)}
                   oninput={(event) => onTemplateVariableInput(template.id, variable.name, event)}
                 />
@@ -60,8 +101,14 @@
           </div>
         {/if}
       </div>
-      <button type="button" disabled={!guard.ok || !languageAvailable} onclick={() => onCopyTemplate(template)}>
-        {copiedTemplateId === template.id ? "복사됨" : "복사"}
+      <button
+        class="template-copy-button"
+        type="button"
+        aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
+        disabled={!guard.ok || !languageAvailable}
+        onclick={() => onCopyTemplate(template)}
+      >
+        <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={20} />
       </button>
     </article>
   {/each}

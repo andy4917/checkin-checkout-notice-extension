@@ -1,16 +1,17 @@
 <script lang="ts">
-  import type { HomeMenuSection, HomeQuickAction, MenuId } from "../../catalog/menu-routing.js";
-  import * as HomeIconModule from "./HomeIcon.svelte";
-  import type { HomeIconName } from "./HomeIcon.svelte";
+  import type { HomeMenuSection, MenuId } from "../../catalog/menu-routing.js";
+  import * as MaterialIconModule from "./MaterialIcon.svelte";
 
-  const HomeIcon = HomeIconModule.default;
+  const MaterialIcon = MaterialIconModule.default;
 
-  export let footerActions: readonly HomeQuickAction[];
   export let sections: readonly HomeMenuSection[];
   export let onOpenMenu: (menuId: MenuId) => void;
 
-  function toHomeIconName(icon: string): HomeIconName {
-    return icon as HomeIconName;
+  let selectedMenuId: MenuId | null = null;
+
+  function openMenu(menuId: MenuId) {
+    selectedMenuId = menuId;
+    onOpenMenu(menuId);
   }
 </script>
 
@@ -21,19 +22,20 @@
         {#each section.items as menu}
           <button
             class:primary={menu.home?.tone === "primary"}
+            class:selected={selectedMenuId === menu.id}
             class="priority-card"
             type="button"
-            onclick={() => onOpenMenu(menu.id)}
+            onclick={() => openMenu(menu.id)}
           >
             <span class="priority-icon" aria-hidden="true">
-              <HomeIcon name={toHomeIconName(menu.home?.icon || menu.icon)} size={32} strokeWidth={2.35} />
+              <MaterialIcon name={menu.home?.icon || menu.icon} size={32} filled />
             </span>
             <span class="menu-text">
               <strong>{menu.home?.title || menu.title}</strong>
               <small>{menu.home?.description || menu.description}</small>
             </span>
             <span class="menu-arrow" aria-hidden="true">
-              <HomeIcon name="chevron-right" size={24} strokeWidth={2.6} />
+              <MaterialIcon name="chevron_right" size={24} />
             </span>
           </button>
         {/each}
@@ -43,29 +45,22 @@
         <h2>{section.title}</h2>
         <div class="home-list-card">
           {#each section.items as menu}
-            <button type="button" onclick={() => onOpenMenu(menu.id)}>
+            <button
+              class:selected={selectedMenuId === menu.id}
+              type="button"
+              onclick={() => openMenu(menu.id)}
+            >
               <span class="list-icon" aria-hidden="true">
-                <HomeIcon name={toHomeIconName(menu.home?.icon || menu.icon)} size={22} strokeWidth={2} />
+                <MaterialIcon name={menu.home?.icon || menu.icon} size={20} />
               </span>
               <span>{menu.home?.title || menu.title}</span>
               <b aria-hidden="true">
-                <HomeIcon name="chevron-right" size={20} strokeWidth={2.6} />
+                <MaterialIcon name="chevron_right" size={18} />
               </b>
             </button>
           {/each}
         </div>
       </section>
     {/if}
-  {/each}
-</nav>
-
-<nav class="home-bottom-bar" aria-label="빠른 실행">
-  {#each footerActions as action}
-    <button type="button" onclick={() => action.menuId && onOpenMenu(action.menuId)}>
-      <span aria-hidden="true">
-        <HomeIcon name={toHomeIconName(action.icon)} size={24} strokeWidth={2.1} />
-      </span>
-      <strong>{action.label}</strong>
-    </button>
   {/each}
 </nav>

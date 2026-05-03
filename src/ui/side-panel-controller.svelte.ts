@@ -4,7 +4,6 @@ import {
   resolveActiveTemplates,
   resolveMenuTemplates,
   resolveScopedTemplates,
-  resolveTabs,
   selectPmsRecord as resolveSelectedPmsRecord,
 } from "./app-view-model.js";
 import {
@@ -111,7 +110,6 @@ export type SidePanelControllerDependencies = {
 
 export function createSidePanelController(dependencies: SidePanelControllerDependencies) {
   let activeMenu = $state<MenuId | null>(null);
-  let selectedTabId = $state("all");
   let selectedBranchId = $state<BranchId | "">("");
   let selectedLanguage = $state<Language>("KO");
   let tabContext = $state({ ...EMPTY_TAB_CONTEXT });
@@ -161,11 +159,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }),
   );
   const menuTemplates = $derived(resolveMenuTemplates(activeMenu, catalogTemplates));
-  const activeTabs = $derived(resolveTabs(activeMenu));
   const scopedTemplates = $derived(resolveScopedTemplates(menuTemplates, selectedBranchId));
-  const activeTemplates = $derived(
-    resolveActiveTemplates(activeMenu, scopedTemplates, selectedTabId),
-  );
+  const activeTemplates = $derived(resolveActiveTemplates(activeMenu, scopedTemplates));
   const visiblePmsRecords = $derived(filterPmsGuestRecords(pmsRecords, pmsSearchTerm));
   const selectedPmsRecord = $derived(
     resolveSelectedPmsRecord(pmsRecords, selectedPmsRecordId),
@@ -184,18 +179,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       activeMenu &&
       activeMenu !== "SETTINGS" &&
       activeMenu !== "OTA_RESERVATION_INPUT" &&
-      activeTabs.length > 0 &&
-      !activeTabs.some((tab) => tab.id === selectedTabId)
-    ) {
-      selectedTabId = activeTabs[0].id;
-    }
-  });
-
-  $effect(() => {
-    if (
-      activeMenu &&
-      activeMenu !== "SETTINGS" &&
-      activeMenu !== "OTA_RESERVATION_INPUT" &&
       activeTemplates.length > 0 &&
       !hasAnyTemplateForLanguage(activeTemplates, selectedLanguage)
     ) {
@@ -205,7 +188,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
 
   async function mount() {
     activeMenu = null;
-    selectedTabId = "all";
     tabContext = await dependencies.tabContext.getActiveTabContext();
     try {
       const { state: loadedState, recovered } = await dependencies.extensionState.readWithRecovery();
@@ -237,8 +219,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
   }
 
-  function handleLanguageChange(event: Event) {
-    selectedLanguage = (event.target as HTMLSelectElement).value as Language;
+  function handleLanguageSelect(language: Language) {
+    selectedLanguage = language;
     refreshEditFields(settingsTemplateId);
   }
 
@@ -248,7 +230,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       return;
     }
     activeMenu = menuId;
-    selectedTabId = "all";
     copiedTemplateId = "";
     if (menuId === "SETTINGS") {
       refreshEditFields(settingsTemplateId);
@@ -274,7 +255,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       return;
     }
     activeMenu = null;
-    selectedTabId = "all";
     copiedTemplateId = "";
     statusMessage = "시작화면으로 돌아왔습니다.";
     scrollToTop();
@@ -282,12 +262,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
 
   function goHome() {
     goBack();
-  }
-
-  function selectTab(tabId: string) {
-    selectedTabId = tabId;
-    copiedTemplateId = "";
-    scrollToTop();
   }
 
   async function selectPmsMode(mode: TabMode) {
@@ -717,11 +691,10 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     visibleTemplateVariables,
     mount,
     handleBranchChange,
-    handleLanguageChange,
+    handleLanguageSelect,
     openMenu,
     goBack,
     goHome,
-    selectTab,
     selectPmsMode,
     syncPmsGuestRecords,
     handlePmsSearchChange,
@@ -759,9 +732,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     isBuiltInTemplate,
     get activeMenu() {
       return activeMenu;
-    },
-    get selectedTabId() {
-      return selectedTabId;
     },
     get selectedBranchId() {
       return selectedBranchId;
@@ -849,9 +819,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     },
     get navigationLocked() {
       return navigationLocked;
-    },
-    get activeTabs() {
-      return activeTabs;
     },
     get activeTemplates() {
       return activeTemplates;

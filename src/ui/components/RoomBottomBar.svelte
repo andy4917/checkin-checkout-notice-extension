@@ -13,21 +13,46 @@
   export let onSelectPmsMode: (mode: TabMode) => void | Promise<void>;
   export let onSelectPmsRecord: (record: PmsGuestRecord) => void;
   export let onSyncPmsGuestRecords: () => void | Promise<void>;
+
+  let roomPanelOpen = false;
+
+  function chooseRoom(record: PmsGuestRecord) {
+    onSelectPmsRecord(record);
+    roomPanelOpen = false;
+  }
 </script>
 
 <section class="room-bottom-bar" aria-label="객실 선택">
-  <div class="room-bottom-summary">
-    <span>선택 객실</span>
-    <strong>
-      {selectedPmsRecord
-        ? selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo
-        : "미선택"}
-    </strong>
-    {#if selectedPmsRecord?.guestName}
-      <small>{selectedPmsRecord.guestName}</small>
-    {/if}
-  </div>
-  <div class="room-bottom-panel">
+  {#if selectedPmsRecord}
+    <aside
+      class="selected-room-overlay"
+      aria-live="polite"
+      aria-label="선택된 객실"
+    >
+      <strong>{selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo}</strong>
+      {#if selectedPmsRecord.guestName}
+        <span>{selectedPmsRecord.guestName}</span>
+      {/if}
+    </aside>
+  {/if}
+
+  <button
+    class="room-bottom-summary"
+    type="button"
+    aria-expanded={roomPanelOpen}
+    aria-controls="room-bottom-panel"
+    onclick={() => (roomPanelOpen = !roomPanelOpen)}
+  >
+    <span>객실</span>
+    <strong>{pmsMode === "ARRIVAL" ? "입실" : "퇴실"}</strong>
+    <small>{selectedPmsRecord ? "선택됨" : "미선택"}</small>
+  </button>
+
+  {#if roomPanelOpen}
+  <div
+    id="room-bottom-panel"
+    class="room-bottom-panel"
+  >
     <div class="pms-panel-header">
       <div>
         <p class="eyebrow">객실 선택</p>
@@ -59,7 +84,7 @@
       </div>
       <label>
         <span>검색</span>
-        <input value={pmsSearchTerm} oninput={onPmsSearchChange} />
+        <input name="room-search" value={pmsSearchTerm} oninput={onPmsSearchChange} />
       </label>
     </div>
 
@@ -74,7 +99,7 @@
             class:active={selectedPmsRecordId === record.id}
             class="pms-record pms-record-button"
             type="button"
-            onclick={() => onSelectPmsRecord(record)}
+            onclick={() => chooseRoom(record)}
           >
             <div>
               <strong>{record.displayRoom || record.roomNo}</strong>
@@ -95,4 +120,5 @@
       {/if}
     </div>
   </div>
+  {/if}
 </section>
