@@ -6,6 +6,7 @@ export const BRANCHES = Object.freeze({
   coex: Object.freeze({
     id: "coex",
     label: "코엑스",
+    headerLabel: "The Coex",
     locationLabel: "Seoul, Gangnam-gu",
     pms: Object.freeze({
       bsnsCode: "13",
@@ -17,6 +18,7 @@ export const BRANCHES = Object.freeze({
   gangnam: Object.freeze({
     id: "gangnam",
     label: "강남",
+    headerLabel: "The Gangnam",
     locationLabel: "Seoul, Seocho-gu",
     pms: Object.freeze({
       bsnsCode: "91",
@@ -28,6 +30,7 @@ export const BRANCHES = Object.freeze({
   seolleung: Object.freeze({
     id: "seolleung",
     label: "선릉",
+    headerLabel: "The Seolleung",
     locationLabel: "Seoul, Gangnam-gu",
     pms: Object.freeze({
       bsnsCode: "14",
@@ -41,6 +44,7 @@ export const BRANCHES = Object.freeze({
   {
     id: BranchId;
     label: string;
+    headerLabel: string;
     locationLabel: string;
     pms: {
       bsnsCode: string;
@@ -59,9 +63,10 @@ export function getBranch(branchId: string | null | undefined): Branch | null {
 }
 
 export function getBranchOptions() {
-  return Object.values(BRANCHES).map(({ id, label, locationLabel }) => ({
+  return Object.values(BRANCHES).map(({ id, label, headerLabel, locationLabel }) => ({
     id,
     label,
+    headerLabel,
     locationLabel,
   }));
 }

@@ -4,7 +4,12 @@
   import * as HomeIconModule from "./HomeIcon.svelte";
 
   export let activeMenu: MenuId | null;
-  export let branchOptions: Array<{ id: BranchId; label: string; locationLabel?: string }>;
+  export let branchOptions: Array<{
+    id: BranchId;
+    label: string;
+    headerLabel?: string;
+    locationLabel?: string;
+  }>;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
   export let selectedPmsRecord: PmsGuestRecord | null;
@@ -16,6 +21,7 @@
   let branchMenuOpen = false;
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
+  $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "Select branch";
   $: headerDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -47,61 +53,61 @@
     </button>
   {/if}
 
-  <div class="brand-lockup">
+  <div class="header-left-lockup">
     <img class="brand-logo" src={logoUrl} alt="UH Suite" />
+
+    <div class="branch-selector">
+      <button
+        class:unselected={!selectedBranch}
+        class="branch-trigger"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={branchMenuOpen}
+        disabled={navigationLocked}
+        onclick={toggleBranchMenu}
+      >
+        <span>{selectedBranchHeaderLabel}</span>
+        <span class="branch-chevron" aria-hidden="true">
+          <HomeIcon name="chevron-down" size={18} strokeWidth={2.3} />
+        </span>
+      </button>
+
+      {#if branchMenuOpen}
+        <div class="branch-menu" role="listbox" aria-label="지점 선택">
+          {#each branchOptions as branch}
+            <button
+              class:active={selectedBranchId === branch.id}
+              type="button"
+              role="option"
+              aria-selected={selectedBranchId === branch.id}
+              onclick={() => chooseBranch(branch.id)}
+            >
+              <span>
+                <strong>{branch.headerLabel || branch.label}</strong>
+                {#if branch.locationLabel}
+                  <small>{branch.locationLabel}</small>
+                {/if}
+              </span>
+              {#if selectedBranchId === branch.id}
+                <b aria-hidden="true"><HomeIcon name="check" size={24} strokeWidth={2.4} /></b>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 
-  <div class="branch-selector">
-    <button
-      class="branch-trigger"
-      type="button"
-      aria-haspopup="listbox"
-      aria-expanded={branchMenuOpen}
-      disabled={navigationLocked}
-      onclick={toggleBranchMenu}
-    >
-      <span>{selectedBranch ? selectedBranch.label : "지점 선택"}</span>
-      <span class="branch-chevron" aria-hidden="true">
-        <HomeIcon name="chevron-down" size={18} strokeWidth={2.3} />
-      </span>
-    </button>
-
-    {#if branchMenuOpen}
-      <div class="branch-menu" role="listbox" aria-label="지점 선택">
-        {#each branchOptions as branch}
-          <button
-            class:active={selectedBranchId === branch.id}
-            type="button"
-            role="option"
-            aria-selected={selectedBranchId === branch.id}
-            onclick={() => chooseBranch(branch.id)}
-          >
-            <span>
-              <strong>{branch.label}</strong>
-              {#if branch.locationLabel}
-                <small>{branch.locationLabel}</small>
-              {/if}
-            </span>
-            {#if selectedBranchId === branch.id}
-              <b aria-hidden="true"><HomeIcon name="check" size={24} strokeWidth={2.4} /></b>
-            {/if}
-          </button>
-        {/each}
-      </div>
+  <div class="header-room-slot" aria-label="선택 객실">
+    {#if activeMenu !== null && selectedPmsRecord}
+      <strong>{selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo}</strong>
+      {#if selectedPmsRecord.guestName}
+        <span>{selectedPmsRecord.guestName}</span>
+      {/if}
     {/if}
   </div>
 
   <div class="header-date" aria-label="오늘 날짜">
     <span>{headerDate}</span>
-    <span aria-hidden="true"><HomeIcon name="calendar" size={24} strokeWidth={2.15} /></span>
   </div>
-
-  {#if activeMenu !== null && selectedPmsRecord}
-    <div class="selected-room-header" aria-label="선택 객실">
-      <strong>{selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo}</strong>
-      {#if selectedPmsRecord.guestName}
-        <span>{selectedPmsRecord.guestName}</span>
-      {/if}
-    </div>
-  {/if}
 </header>

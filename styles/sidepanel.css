@@ -10,9 +10,9 @@ html {
 }
 
 body {
-  --panel-min-width: 460px;
-  --panel-pad-left: 24px;
-  --panel-pad-right: 24px;
+  --panel-min-width: 420px;
+  --panel-pad-left: 20px;
+  --panel-pad-right: 20px;
   --sidepanel-right-rail: 0px;
   --bottom-bar-gap: max(14px, env(safe-area-inset-bottom));
   --font-display: "Manrope", "Inter", "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
@@ -62,7 +62,13 @@ body::-webkit-scrollbar-track,
 .pms-record-list::-webkit-scrollbar-track,
 .laundry-list::-webkit-scrollbar-track,
 .tab-bar::-webkit-scrollbar-track {
-  background: transparent;
+  border-radius: 999px;
+  background: rgb(38 51 66 / 10%);
+}
+
+body::-webkit-scrollbar-track {
+  margin-top: 76px;
+  margin-bottom: 86px;
 }
 
 body::-webkit-scrollbar-thumb,
@@ -117,9 +123,9 @@ select:disabled {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, auto) minmax(40px, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  column-gap: 12px;
   min-height: 68px;
   margin: 0 calc(-1 * (var(--panel-pad-right) + var(--sidepanel-right-rail))) 22px calc(-1 * var(--panel-pad-left));
   border-bottom: 1px solid var(--color-line);
@@ -128,32 +134,38 @@ select:disabled {
 }
 
 .home-mode .app-header {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, auto) minmax(40px, 1fr) auto;
   margin-right: calc(-1 * (var(--panel-pad-right) + var(--sidepanel-right-rail)));
   margin-left: calc(-1 * var(--panel-pad-left));
 }
 
-.brand-lockup {
+.header-left-lockup {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.brand-lockup::after {
+.header-left-lockup::after {
   width: 1px;
-  height: 26px;
+  height: 24px;
   background: var(--color-line);
   content: "";
+  order: 2;
 }
 
 .brand-logo {
-  width: 152px;
-  max-height: 46px;
+  width: 96px;
+  max-height: 30px;
   height: auto;
   flex: 0 0 auto;
   object-fit: contain;
   object-position: left center;
+  order: 1;
+}
+
+.header-left-lockup .branch-selector {
+  order: 3;
 }
 
 .branch-picker,
@@ -183,13 +195,12 @@ select:disabled {
 .branch-selector {
   position: relative;
   min-width: 0;
-  justify-self: start;
 }
 
 .branch-trigger {
   display: inline-flex;
   max-width: 126px;
-  min-height: 40px;
+  min-height: 44px;
   align-items: center;
   gap: 6px;
   border: 0;
@@ -197,10 +208,15 @@ select:disabled {
   color: var(--color-primary);
   padding: 0 2px;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
+}
+
+.branch-trigger.unselected {
+  color: var(--color-icon);
+  font-weight: 700;
 }
 
 .branch-trigger span:first-child {
@@ -238,7 +254,7 @@ select:disabled {
   border: 0;
   border-bottom: 1px solid #e5e8eb;
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-icon);
   padding: 12px 18px;
   text-align: left;
   cursor: pointer;
@@ -250,6 +266,7 @@ select:disabled {
 
 .branch-menu button.active {
   background: #f2f4f6;
+  color: var(--color-text);
 }
 
 .branch-menu span {
@@ -271,6 +288,10 @@ select:disabled {
   line-height: 1.2;
 }
 
+.branch-menu button:not(.active) small {
+  color: #9aa3ad;
+}
+
 .branch-menu b {
   display: grid;
   place-items: center;
@@ -281,12 +302,11 @@ select:disabled {
 .header-date {
   display: inline-flex;
   min-width: 0;
-  max-width: 112px;
+  max-width: 104px;
   align-items: center;
   justify-content: end;
-  gap: 8px;
   color: #7f8a99;
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -294,12 +314,6 @@ select:disabled {
 .header-date span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.header-date span:last-child {
-  display: grid;
-  place-items: center;
-  color: var(--color-primary);
 }
 
 .branch-picker select,
@@ -1221,18 +1235,14 @@ h1 {
   color: #333d4b;
 }
 
-.selected-room-header {
-  position: absolute;
-  left: 50%;
-  top: 4px;
+.header-room-slot {
   display: grid;
-  max-width: 112px;
-  transform: translateX(-50%);
+  min-width: 0;
   text-align: center;
   pointer-events: none;
 }
 
-.selected-room-header strong {
+.header-room-slot strong {
   overflow: hidden;
   color: #333d4b;
   font-size: 13px;
@@ -1242,7 +1252,7 @@ h1 {
   white-space: nowrap;
 }
 
-.selected-room-header span {
+.header-room-slot span {
   overflow: hidden;
   color: #6f6a61;
   font-size: 10px;
@@ -1306,37 +1316,31 @@ h1 {
 
 @media (max-width: 460px) {
   body {
-    --panel-pad-left: 20px;
-    --panel-pad-right: 20px;
+    --panel-pad-left: 18px;
+    --panel-pad-right: 18px;
     --sidepanel-right-rail: 0px;
   }
 
   .app-header,
   .home-mode .app-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, auto) minmax(28px, 1fr) auto;
     gap: 8px;
     min-width: 0;
   }
 
-  .branch-trigger {
-    max-width: 110px;
-    font-size: 15px;
+  .brand-logo {
+    width: 82px;
   }
 
-  .header-date span:first-child {
-    display: none;
+  .branch-trigger {
+    max-width: 112px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 390px) {
   .icon-button {
     justify-self: start;
-  }
-
-  .selected-room-header {
-    position: static;
-    max-width: none;
-    transform: none;
   }
 
   .menu-grid,
