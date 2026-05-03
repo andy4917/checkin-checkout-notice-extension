@@ -9,7 +9,7 @@ export type SyncGuestsInput = {
   mode: TabMode;
   branchId: BranchId | "" | null;
   searchTerm?: string;
-  fetchImpl?: PmsFetch;
+  fetchImpl: PmsFetch;
 };
 
 export type SyncGuestsResult = {

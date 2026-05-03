@@ -13,8 +13,6 @@ export const EXTENSION_CONFIG = Object.freeze({
 export const UI_CONFIG = Object.freeze({
   defaultTab: "ARRIVAL",
   noAssignedRoomLabel: "배정전",
-  supportedLanguages: ["KO", "EN", "JP", "CN"],
-  fallbackLanguage: "EN",
 } as const);
 
 export const HOTEL_CONFIG = Object.freeze({

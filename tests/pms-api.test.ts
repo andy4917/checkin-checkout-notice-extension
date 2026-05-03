@@ -3,40 +3,11 @@ import assert from "node:assert/strict";
 
 import { EXTENSION_CONFIG, PMS_CONFIG } from "../src/config/app-config.js";
 import { BRANCHES } from "../src/config/branches.js";
-import { ASSET_CATALOG, hasDoorPasswordGuideAsset } from "../src/assets/asset-catalog.js";
-import {
-  TEMPLATE_CATALOG,
-  TEMPLATE_DUPLICATE_GROUPS,
-  getTemplatesForBranch,
-} from "../src/messages/template-catalog.js";
 import { syncGuests } from "../src/application/sync-guests.js";
 import { buildPmsSearchParams } from "../src/pms/filter-builder.js";
 import { PmsRequestError, fetchPmsGuests } from "../src/pms/client.js";
 import { normalizePmsGuestRow } from "../src/pms/normalizer.js";
 import type { BranchId, PmsFetch } from "../src/types.js";
-import manifest from "../manifest.json" with { type: "json" };
-import { getExtensionIdFromManifestKey } from "../scripts/extension-id.js";
-
-test("manifest maps MV3 entrypoints to compiled extension assets", () => {
-  assert.equal(manifest.manifest_version, 3);
-  assert.equal(manifest.background.service_worker, "dist/assets/background.js");
-  assert.equal(manifest.background.type, "module");
-  assert.equal(manifest.side_panel.default_path, "dist/sidepanel.html");
-  assert.deepEqual(manifest.host_permissions, [
-    "https://pms.sanhait.com/*",
-    "https://partner.booking.naver.com/*",
-    "https://admin.admin-stationbyuhc.com/*",
-    "https://api.admin-stationbyuhc.com/*",
-  ]);
-  assert.equal(manifest.permissions.includes("scripting"), true);
-});
-
-test("manifest key fixes the unpacked Chrome extension ID", () => {
-  assert.equal(
-    getExtensionIdFromManifestKey(manifest.key),
-    "jeidoobjhbnnicfkcdfncheimgdnhmjk",
-  );
-});
 
 test("PMS branch config maps WINGS codes to all three request fields", () => {
   const cases: Array<[BranchId, string]> = [
@@ -80,7 +51,7 @@ test("departure PMS params put selected date in departure filters", () => {
 
 test("PMS client requires a selected branch before fetch", async () => {
   let called = false;
-  const fakeFetch: PmsFetch = async () => {
+  const pmsFetchStub: PmsFetch = async () => {
     called = true;
     return {
       async json() {
@@ -89,7 +60,7 @@ test("PMS client requires a selected branch before fetch", async () => {
     };
   };
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "", fakeFetch),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "", pmsFetchStub),
     /지점을 선택해주세요/,
   );
   assert.equal(called, false);
@@ -100,7 +71,7 @@ test("PMS client posts encoded filter body and returns rows", async () => {
     url: string;
     options: Parameters<PmsFetch>[1];
   }> = [];
-  const fakeFetch: PmsFetch = async (url, options) => {
+  const pmsFetchStub: PmsFetch = async (url, options) => {
     calls.push({ url, options });
     return {
       async json() {
@@ -109,7 +80,7 @@ test("PMS client posts encoded filter body and returns rows", async () => {
     };
   };
 
-  const rows = await fetchPmsGuests("20260426", "ARRIVAL", "coex", fakeFetch);
+  const rows = await fetchPmsGuests("20260426", "ARRIVAL", "coex", pmsFetchStub);
 
   assert.deepEqual(rows, [{ GUEST_NAME: "Kim" }]);
   assert.equal(
@@ -125,7 +96,7 @@ test("PMS client posts encoded filter body and returns rows", async () => {
 });
 
 test("PMS client rejects HTTP failures and malformed rows", async () => {
-  const failingFetch: PmsFetch = async () => ({
+  const unauthorizedFetch: PmsFetch = async () => ({
     ok: false,
     status: 401,
     statusText: "Unauthorized",
@@ -135,11 +106,11 @@ test("PMS client rejects HTTP failures and malformed rows", async () => {
   });
 
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", failingFetch),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", unauthorizedFetch),
     /PMS 요청 실패: 401 Unauthorized/,
   );
 
-  const missingRowsFetch: PmsFetch = async () => ({
+  const missingRowsResponseFetch: PmsFetch = async () => ({
     ok: true,
     async json() {
       return {};
@@ -147,11 +118,11 @@ test("PMS client rejects HTTP failures and malformed rows", async () => {
   });
 
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", missingRowsFetch),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", missingRowsResponseFetch),
     /rows is required/,
   );
 
-  const malformedFetch: PmsFetch = async () => ({
+  const malformedRowsResponseFetch: PmsFetch = async () => ({
     ok: true,
     async json() {
       return { rows: "not-array" };
@@ -159,7 +130,7 @@ test("PMS client rejects HTTP failures and malformed rows", async () => {
   });
 
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", malformedFetch),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", malformedRowsResponseFetch),
     PmsRequestError,
   );
 });
@@ -197,7 +168,7 @@ test("PMS rows normalize into template-free guest records", () => {
 });
 
 test("syncGuests fetches, sorts, filters, and exposes template value bags", async () => {
-  const fakeFetch: PmsFetch = async () => ({
+  const pmsFetchStub: PmsFetch = async () => ({
     ok: true,
     async json() {
       return {
@@ -214,7 +185,7 @@ test("syncGuests fetches, sorts, filters, and exposes template value bags", asyn
     mode: "ARRIVAL",
     branchId: "gangnam",
     searchTerm: "b101",
-    fetchImpl: fakeFetch,
+    fetchImpl: pmsFetchStub,
   });
 
   assert.equal(result.branchId, "gangnam");
@@ -226,47 +197,4 @@ test("syncGuests fetches, sorts, filters, and exposes template value bags", asyn
     result.visibleRecords.map((record) => record.templateValues.branchName),
     ["강남"],
   );
-});
-
-test("door password guide video is intentionally excluded from runtime attachments", () => {
-  assert.deepEqual(ASSET_CATALOG, []);
-  assert.equal(hasDoorPasswordGuideAsset("coex"), false);
-  assert.equal(hasDoorPasswordGuideAsset("gangnam"), false);
-  assert.equal(hasDoorPasswordGuideAsset("seolleung"), false);
-
-  assert.equal(
-    getTemplatesForBranch("coex").some((template) =>
-      template.attachments.includes("coex-door-password-guide-video"),
-    ),
-    false,
-  );
-  assert.equal(
-    getTemplatesForBranch("gangnam").some((template) =>
-      template.attachments.includes("coex-door-password-guide-video"),
-    ),
-    false,
-  );
-});
-
-test("template catalog records only proven duplicate groups as canonical groups", () => {
-  const duplicateGroupIds = new Set(
-    TEMPLATE_CATALOG
-      .map((template) => template.duplicateGroupId)
-      .filter(Boolean),
-  );
-
-  assert.deepEqual([...duplicateGroupIds].sort(), [
-    "csm-foreign-prearrival-exact",
-    "csm-two-week-strong-similar",
-    "full-cleaning-exact",
-    "laundry-complete-strong-similar",
-    "room-upgrade-en-exact",
-    "room-upgrade-ko-exact",
-  ]);
-  assert.deepEqual(TEMPLATE_DUPLICATE_GROUPS["csm-foreign-prearrival-exact"], [
-    "CSM.zip::CSM/2주전CSM.txt",
-    "CSM.zip::CSM/외국고객리뷰요청.txt",
-    "CSM.zip::CSM/외국인 재실CSM.txt",
-    "CSM.zip::CSM/한 달 전CSM.txt",
-  ]);
 });

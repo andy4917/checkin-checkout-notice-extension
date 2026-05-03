@@ -1,8 +1,6 @@
 export type BranchId = "coex" | "gangnam" | "seolleung";
 export type Language = "KO" | "EN" | "JP" | "CN";
 export type TabMode = "ARRIVAL" | "DEPARTURE";
-export type DepartureMessageType = "BEFORE_30" | "AFTER_15" | "LATE_12";
-export type MessageAction = "arrival" | "departure";
 
 export type Guest = {
   GUEST_NAME?: string;
@@ -26,23 +24,6 @@ export type PmsGuestRecord = {
   statusTagClass: string;
   templateValues: TemplateValueBag;
 };
-
-export type GuestMessageInput =
-  | {
-      action: "arrival";
-      lang: string;
-      name: string;
-      room: string;
-      departureDate: string;
-      branchId: BranchId;
-    }
-  | {
-      action: "departure";
-      lang: string;
-      type: DepartureMessageType;
-      name: string;
-      room: string;
-    };
 
 export type PmsRowsResponse = {
   rows?: unknown;

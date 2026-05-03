@@ -8,11 +8,10 @@ import {
   normalizeStoredExtensionState,
 } from "../platform/storage-schema.js";
 import {
+  type ChromeStorageArea,
   readExtensionState,
   writeExtensionState,
 } from "../platform/chrome-storage.js";
-
-type ExtensionStorageArea = Parameters<typeof readExtensionState>[0];
 
 export type TemplateSettingsExport = {
   schemaVersion: 1;
@@ -62,7 +61,7 @@ export function resetOneTemplateOverride(
 
 export async function saveImportedTemplateSettings(
   payload: unknown,
-  storageArea?: ExtensionStorageArea,
+  storageArea: ChromeStorageArea,
 ): Promise<StoredExtensionState> {
   const current = await readExtensionState(storageArea);
   const nextState = importTemplateSettings(current, payload);
@@ -71,7 +70,7 @@ export async function saveImportedTemplateSettings(
 }
 
 export async function clearTemplateSettings(
-  storageArea?: ExtensionStorageArea,
+  storageArea: ChromeStorageArea,
 ): Promise<StoredExtensionState> {
   const current = await readExtensionState(storageArea);
   const nextState = resetAllTemplateSettings(current);

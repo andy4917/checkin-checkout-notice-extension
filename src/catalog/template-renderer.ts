@@ -1,8 +1,14 @@
-import { UnsupportedLanguageError } from "../messages/message-service.js";
 import type { Language } from "../types.js";
 import type { TemplateDefinition } from "./template-types.js";
 
 const TEMPLATE_LANGUAGE_ORDER: readonly Language[] = Object.freeze(["KO", "EN", "JP", "CN"]);
+
+export class UnsupportedLanguageError extends Error {
+  constructor(lang: string) {
+    super(`지원하지 않는 언어입니다: ${lang}`);
+    this.name = "UnsupportedLanguageError";
+  }
+}
 
 export class PmsRequiredValueMissingError extends Error {
   constructor(variableName: string) {

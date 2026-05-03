@@ -14,7 +14,7 @@ export async function fetchPmsGuests(
   date: string,
   mode: TabMode,
   branchId: BranchId | "" | null,
-  fetchImpl: PmsFetch = fetch,
+  fetchImpl: PmsFetch,
 ): Promise<Guest[]> {
   const branch = requireBranch(branchId);
   const endpoint = `${EXTENSION_CONFIG.allowedPmsOrigins[0]}${PMS_CONFIG.endpointPath}`;

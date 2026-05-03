@@ -7,6 +7,7 @@ import { isBranchId } from "../config/branches.js";
 import type { BranchId } from "../types.js";
 import type {
   CatalogSourceMetadata,
+  CustomTemplate,
   StoredExtensionState,
   TemplateDefinition,
   UnifiedTemplateDefinition,
@@ -47,7 +48,7 @@ const TEMPLATE_METADATA: Record<string, CatalogSourceMetadata> = {
     typeId: "arrival_notice",
     summary: "입실 직후 객실과 지점 안내",
     sourceRefs: [
-      "src/messages/templates.ts::arrival",
+      "repo://workflow-catalog::guest-arrival-notice",
       "체크인시 보낼 것.zip::입실 직후 안내",
     ],
     duplicateGroupId: null,
@@ -188,11 +189,23 @@ export function applyStoredUnifiedTemplateState(
 }
 
 function toUnifiedTemplate(template: TemplateDefinition): UnifiedTemplateDefinition {
-  const metadata = TEMPLATE_METADATA[template.id] || inferMetadata(template);
+  const metadata = metadataForTemplate(template);
   return { ...template, ...metadata };
 }
 
-function inferMetadata(template: TemplateDefinition): CatalogSourceMetadata {
+function metadataForTemplate(template: TemplateDefinition): CatalogSourceMetadata {
+  const metadata = TEMPLATE_METADATA[template.id];
+  if (metadata) return metadata;
+  if (isCustomTemplate(template)) return metadataForCustomTemplate(template);
+
+  throw new Error(`Template metadata is required: ${template.id}`);
+}
+
+function isCustomTemplate(template: TemplateDefinition): template is CustomTemplate {
+  return "builtIn" in template && template.builtIn === false;
+}
+
+function metadataForCustomTemplate(template: CustomTemplate): CatalogSourceMetadata {
   if (template.category === "CUSTOMER_RECORDS") {
     return {
       menuId: "ROOM_REMARK_MEMO",

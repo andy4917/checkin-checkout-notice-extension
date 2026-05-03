@@ -13,7 +13,7 @@ The packs were extracted read-only into:
 
 `C:\Users\anise\code\.scratch\Dev-Management\checkin-ui-template-design-20260430-151932`
 
-The implementation target remains the Svelte side panel under `src/ui/App.svelte`, backed by the existing application/catalog/platform modules. Do not revive the legacy `src/sidepanel/*` DOM renderer as the main UI.
+The implementation target remains the Svelte side panel under `src/ui/App.svelte`, `src/ui/components/*`, and the `src/ui/*-workflow.ts` helper modules, backed by the existing application/catalog/platform modules. `App.svelte` must remain a skeleton entry and must not regain UI/business workflow bodies. Do not recreate the removed legacy `src/sidepanel/*` DOM renderer.
 
 ## Product Direction
 
@@ -45,7 +45,7 @@ The workflow mapping below is descriptive only. It explains how the existing men
 
 | Existing workflow area | Current repo surface | Backend/source owner |
 | --- | --- | --- |
-| Home / branch context | branch select, home menu | `src/config/branches.ts`, `src/ui/App.svelte` |
+| Home / branch context | branch select, home menu | `src/config/branches.ts`, `src/ui/components/SidePanelView.svelte`, `src/ui/side-panel-controller.svelte.ts` |
 | Guest communication / Guidance | `CUSTOMER_NOTICE` | template packs, `src/catalog/*`, renderer |
 | Guest communication / Inquiry | `QUICK_REPLY` | quick reply pack, `src/catalog/*`, renderer |
 | Service records / Room info | `ROOM_REMARK_MEMO` | `src/domain/remarks.ts`, WINGS context |
@@ -95,7 +95,7 @@ Expected frontend within current structure:
 - right-side copy icon on every row
 - no full body wall of text in the list
 - unavailable language is disabled with a short reason
-- COEX-only door password content appears only for COEX-scoped conditions
+- COEX-only door password content or attachments appear only if the catalog and runtime asset catalog explicitly support that COEX-scoped condition
 - same template row component/pattern should be reused by other template menus
 
 Backend path:
@@ -134,8 +134,7 @@ Backend path:
 
 Expected frontend within current structure:
 
-- backend implementation is ahead of the current frontend here
-- add frontend implementation following the laundry reference as closely as the current structure allows
+- the current frontend has a record-based first pass; continue refining it against the reference without adding machine state unless the schema supports it
 - actual list comes from laundry storage
 - status actions call the application layer
 - do not add fake machine data; if the reference machine layout is used, it must be backed by real laundry state or deferred
@@ -189,8 +188,8 @@ Expected frontend within current structure:
 
 Backend path:
 
-- `loadOtaReservationPreview(selectedBranchId)`
-- `fillWingsReservationFromPreview(otaPreview)`
+- `loadOtaReservationPreview(selectedBranchId, otaDependencies)`
+- `fillWingsReservationFromPreview(otaPreview, otaDependencies)`
 - active tab automation
 
 ### Simulation G: Work Forms And Expenditure
@@ -272,7 +271,7 @@ Reference elements:
 
 Current source:
 
-- `src/ui/App.svelte` owns shell, header, branch select, menu/back navigation.
+- `src/ui/App.svelte` owns only entry skeleton and lifecycle wiring. Shell, header, branch select, and menu/back composition live in `src/ui/components/SidePanelView.svelte` with state/actions from `src/ui/side-panel-controller.svelte.ts`.
 - `src/config/branches.ts` owns branch IDs and PMS codes.
 
 Design rule:
@@ -292,7 +291,7 @@ Reference elements:
 Current source:
 
 - `src/catalog/menu-routing.ts` owns menu groups and menu items.
-- `src/ui/App.svelte` renders menu cards and settings entry.
+- `src/ui/components/HomeView.svelte` renders menu cards and settings entry from `src/catalog/menu-routing.ts`.
 
 Design rule:
 
@@ -341,7 +340,7 @@ Required work:
 - Normalize `CN` versus current `Language` type naming if the app currently uses `CN`.
 - Map bracket placeholders to `TemplateVariable` entries.
 - Preserve Korean placeholder labels for operator search/replacement.
-- Enforce branch scope, especially COEX-only door password content.
+- Enforce branch scope, especially COEX-only door password content or attachments if they are added to the runtime catalog.
 
 ### 4. Quick Inquiry / Quick Reply
 
@@ -390,12 +389,12 @@ Current backend surface:
 Design decision:
 
 - The reference includes machine tracking, but the current backend stores laundry records, statuses, item summary, notes, room/guest linkage, and source PMS guest ID.
-- First implementation should use current record backend, not invent machine-state persistence.
+- Continue using the current record backend; do not invent machine-state persistence.
 
 Required work:
 
-- Redesign UI around real `LaundryRecord` states.
-- Add from-PMS action: create laundry record from selected guest plus item summary.
+- Continue UI work around real `LaundryRecord` states.
+- Preserve the from-PMS action: create laundry record from selected guest plus item summary.
 - Status transitions should use `updateLaundryStatus()` only.
 - If machine assignment is required later, add it to `LaundryRecord` and tests first.
 
@@ -411,8 +410,8 @@ Reference elements:
 
 Current backend surface:
 
-- `loadOtaReservationPreview(selectedBranchId)`
-- `fillWingsReservationFromPreview(otaPreview)`
+- `loadOtaReservationPreview(selectedBranchId, otaDependencies)`
+- `fillWingsReservationFromPreview(otaPreview, otaDependencies)`
 - active tab automation under `src/platform/active-tab-automation.ts`
 
 Design rule:
@@ -571,14 +570,16 @@ Design rule:
 | Concern | Must use | Must not do |
 | --- | --- | --- |
 | branch choice | `getBranchOptions()`, `requireBranch()` | hardcode PMS codes in UI |
-| PMS list | `syncGuests()` | query PMS from Svelte directly |
-| OTA extraction | `loadOtaReservationPreview()` | create fake preview records |
-| WINGS fill | `fillWingsReservationFromPreview()` | auto-save reservation |
+| PMS list | `syncGuests(..., injected fetchImpl)` | query PMS from Svelte directly |
+| OTA extraction | `loadOtaReservationPreview(..., otaDependencies)` | create fake preview records |
+| WINGS fill | `fillWingsReservationFromPreview(..., otaDependencies)` | auto-save reservation |
 | template copy | `renderTemplate()` | interpolate templates in UI component |
 | context gating | `guardRequiredContext()` | enable PMS-only copy everywhere |
 | settings save | schema validators + storage adapter | write arbitrary JSON |
 | laundry | laundry application/storage modules | invent machine records without schema |
 | remarks | `createRemarkLine()`, `upsertRemarkLine()` | duplicate remark formatting |
+
+The Svelte UI must receive browser dependencies through `src/ui/side-panel-dependencies.ts`. Do not hide `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` access as default parameters in UI/application workflows.
 
 ## Implementation Slices
 
@@ -594,7 +595,7 @@ Design rule:
 ### Slice 2: Template Catalog Import
 
 - Add importer or manually structured catalog entries from the three template packs.
-- Add tests for language parsing, placeholder extraction, branch scope, and duplicate policy.
+- Do not add module-unit tests as the closeout strategy. Final-stage checks must exercise the built Svelte entry and an observable failure path.
 - Expand `TemplateTypeId` only for real template families.
 - Verify `npm test` plus direct renderer calls.
 
@@ -611,7 +612,7 @@ Design rule:
 - Match extract-summary-action flow from the reference.
 - Keep detected source and actual preview values only.
 - Preserve branch-required and WINGS-missing errors.
-- Verify direct calls to `loadOtaReservationPreview()` and `fillWingsReservationFromPreview()` with mocked dependencies.
+- Final-stage checks may call `loadOtaReservationPreview(..., otaDependencies)` and `fillWingsReservationFromPreview(..., otaDependencies)` only when proving the real touched OTA path or a visible failure condition.
 
 ### Slice 5: Room Info Memo UX
 
@@ -637,12 +638,12 @@ Design rule:
 ## Current Gaps To Resolve Before Coding
 
 - The UI reference is strongly connected to the current UX/UI; implementation must preserve the reference component patterns while replacing names/data with real product labels and real backend values.
-- The current language type must be checked before importing `CH` labels; source uses `CN`, UI reference displays `CH`.
+- The current language type is `CN`; if a UI reference displays `CH`, map only the visible label and keep runtime values as `CN`.
 - The current template catalog has far fewer templates than the provided packs.
-- Laundry backend is ahead of frontend; frontend needs implementation following the reference without fake machine state.
+- Laundry has a record-based frontend/backend path; machine assignment remains deferred until schema-backed.
 - Airport van backend exists through customer 안내/배차 완료 templates and the internal reservation report; it must stay out of WINGS/객실 정보 메모 remark formatting.
 - Settings reference includes broad service menu editing; current storage supports templates and custom templates, not arbitrary service pricing structures.
-- PMS list/sync as a menu panel is legacy/misdesigned for the target UX. The intended direction is a hoverable bottom bar room selector; the selected room appears in the header center with room number and smaller reserver name, and that room context becomes the default for templates and forms.
+- PMS list/sync as a menu panel is not the target UX. The intended direction is a hoverable bottom bar room selector; the selected room appears in the header center with room number and smaller reserver name, and that room context becomes the default for templates and forms.
 
 ## Verification Plan
 
@@ -653,18 +654,18 @@ Design rule:
   - template import/render output
   - placeholder extraction
   - branch-scoped COEX-only content
-  - OTA preview/fill mocked dependencies
+  - OTA preview/fill with injected dependencies
   - laundry add/update/query
   - remark line generation/upsert
 - browser or screenshot verification after UI implementation.
 
-## First Coding Batch
+## Next Coding Batch
 
-Start with the least risky repeated-element normalization:
+Continue with the least risky repeated-element normalization:
 
-1. Add a stable UI token layer in `styles/sidepanel.css`.
-2. Keep `src/ui/App.svelte` structure intact and normalize repeated template-list rows/actions.
+1. Keep the stable UI token layer in `styles/sidepanel.css`.
+2. Keep `src/ui/App.svelte` as a skeleton entry and continue normalizing repeated template-list rows/actions in `src/ui/components/*`.
 3. Add a template-pack parsing harness under `scripts/` or `tests/fixtures/` before importing all template bodies.
-4. Add tests that prove the parser keeps `KO / EN / JP / CN` and extracts `[placeholder]` variables.
+4. Use final-stage app-path checks, not module-unit tests, when parser behavior is part of the touched workflow.
 
 Done when repeated template/list/form elements match the reference density and behavior, while the current screen/menu structure and existing PMS/OTA/template tests still pass.

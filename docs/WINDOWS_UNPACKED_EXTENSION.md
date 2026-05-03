@@ -22,15 +22,7 @@ Chrome derives the unpacked extension ID from the manifest public key. Keep the 
 
 The TypeScript source folder is not the runtime extension folder after compilation. Chrome should load the generated `dist` folder because it contains the compiled `sidepanel.html`, `assets/background.js`, `manifest.json`, icons, and packaged assets.
 
-## Legacy Root Load
-
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Choose Load unpacked.
-4. Select this project folder.
-5. Confirm the ID is `jeidoobjhbnnicfkcdfncheimgdnhmjk`.
-
-This legacy root-load flow only applies to pre-TypeScript source snapshots.
+Do not load the project root folder for the current TypeScript/Svelte build. The root folder is source, not the Chrome runtime package.
 
 ## Do Not Rotate
 

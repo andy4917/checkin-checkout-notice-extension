@@ -17,7 +17,7 @@ The first screen must be the actual menu/work surface. Do not add a landing page
 
 ## Runtime Surface
 
-The current frontend entrypoint is `src/ui/App.svelte`, mounted by `src/ui/main.ts`.
+The current frontend entrypoint is `src/ui/App.svelte`, mounted by `src/ui/main.ts`. `App.svelte` is a skeleton only: it creates `src/ui/side-panel-controller.svelte.ts`, attaches mount lifecycle, and renders `src/ui/components/SidePanelView.svelte`.
 
 The side panel is a Chrome MV3 extension surface. Assume:
 
@@ -27,7 +27,7 @@ The side panel is a Chrome MV3 extension surface. Assume:
 - errors must be short and operational
 - branch choice is a hard boundary, not a visual preference
 
-The existing legacy DOM sidepanel path under `src/sidepanel/*` must not become the primary UX surface again. New frontend work should connect to the Svelte side panel and catalog/application modules.
+The legacy DOM sidepanel path under `src/sidepanel/*` has been removed as a product surface. Do not recreate it; frontend work must connect to the Svelte side panel and catalog/application modules.
 
 ## Backend Contracts To Use
 
@@ -36,14 +36,14 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 | Concern | Source | Frontend rule |
 | --- | --- | --- |
 | Branches | `src/config/branches.ts` | Render options from `getBranchOptions()`. Do not hardcode PMS codes in UI. |
-| Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, tabs, and counts from routing/catalog data. |
+| Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, and tabs from routing/catalog data. Do not add home-only menu contracts. |
 | Template catalog | `src/catalog/template-catalog.ts` | Use `UNIFIED_TEMPLATE_CATALOG`, `applyStoredUnifiedTemplateState()`, and `scopeUnifiedTemplateForBranch()`. |
 | Template rendering | `src/catalog/template-renderer.ts` | Use renderer output for copy text. Do not interpolate template strings inside components. |
-| PMS sync | `src/application/sync-guests.ts` | Call `syncGuests({ date, mode, branchId, searchTerm })`. |
+| PMS sync | `src/application/sync-guests.ts`, `src/ui/side-panel-dependencies.ts` | Call `syncGuests({ date, mode, branchId, searchTerm, fetchImpl })` through injected PMS dependencies. |
 | Context guard | `src/application/context-guard.ts` | Gate PMS-only or guest-record actions with `guardRequiredContext()`. |
-| OTA preview/fill | `src/application/ota-reservation-input.ts` | Use `loadOtaReservationPreview()` then `fillWingsReservationFromPreview()`. |
+| OTA preview/fill | `src/application/ota-reservation-input.ts`, `src/ui/side-panel-dependencies.ts` | Use `loadOtaReservationPreview(..., otaDependencies)` then `fillWingsReservationFromPreview(..., otaDependencies)` through injected OTA dependencies. |
 | Active tab automation | `src/platform/active-tab-automation.ts` | Treat missing reservation window as a blocking error, not as an empty state. |
-| Storage | `src/platform/chrome-storage.ts` | Use `readExtensionStateWithRecovery()` on mount and `writeExtensionState()` for saves. |
+| Storage | `src/platform/chrome-storage.ts`, `src/ui/side-panel-dependencies.ts` | Use injected extension-state dependencies for mount and saves; do not hide `chrome.storage.local` as a default parameter. |
 
 Any new frontend state should be derived from these contracts or stored explicitly through the existing storage schema. Avoid local shadow constants for branch IDs, menu category membership, OTA field rules, PMS field names, or storage recovery policy.
 
@@ -80,11 +80,11 @@ Required flow:
 1. User selects branch.
 2. User opens a Naver or Station reservation detail tab.
 3. User clicks `예약정보 가져오기`.
-4. Frontend calls `loadOtaReservationPreview(selectedBranchId)`.
+4. Frontend calls `loadOtaReservationPreview(selectedBranchId, otaDependencies)`.
 5. Frontend shows only actual preview values that are present.
 6. User opens WINGS reservation creation window.
 7. User clicks `WINGS에 입력`.
-8. Frontend calls `fillWingsReservationFromPreview(otaPreview)`.
+8. Frontend calls `fillWingsReservationFromPreview(otaPreview, otaDependencies)`.
 9. User reviews and saves manually inside WINGS.
 
 Required fail-fast behavior:
@@ -287,6 +287,8 @@ Do not introduce:
 - landing page, hero, or product marketing section
 - duplicate legacy sidepanel runtime behavior
 - hardcoded PMS field names inside Svelte components
+- direct Chrome OTA automation imports outside the explicit side-panel dependency container
+- hidden defaults for `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` in UI/application workflows
 - auto-generated sample guest data
 
 ## Done-When For Frontend Implementation
@@ -303,4 +305,4 @@ A frontend implementation following this directive is done only when:
 - storage root corruption recovery still displays `저장소 데이터 손상으로 설정을 초기화했습니다. 다시 설정해주세요.`
 - no banned placeholder strings are present in `src`, `dist`, or `tests`
 
-Use direct file/test evidence because this folder is currently not a git repository.
+Use direct file, build, and test evidence from the current worktree. Passing scripts are evidence only; they do not replace checking the touched product path and observable failure behavior.

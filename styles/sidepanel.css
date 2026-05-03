@@ -110,7 +110,6 @@ select:disabled {
   cursor: pointer;
 }
 
-.home-title,
 .work-header,
 .status-bar,
 .settings-panel,
@@ -121,10 +120,6 @@ select:disabled {
   border-radius: 8px;
   background: #fff;
   padding: 12px;
-}
-
-.home-title {
-  margin-bottom: 10px;
 }
 
 .eyebrow {
@@ -176,7 +171,7 @@ h1 {
 .settings-menu-button {
   position: relative;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr);
   min-height: 76px;
   align-items: center;
   gap: 10px;
@@ -231,14 +226,6 @@ h1 {
   color: #5f6776;
   font-size: 11px;
   line-height: 1.35;
-}
-
-.menu-button em,
-.settings-menu-button em {
-  color: #333d4b;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 900;
 }
 
 .settings-entry {

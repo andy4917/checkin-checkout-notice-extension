@@ -33,56 +33,70 @@ Prepare the extension for the next implementation stage after TypeScript compila
 | `src/platform/*` | Chrome APIs, storage, runtime adapters | PMS filter details, UI state |
 | `src/pms/*` | PMS endpoint and request body construction | selected branch persistence, UI rendering |
 | `src/domain/*` | pure date, room, guest behavior | Chrome APIs, DOM, Svelte state |
-| `src/catalog/*` or current `src/messages/*` + `src/assets/*` | template and asset definitions, validators | DOM events, PMS fetch |
+| `src/catalog/*` + `src/assets/*` | template and asset definitions, validators | DOM events, PMS fetch |
 | `src/application/*` | use cases that join storage, PMS, catalog, and domain | HTML string rendering |
 | `src/ui/*` | Svelte components and local interaction | branch code authority, PMS filters |
 | `scripts/*` | build/package helpers | runtime business behavior |
 
-## Target Folder Shape
+## Current Folder Shape
 
 ```text
 src/
   application/
-    generate-message.ts
-    load-work-context.ts
-    select-branch.ts
+    context-guard.ts
+    laundry-records.ts
+    ota-reservation-input.ts
     sync-guests.ts
-    save-template-override.ts
+    template-settings.ts
   catalog/
-    asset-catalog.ts
+    menu-routing.ts
     template-catalog.ts
     template-renderer.ts
-    template-validation.ts
+    template-schema.ts
+    template-types.ts
+    template-variable-mapping.ts
+    workflow-catalog.ts
+  assets/
+    asset-catalog.ts
   domain/
     dates.ts
     guests.ts
+    language.ts
+    remarks.ts
     rooms.ts
-  errors/
-    app-errors.ts
   platform/
+    active-tab-automation.ts
     chrome-storage.ts
-    chrome-runtime.ts
     storage-schema.ts
+    tab-context.ts
   pms/
     client.ts
     filter-builder.ts
+    normalizer.ts
   ui/
     App.svelte
+    side-panel-controller.svelte.ts
+    app-state-helpers.ts
+    app-view-model.ts
+    display-helpers.ts
+    pms-workflow.ts
+    laundry-workflow.ts
+    ota-workflow.ts
+    template-runtime-values.ts
+    template-settings-workflow.ts
     components/
-      AppHeader.svelte
-      BranchSelector.svelte
-      GuestCard.svelte
-      GuestList.svelte
-      MessageActionGrid.svelte
-      AssetReminderList.svelte
+      SidePanelView.svelte
+      ShellHeader.svelte
+      HomeView.svelte
+      WorkHeader.svelte
+      TemplateList.svelte
       SettingsPanel.svelte
-      TemplateEditor.svelte
-      ErrorBanner.svelte
-    state/
-      sidepanel-state.svelte.ts
+      RoomBottomBar.svelte
+      LaundryPanel.svelte
+      OtaReservationPanel.svelte
 ```
 
-The current `src/sidepanel/*` can remain during migration, but new UI work should move toward `src/ui/*` and use DOM APIs/Svelte bindings instead of HTML string rendering for user-editable content.
+The old `src/sidepanel/*` DOM renderer has been removed. New UI work must stay under `src/ui/*`. `App.svelte` stays an entry skeleton; side-panel composition belongs in `components/SidePanelView.svelte`, state orchestration belongs in `side-panel-controller.svelte.ts`, and feature calculations belong in the workflow/helper modules.
 
 ## Storage Contract
 
@@ -93,6 +107,7 @@ type StoredExtensionState = {
   schemaVersion: 1;
   lastBranchId?: BranchId;
   templateOverrides: Record<string, TemplateOverride>;
+  customTemplates: CustomTemplate[];
   ui: {
     lastTab?: TabMode;
     compactMode?: boolean;
@@ -102,7 +117,7 @@ type StoredExtensionState = {
 
 Rules:
 
-- invalid `lastBranchId` is ignored and reported as a recoverable settings error
+- invalid `lastBranchId` is rejected and surfaced; it must not silently fall back to another branch
 - branch selection writes only after `BranchId` validation
 - template overrides never mutate the built-in catalog directly
 - reset removes only override keys, not built-in catalog entries
@@ -110,7 +125,7 @@ Rules:
 
 ## Template Contract
 
-Move toward a single editable template shape:
+The current editable template shape is:
 
 ```ts
 type TemplateDefinition = {
@@ -118,16 +133,18 @@ type TemplateDefinition = {
   title: string;
   category: TemplateCategory;
   branchScope: BranchId[];
-  languages: Partial<Record<Language, TemplateBody>>;
+  languages: Partial<Record<Language, string>>;
   variables: TemplateVariable[];
   attachments: string[];
+  requiresContext: TemplateContextRequirement;
   editable: boolean;
-  sourcePath: string;
-  duplicateGroupId: string | null;
+  defaultValue: string;
 };
 ```
 
-`TemplateBody` should support conditional segments instead of removing password text after rendering:
+Runtime menu/source metadata is layered through `UnifiedTemplateDefinition` in `src/catalog/template-catalog.ts`, not duplicated in Svelte components.
+
+Future catalog work may add structured `TemplateBody` conditional segments:
 
 ```ts
 type TemplateSegment =
@@ -136,56 +153,52 @@ type TemplateSegment =
   | { kind: "conditional"; policy: "coexDoorPasswordGuide"; segments: TemplateSegment[] };
 ```
 
-This makes the COEX-only password sentence a catalog policy decision, not a string replace.
+That would make COEX-only password text a catalog policy decision. Until then, no UI component may reimplement password-text branching; rendering and attachment filtering must stay in catalog/asset owners.
 
-## Error Classes
+## Error Surfaces
 
-Add explicit errors before settings work:
+Current explicit failure surfaces include:
 
-- `BranchRequiredError`
-- `InvalidBranchError`
 - `UnsupportedLanguageError`
-- `TemplateNotFoundError`
-- `TemplateLanguageMissingError`
+- `TemplateLanguageUnavailableError`
+- `PmsRequiredValueMissingError`
+- `ManualRequiredValueMissingError`
 - `PmsRequestError`
 - `StorageSchemaError`
+- `OtaReservationDependencyError`
 
 The side panel should display these as user-actionable states instead of generic `Error: ...`.
 
-## Implementation Order
+## Completed Structure Work
 
-1. Storage adapter and last branch persistence
-   - add `src/platform/chrome-storage.ts`
-   - add `src/platform/storage-schema.ts`
-   - load saved branch on startup
-   - save selected branch after validation
-   - tests: valid saved branch, missing branch, invalid saved branch, storage failure
+- `src/sidepanel/*` DOM renderer has been removed.
+- `src/messages/*` legacy message layer has been removed.
+- `src/ui/App.svelte` is a skeleton entry.
+- Browser globals are injected through `src/ui/side-panel-dependencies.ts`.
+- PMS, OTA, storage, catalog rendering, laundry records, and template settings have owner modules.
+- Tests are organized by product contract in `docs/TEST_CONTRACT.md`.
 
-2. Application use cases
-   - move branch selection, PMS sync, list filtering, and message generation out of `src/sidepanel/index.ts`
-   - keep existing DOM UI working during this step
-   - tests: `selectBranch`, `syncGuests`, `generateMessage`
+## Remaining Implementation Order
 
-3. Svelte shell migration
-   - change `sidepanel.html` to mount `src/ui/App.svelte`
-   - replace `renderGuestList` HTML strings with components
-   - use Svelte state for branch, tab, guests, loading, and error state
-   - keep PMS and message logic in application/domain modules
-
-4. Catalog-driven message generation
+1. Catalog-driven message expansion
    - make `template-catalog.ts` the runtime entry point
    - support `templateId + lang + branchId + variables`
-   - replace password text removal with conditional segments
-   - tests: COEX includes password segment, Gangnam/Seolleung omit it, unsupported language fails
+   - import only real template-pack content with source evidence
+   - keep unsupported language, missing PMS value, and missing manual required value observable
 
-5. Settings panel
+2. Settings panel
    - list templates by category and branch scope
    - edit language body and attachments
-   - preview with sample guest variables
+   - preview with operator-provided guest variables
    - validate before save
    - reset one template or all overrides
 
-6. Packaging
+3. Frontend reference normalization
+   - keep `App.svelte` as skeleton
+   - normalize repeated row/list/form controls under `src/ui/components/*`
+   - exercise the built Svelte entry and at least one real failure path
+
+4. Packaging
    - add zip packaging script only after `dist` is stable
    - preserve fixed extension ID
    - Chrome should load `dist`
@@ -194,16 +207,16 @@ The side panel should display these as user-actionable states instead of generic
 
 The next coding batch should be:
 
-1. `src/platform/chrome-storage.ts`
-2. `src/platform/storage-schema.ts`
-3. `src/application/select-branch.ts`
-4. update `src/sidepanel/index.ts` to load/save `lastBranchId`
-5. add focused tests for branch persistence and invalid storage data
+1. import the next real template-pack slice into `src/catalog/workflow-catalog.ts`
+2. update `src/catalog/template-catalog.ts` metadata and duplicate evidence
+3. normalize the affected `src/ui/components/*` rows without adding new workflow sections
+4. add or adjust contract tests under the relevant test file from `docs/TEST_CONTRACT.md`
+5. run `npm run verify` plus an app-path check for the touched side-panel workflow
 
 Done when:
 
-- a valid saved branch auto-selects and queries PMS
-- no saved branch keeps the existing branch-required state
-- invalid saved branch does not fall back to COEX silently
-- branch changes persist to `chrome.storage.local`
-- `npm run verify` passes
+- new template copy renders through `renderTemplate()`
+- branch scope and language availability are enforced
+- no fake customer, room, reservation, machine, or source data is introduced
+- the Svelte entry still builds
+- a real failure path remains observable

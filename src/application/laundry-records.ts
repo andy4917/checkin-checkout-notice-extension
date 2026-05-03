@@ -57,7 +57,7 @@ export function createLaundryRecordFromGuest(
 
 export async function addLaundryRecord(
   draft: LaundryRecordDraft,
-  storageArea?: LaundryStorageArea,
+  storageArea: LaundryStorageArea,
   now = new Date(),
 ): Promise<LaundryRecord> {
   const record = createLaundryRecord(draft, now);
@@ -69,7 +69,7 @@ export async function addLaundryRecord(
 export async function updateLaundryStatus(
   recordId: string,
   status: LaundryStatus,
-  storageArea?: LaundryStorageArea,
+  storageArea: LaundryStorageArea,
   now = new Date(),
 ): Promise<LaundryRecord> {
   const records = await readLaundryRecords(storageArea);
@@ -97,8 +97,8 @@ export async function updateLaundryStatus(
 }
 
 export async function queryLaundryRecords(
-  query: LaundryRecordQuery = {},
-  storageArea?: LaundryStorageArea,
+  query: LaundryRecordQuery,
+  storageArea: LaundryStorageArea,
 ): Promise<LaundryRecord[]> {
   const records = await readLaundryRecords(storageArea);
   return filterLaundryRecords(records, query);

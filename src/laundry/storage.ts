@@ -16,7 +16,7 @@ export class LaundryStorageError extends Error {
 }
 
 export async function readLaundryRecords(
-  storageArea: LaundryStorageArea = chrome.storage.local,
+  storageArea: LaundryStorageArea,
 ): Promise<LaundryRecord[]> {
   const result = await storageArea.get([LAUNDRY_STORAGE_KEY]);
   return normalizeLaundryRecords(result[LAUNDRY_STORAGE_KEY]);
@@ -24,7 +24,7 @@ export async function readLaundryRecords(
 
 export async function writeLaundryRecords(
   records: LaundryRecord[],
-  storageArea: LaundryStorageArea = chrome.storage.local,
+  storageArea: LaundryStorageArea,
 ): Promise<void> {
   await storageArea.set({ [LAUNDRY_STORAGE_KEY]: normalizeLaundryRecords(records) });
 }

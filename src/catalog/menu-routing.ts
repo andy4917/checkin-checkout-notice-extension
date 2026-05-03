@@ -23,6 +23,13 @@ export type TemplateTab = {
   label: string;
 };
 
+export class MenuRoutingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MenuRoutingError";
+  }
+}
+
 export const menuGroups: readonly MenuGroup[] = Object.freeze([
   Object.freeze({
     title: "고객 커뮤니케이션",
@@ -177,8 +184,10 @@ export function matchesTemplateTab(
 }
 
 export function getMenu(menuId: MenuId): MenuItem {
-  return menuId === "SETTINGS"
-    ? settingsMenu
-    : menuGroups.flatMap((group) => group.items).find((item) => item.id === menuId) ||
-        settingsMenu;
+  if (menuId === "SETTINGS") return settingsMenu;
+  const menu = menuGroups.flatMap((group) => group.items).find((item) => item.id === menuId);
+  if (!menu) {
+    throw new MenuRoutingError(`Unknown menu: ${menuId}`);
+  }
+  return menu;
 }

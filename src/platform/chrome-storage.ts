@@ -7,7 +7,10 @@ import {
   normalizeStoredExtensionState,
 } from "./storage-schema.js";
 
-type ChromeStorageArea = Pick<chrome.storage.StorageArea, "get" | "set">;
+export type ChromeStorageArea = {
+  get(keys: string[]): Promise<Record<string, unknown>>;
+  set(values: Record<string, unknown>): Promise<void>;
+};
 
 export const STORAGE_CORRUPTION_RECOVERY_MESSAGE =
   "저장소 데이터 손상으로 설정을 초기화했습니다. 다시 설정해주세요.";
@@ -18,14 +21,14 @@ export type ExtensionStateReadResult = {
 };
 
 export async function readExtensionState(
-  storageArea: ChromeStorageArea = chrome.storage.local,
+  storageArea: ChromeStorageArea,
 ): Promise<StoredExtensionState> {
   const result = await storageArea.get([STORAGE_KEY]);
   return normalizeStoredExtensionState(result[STORAGE_KEY]);
 }
 
 export async function readExtensionStateWithRecovery(
-  storageArea: ChromeStorageArea = chrome.storage.local,
+  storageArea: ChromeStorageArea,
 ): Promise<ExtensionStateReadResult> {
   try {
     return {
@@ -42,14 +45,14 @@ export async function readExtensionStateWithRecovery(
 
 export async function writeExtensionState(
   state: StoredExtensionState,
-  storageArea: ChromeStorageArea = chrome.storage.local,
+  storageArea: ChromeStorageArea,
 ): Promise<void> {
   await storageArea.set({ [STORAGE_KEY]: state });
 }
 
 export async function setLastBranchId(
   branchId: BranchId,
-  storageArea: ChromeStorageArea = chrome.storage.local,
+  storageArea: ChromeStorageArea,
 ): Promise<void> {
   const state = await readExtensionState(storageArea);
   await writeExtensionState({ ...state, lastBranchId: branchId }, storageArea);

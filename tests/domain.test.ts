@@ -4,9 +4,6 @@ import assert from "node:assert/strict";
 import { formatDateForLang, getBusinessDateParts } from "../src/domain/dates.js";
 import { filterGuests, getGuestStatus, sortGuestsByRoom } from "../src/domain/guests.js";
 import { convertRoomNo, getFullRoomInfo } from "../src/domain/rooms.js";
-import { createGuestMessage, UnsupportedLanguageError } from "../src/messages/message-service.js";
-import { copyToClipboard } from "../src/sidepanel/clipboard.js";
-import { renderGuestList } from "../src/sidepanel/render.js";
 
 test("business date exposes PMS API and display formats", () => {
   const date = new Date("2026-04-26T09:30:00+09:00");
@@ -46,107 +43,4 @@ test("guest filtering, sorting, and status mapping are pure domain behavior", ()
     text: "체크아웃 완료",
     tagClass: "tag-co",
   });
-});
-
-test("message service maps arrival and departure templates and rejects unknown languages", () => {
-  const arrival = createGuestMessage({
-    action: "arrival",
-    lang: "KO",
-    name: "홍길동",
-    room: "B타워 / 101호",
-    departureDate: "2026년 4월 27일",
-    branchId: "coex",
-  });
-  assert.match(arrival, /홍길동 님/);
-  assert.match(arrival, /B타워 \/ 101호/);
-  assert.doesNotMatch(arrival, /비밀번호 입력 가이드 영상/);
-
-  const gangnamArrival = createGuestMessage({
-    action: "arrival",
-    lang: "KO",
-    name: "홍길동",
-    room: "B타워 / 101호",
-    departureDate: "2026년 4월 27일",
-    branchId: "gangnam",
-  });
-  assert.doesNotMatch(gangnamArrival, /비밀번호 입력 가이드 영상/);
-
-  assert.throws(
-    () =>
-      createGuestMessage({
-        action: "departure",
-        lang: "UNKNOWN",
-        type: "BEFORE_30",
-        name: "Kim",
-        room: "B Tower / Room 101",
-      }),
-    UnsupportedLanguageError,
-  );
-
-  const departure = createGuestMessage({
-    action: "departure",
-    lang: "EN",
-    type: "BEFORE_30",
-    name: "Kim",
-    room: "B Tower / Room 101",
-  });
-  assert.match(departure, /Good morning, Kim/);
-});
-
-test("side panel renderer emits expected action buttons and empty state", () => {
-  assert.equal(
-    renderGuestList([], "ARRIVAL", "coex"),
-    "<div class=\"empty-state\">결과가 없습니다.</div>",
-  );
-
-  const html = renderGuestList(
-    [{ GUEST_NAME: "Kim", ROOM_NO: "0101", DEPT_DATE: "20260427", RSVN_STATUS_CODE: "RR" }],
-    "ARRIVAL",
-    "coex",
-  );
-
-  assert.match(html, /guest-card ARRIVAL-card/);
-  assert.match(html, /data-action="arrival"/);
-  assert.match(html, /data-lang="KO"/);
-  assert.match(html, /B101/);
-  assert.doesNotMatch(html, /coex-door-password-guide-video/);
-
-  const gangnamHtml = renderGuestList(
-    [{ GUEST_NAME: "Kim", ROOM_NO: "0101", DEPT_DATE: "20260427", RSVN_STATUS_CODE: "RR" }],
-    "ARRIVAL",
-    "gangnam",
-  );
-  assert.doesNotMatch(gangnamHtml, /coex-door-password-guide-video/);
-  assert.throws(
-    () =>
-      renderGuestList(
-        [{ GUEST_NAME: "Kim", ROOM_NO: "0101", DEPT_DATE: "20260427", RSVN_STATUS_CODE: "RR" }],
-        "ARRIVAL",
-        "" as never,
-      ),
-    /지점을 선택해주세요/,
-  );
-});
-
-test("clipboard helper writes text and restores button label", async () => {
-  const writes: string[] = [];
-  const button = { innerText: "KO" };
-  const originalSetTimeout = globalThis.setTimeout;
-  globalThis.setTimeout = ((callback: TimerHandler) => {
-    if (typeof callback === "function") callback();
-    return 0;
-  }) as typeof globalThis.setTimeout;
-
-  try {
-    await copyToClipboard("hello", button, {
-      writeText: async (text) => {
-        writes.push(text);
-      },
-    });
-  } finally {
-    globalThis.setTimeout = originalSetTimeout;
-  }
-
-  assert.deepEqual(writes, ["hello"]);
-  assert.equal(button.innerText, "KO");
 });
