@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { BranchId, PmsGuestRecord, TabMode } from "../../types.js";
+  import * as LoadingImageModule from "./LoadingImage.svelte";
+
+  const LoadingImage = LoadingImageModule.default;
 
   export let pmsLoading: boolean;
   export let pmsMode: TabMode;
@@ -63,7 +66,11 @@
         <h2>{pmsMode === "ARRIVAL" ? "입실 예정" : "퇴실 예정"}</h2>
       </div>
       <button type="button" disabled={pmsLoading || !selectedBranchId} onclick={onSyncPmsGuestRecords}>
-        {pmsLoading ? "불러오는 중" : "객실 불러오기"}
+        {#if pmsLoading}
+          <LoadingImage compact label="객실 목록 로딩 중" />
+        {:else}
+          객실 불러오기
+        {/if}
       </button>
     </div>
 

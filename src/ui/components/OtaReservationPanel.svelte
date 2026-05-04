@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { BranchId } from "../../types.js";
   import type { OtaReservationInputPreview } from "../../application/ota-reservation-input.js";
+  import * as LoadingImageModule from "./LoadingImage.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const LoadingImage = LoadingImageModule.default;
   const MaterialIcon = MaterialIconModule.default;
 
   export let otaLoading: boolean;
@@ -23,7 +25,11 @@
       </h2>
     </div>
     <button type="button" disabled={otaLoading || !selectedBranchId} onclick={onLoadOtaReservation}>
-      {otaLoading ? "처리 중" : "예약정보 가져오기"}
+      {#if otaLoading}
+        <LoadingImage compact label="OTA 예약정보 로딩 중" />
+      {:else}
+        예약정보 가져오기
+      {/if}
     </button>
   </div>
 
@@ -55,8 +61,12 @@
           {/if}
         </div>
         <button type="button" disabled={otaLoading} onclick={onFillWingsReservation}>
-          <MaterialIcon name="login" size={18} />
-          WINGS에 입력
+          {#if otaLoading}
+            <LoadingImage compact label="WINGS 입력 중" />
+          {:else}
+            <MaterialIcon name="login" size={18} />
+            WINGS에 입력
+          {/if}
         </button>
       </article>
     {/if}

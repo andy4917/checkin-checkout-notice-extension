@@ -7,10 +7,7 @@
   export let sections: readonly HomeMenuSection[];
   export let onOpenMenu: (menuId: MenuId) => void;
 
-  let selectedMenuId: MenuId | null = null;
-
   function openMenu(menuId: MenuId) {
-    selectedMenuId = menuId;
     onOpenMenu(menuId);
   }
 </script>
@@ -22,7 +19,6 @@
         {#each section.items as menu}
           <button
             class:primary={menu.home?.tone === "primary"}
-            class:selected={selectedMenuId === menu.id}
             class="priority-card"
             type="button"
             onclick={() => openMenu(menu.id)}
@@ -43,10 +39,10 @@
     {:else}
       <section class="home-menu-section" aria-label={section.title}>
         <h2>{section.title}</h2>
-        <div class="home-list-card">
+        <div class="home-list-stack">
           {#each section.items as menu}
             <button
-              class:selected={selectedMenuId === menu.id}
+              class="home-list-item"
               type="button"
               onclick={() => openMenu(menu.id)}
             >

@@ -27,6 +27,7 @@ function template(
     defaultValue: "opaque default",
     menuId: "WORK_REPORT",
     typeId: "day_night_report",
+    icon: "assignment",
     summary: "opaque summary",
     sourceRefs: [`test://${id}`],
     duplicateGroupId: null,

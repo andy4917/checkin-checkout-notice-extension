@@ -153,6 +153,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   let otaLoading = $state(false);
   let otaPreview = $state<OtaReservationInputPreview | null>(null);
   let selectedRoomRemarkTemplateId = $state("");
+  let selectedGuidanceTemplateId = $state("");
 
   const selectedMenu = $derived(activeMenu ? getMenu(activeMenu) : null);
   const navigationLocked = $derived(
@@ -252,6 +253,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
     activeMenu = menuId;
     copiedTemplateId = "";
+    selectedGuidanceTemplateId = "";
     if (menuId !== "ROOM_REMARK_MEMO") {
       selectedRoomRemarkTemplateId = "";
     }
@@ -282,6 +284,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     activeMenu = null;
     copiedTemplateId = "";
     selectedRoomRemarkTemplateId = "";
+    selectedGuidanceTemplateId = "";
     statusMessage = "";
     scrollToTop();
   }
@@ -622,6 +625,10 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     );
   }
 
+  function selectGuidanceTemplate(templateId: string) {
+    selectedGuidanceTemplateId = selectedGuidanceTemplateId === templateId ? "" : templateId;
+  }
+
   function templateValueContext() {
     return {
       branchOptions,
@@ -638,6 +645,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     templateDraftValues = {};
     copiedTemplateId = "";
     selectedRoomRemarkTemplateId = "";
+    selectedGuidanceTemplateId = "";
   }
 
   function currentWorkContext() {
@@ -814,6 +822,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     setLaundryNote,
     setLaundrySearchTerm,
     setLaundryStatusFilter,
+    handleTemplateVariableInput,
+    selectGuidanceTemplate,
     templateInputValue,
     templateSummary,
     otaPreviewSummary,
@@ -837,6 +847,9 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     },
     get copiedTemplateId() {
       return copiedTemplateId;
+    },
+    get selectedGuidanceTemplateId() {
+      return selectedGuidanceTemplateId;
     },
     get settingsTemplateId() {
       return settingsTemplateId;

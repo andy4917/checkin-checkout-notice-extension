@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as HomeViewModule from "./HomeView.svelte";
+  import * as CustomerGuidancePanelModule from "./CustomerGuidancePanel.svelte";
   import * as LaundryPanelModule from "./LaundryPanel.svelte";
   import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
   import * as RoomBottomBarModule from "./RoomBottomBar.svelte";
@@ -11,6 +12,7 @@
   import type { createSidePanelController } from "../side-panel-controller.svelte.js";
 
   const HomeView = HomeViewModule.default;
+  const CustomerGuidancePanel = CustomerGuidancePanelModule.default;
   const LaundryPanel = LaundryPanelModule.default;
   const OtaReservationPanel = OtaReservationPanelModule.default;
   const RoomBottomBar = RoomBottomBarModule.default;
@@ -37,13 +39,15 @@
     onBranchChange={controller.handleBranchChange}
   />
 
-  {#if controller.activeMenu === null}
-    <HomeView
-      sections={controller.homeMenuSections}
-      onOpenMenu={controller.openMenu}
-    />
-  {:else}
-    <WorkHeader
+  {#key controller.activeMenu}
+    <section class="screen-stage" aria-label={controller.activeMenu === null ? "홈" : "업무 화면"}>
+      {#if controller.activeMenu === null}
+        <HomeView
+          sections={controller.homeMenuSections}
+          onOpenMenu={controller.openMenu}
+        />
+      {:else}
+        <WorkHeader
       activeMenu={controller.activeMenu}
       activeTemplates={controller.activeTemplates}
       languages={controller.languages}
@@ -58,14 +62,14 @@
       onSelectLanguage={controller.handleLanguageSelect}
     />
 
-    {#if controller.statusMessage}
-      <section class="status-bar" aria-live="polite">
-        {controller.statusMessage}
-      </section>
-    {/if}
+        {#if controller.statusMessage}
+          <section class="status-bar" aria-live="polite">
+            {controller.statusMessage}
+          </section>
+        {/if}
 
-    {#if controller.activeMenu === "SETTINGS"}
-      <SettingsPanel
+        {#if controller.activeMenu === "SETTINGS"}
+          <SettingsPanel
         audienceOptions={controller.audienceOptions}
         branchOptions={controller.branchOptions}
         catalogTemplates={controller.catalogTemplates}
@@ -102,8 +106,8 @@
         onSaveTemplateEdit={controller.saveTemplateEdit}
         onSettingsTemplateChange={controller.handleSettingsTemplateChange}
       />
-    {:else if controller.activeMenu === "OTA_RESERVATION_INPUT"}
-      <OtaReservationPanel
+        {:else if controller.activeMenu === "OTA_RESERVATION_INPUT"}
+          <OtaReservationPanel
         otaLoading={controller.otaLoading}
         otaPreview={controller.otaPreview}
         selectedBranchId={controller.selectedBranchId}
@@ -111,9 +115,23 @@
         onFillWingsReservation={controller.fillWingsReservation}
         onLoadOtaReservation={controller.loadOtaReservation}
       />
-    {:else}
-      {#if controller.activeMenu === "LAUNDRY_MANAGEMENT"}
-        <LaundryPanel
+        {:else}
+          {#if controller.activeMenu === "CUSTOMER_NOTICE"}
+            <CustomerGuidancePanel
+          activeTemplates={controller.activeTemplates}
+          copiedTemplateId={controller.copiedTemplateId}
+          selectedGuidanceTemplateId={controller.selectedGuidanceTemplateId}
+          selectedLanguage={controller.selectedLanguage}
+          currentWorkContext={controller.currentWorkContext}
+          onCopyTemplate={controller.copyTemplate}
+          onSelectGuidanceTemplate={controller.selectGuidanceTemplate}
+          onTemplateVariableInput={controller.handleTemplateVariableInput}
+          templateInputValue={controller.templateInputValue}
+          templateSummary={controller.templateSummary}
+          visibleTemplateVariables={controller.visibleTemplateVariables}
+        />
+          {:else if controller.activeMenu === "LAUNDRY_MANAGEMENT"}
+            <LaundryPanel
           filteredLaundryRecords={controller.filteredLaundryRecords}
           laundryItemSummary={controller.laundryItemSummary}
           laundryLoading={controller.laundryLoading}
@@ -132,23 +150,27 @@
           onLoadLaundryRecords={controller.loadLaundryRecords}
           onSetLaundryStatus={controller.setLaundryStatus}
         />
-      {/if}
+          {/if}
 
-      <TemplateList
-        activeTemplates={controller.activeTemplates}
-        copiedTemplateId={controller.copiedTemplateId}
-        selectedLanguage={controller.selectedLanguage}
-        branchScopeLabel={controller.branchScopeLabel}
-        currentWorkContext={controller.currentWorkContext}
-        onCopyTemplate={controller.copyTemplate}
-        onTemplateVariableInput={controller.handleTemplateVariableInput}
-        templateInputValue={controller.templateInputValue}
-        templateSummary={controller.templateSummary}
-        templateTypeLabel={controller.templateTypeLabel}
-        visibleTemplateVariables={controller.visibleTemplateVariables}
-      />
-    {/if}
-  {/if}
+          {#if controller.activeMenu !== "CUSTOMER_NOTICE"}
+            <TemplateList
+          activeTemplates={controller.activeTemplates}
+          copiedTemplateId={controller.copiedTemplateId}
+          selectedLanguage={controller.selectedLanguage}
+          branchScopeLabel={controller.branchScopeLabel}
+          currentWorkContext={controller.currentWorkContext}
+          onCopyTemplate={controller.copyTemplate}
+          onTemplateVariableInput={controller.handleTemplateVariableInput}
+          templateInputValue={controller.templateInputValue}
+          templateSummary={controller.templateSummary}
+          templateTypeLabel={controller.templateTypeLabel}
+          visibleTemplateVariables={controller.visibleTemplateVariables}
+        />
+          {/if}
+        {/if}
+      {/if}
+    </section>
+  {/key}
 
   {#if controller.activeMenu !== null && controller.activeMenu !== "SETTINGS" && controller.activeMenu !== "OTA_RESERVATION_INPUT"}
     <RoomBottomBar

@@ -42,26 +42,8 @@
     return getAvailableTemplateLanguages(template).join(", ");
   }
 
-  const templateIconByType: Readonly<Record<string, string>> = {
-    airport_van: "airport_shuttle",
-    day_night_report: "assignment",
-    dodine_sales: "payments",
-    laundry_complete: "local_laundry_service",
-    partner_service: "room_service",
-    reservation_report: "event_note",
-    room_remark: "edit_note",
-    room_sales: "payments",
-  };
-
   function templateIcon(template: TemplateDefinition) {
-    if (templateIconByType[template.typeId]) return templateIconByType[template.typeId];
-    if (template.id.includes("wifi")) return "wifi";
-    if (template.id.includes("parking")) return "local_parking";
-    if (template.id.includes("late") || template.id.includes("early")) return "schedule";
-    if (template.id.includes("breakfast")) return "restaurant";
-    if (template.id.includes("luggage")) return "luggage";
-    if (template.id.includes("key")) return "vpn_key";
-    return "description";
+    return (template as TemplateDefinition & { icon: string }).icon;
   }
 </script>
 

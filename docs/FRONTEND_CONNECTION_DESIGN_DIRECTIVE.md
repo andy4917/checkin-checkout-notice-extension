@@ -245,6 +245,16 @@ Room information memo supports WINGS remark upsert only through the active WINGS
 
 Template cards are action rows, not content articles.
 
+Customer guidance is a distinct copy workflow, not a generic template editor view. It should use the `customer_guidance_refined_style` reference structure:
+
+- fixed work topbar from the shared shell
+- compact pill-style language segmented control with fully rounded ends
+- guidance cards using actual catalog templates and summaries, not reference dummy labels
+- neutral card surfaces by default; selected card gets the only color emphasis
+- copy action remains connected to `copyTemplate()`
+- variable inputs may appear only for the selected card so the default view stays scannable
+- no broad metadata rows, body previews, or tutorial text inside each guidance card
+
 Each template card should show:
 
 - type label
@@ -317,16 +327,21 @@ Use the current home screen as the visual baseline for all menus.
 Shared interaction rules:
 
 - card default state is neutral; selection state receives the color emphasis
-- hover may darken the surface slightly, but must not change layout size
+- hover may darken the surface slightly, but must not add or emphasize a border
+- card hover must not change layout size
 - press feedback uses subtle `scale(0.96)` for buttons and compact controls
+- screen changes use a short opacity/translate transition
 - enter/exit motion uses only `opacity` and `transform`
 - pull-up and popup surfaces use short, interruptible transitions
 - do not use `transition: all`
 - use `will-change` only for `transform` and `opacity`
+- loading states use the shared loading image component instead of text-only ad hoc loading labels
+- text surfaces do not opt into drag/text selection; template/content input areas are the only text-selection exceptions
 
 Shared surface rules:
 
 - cards and popup surfaces use consistent radius and spacing
+- menu cards are separate cards with compact gaps; do not merge several menu actions into one parent card
 - icon buttons are at least 40px by 40px and center icons with grid/place-items
 - Material Symbols icons must be rendered through the shared icon component
 - do not create per-menu custom icons or ad hoc SVGs
@@ -339,7 +354,7 @@ Shared navigation rules:
 - top header keeps center breathing room; do not fill it with transient room text
 - selected PMS room identity appears above the room bottom bar, not inside the top header
 - branch selection opens a selection sheet/popup, not a dropdown
-- language selection is a segmented bar, not a dropdown
+- language selection is a segmented bar, not a dropdown; its container and active segment must be pill-shaped with rounded ends
 - settings may keep data-management selects for template/category/audience/context, but language must remain segmented
 
 Shared copy rules:
@@ -417,7 +432,9 @@ Accessibility:
 Do not introduce:
 
 - title/body/category text heuristics for routing
+- component-local icon heuristics or `id.includes(...)` UI matching
 - UI-owned branch/PMS/OTA constants
+- UI-owned business workflow state; UI may only render controller/backend-owned state and hold transient presentation state
 - fake fallback values
 - silent storage fallback
 - save endpoint calls for WINGS reservation creation

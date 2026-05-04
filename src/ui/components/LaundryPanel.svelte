@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { BranchId, PmsGuestRecord } from "../../types.js";
   import type { LaundryRecord, LaundryStatus } from "../../laundry/types.js";
+  import * as LoadingImageModule from "./LoadingImage.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const LoadingImage = LoadingImageModule.default;
   const MaterialIcon = MaterialIconModule.default;
 
   const statusOptions: Array<LaundryStatus | "ALL"> = [
@@ -45,7 +47,11 @@
       </h2>
     </div>
     <button type="button" disabled={laundryLoading} onclick={onLoadLaundryRecords}>
-      {laundryLoading ? "불러오는 중" : "새로고침"}
+      {#if laundryLoading}
+        <LoadingImage compact label="세탁물 로딩 중" />
+      {:else}
+        새로고침
+      {/if}
     </button>
   </div>
 
@@ -102,8 +108,12 @@
       {#each filteredLaundryRecords as record}
         <article class="laundry-record">
           <div class="laundry-record-main">
-            <strong>{record.displayRoom || record.roomNo || "객실 미지정"}</strong>
-            <span>{record.guestName || selectedPmsRecord?.guestName || "고객명 미입력"}</span>
+            {#if record.displayRoom || record.roomNo}
+              <strong>{record.displayRoom || record.roomNo}</strong>
+            {/if}
+            {#if record.guestName || selectedPmsRecord?.guestName}
+              <span>{record.guestName || selectedPmsRecord?.guestName}</span>
+            {/if}
             <p>{record.itemSummary}</p>
             {#if record.note}
               <small>{record.note}</small>

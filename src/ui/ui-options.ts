@@ -15,10 +15,10 @@ export const homeFooterActions = homeQuickActions;
 export const branchOptions = getBranchOptions();
 
 export const languageOptions: Array<{ id: Language; label: string }> = [
-  { id: "KO", label: "한국어" },
-  { id: "EN", label: "English" },
-  { id: "JP", label: "日本語" },
-  { id: "CN", label: "中文" },
+  { id: "KO", label: "KR" },
+  { id: "EN", label: "EN" },
+  { id: "JP", label: "JP" },
+  { id: "CN", label: "CH" },
 ];
 
 export const categoryOptions: Array<{ id: TemplateCategory; label: string }> = [
