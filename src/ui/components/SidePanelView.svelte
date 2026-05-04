@@ -3,7 +3,6 @@
   import * as CustomerGuidancePanelModule from "./CustomerGuidancePanel.svelte";
   import * as LaundryPanelModule from "./LaundryPanel.svelte";
   import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
-  import * as RoomBottomBarModule from "./RoomBottomBar.svelte";
   import * as RoomsSettingsBarModule from "./RoomsSettingsBar.svelte";
   import * as SettingsPanelModule from "./SettingsPanel.svelte";
   import * as ShellHeaderModule from "./ShellHeader.svelte";
@@ -15,7 +14,6 @@
   const CustomerGuidancePanel = CustomerGuidancePanelModule.default;
   const LaundryPanel = LaundryPanelModule.default;
   const OtaReservationPanel = OtaReservationPanelModule.default;
-  const RoomBottomBar = RoomBottomBarModule.default;
   const RoomsSettingsBar = RoomsSettingsBarModule.default;
   const SettingsPanel = SettingsPanelModule.default;
   const ShellHeader = ShellHeaderModule.default;
@@ -27,9 +25,6 @@
 
 <main
   class:home-mode={controller.activeMenu === null}
-  class:roomBottomMode={controller.activeMenu !== null &&
-    controller.activeMenu !== "SETTINGS" &&
-    controller.activeMenu !== "OTA_RESERVATION_INPUT"}
   class="app-shell"
 >
   <ShellHeader
@@ -54,6 +49,7 @@
       navigationLocked={controller.navigationLocked}
       selectedLanguage={controller.selectedLanguage}
       selectedMenu={controller.selectedMenu}
+      selectedPmsRecord={controller.selectedPmsRecord}
       showWingsStatus={controller.activeMenu !== "SETTINGS" &&
         controller.activeMenu !== "OTA_RESERVATION_INPUT"}
       wingsConnected={controller.hasWingsPmsContext}
@@ -125,10 +121,7 @@
           currentWorkContext={controller.currentWorkContext}
           onCopyTemplate={controller.copyTemplate}
           onSelectGuidanceTemplate={controller.selectGuidanceTemplate}
-          onTemplateVariableInput={controller.handleTemplateVariableInput}
-          templateInputValue={controller.templateInputValue}
           templateSummary={controller.templateSummary}
-          visibleTemplateVariables={controller.visibleTemplateVariables}
         />
           {:else if controller.activeMenu === "LAUNDRY_MANAGEMENT"}
             <LaundryPanel
@@ -171,24 +164,6 @@
       {/if}
     </section>
   {/key}
-
-  {#if controller.activeMenu !== null && controller.activeMenu !== "SETTINGS" && controller.activeMenu !== "OTA_RESERVATION_INPUT"}
-    <RoomBottomBar
-      pmsLoading={controller.pmsLoading}
-      pmsMode={controller.pmsMode}
-      pmsRecords={controller.pmsRecords}
-      pmsSearchTerm={controller.pmsSearchTerm}
-      selectedBranchId={controller.selectedBranchId}
-      selectedPmsRecord={controller.selectedPmsRecord}
-      selectedPmsRecordId={controller.selectedPmsRecordId}
-      visiblePmsRecords={controller.visiblePmsRecords}
-      recordBadgeLabel={controller.pmsRecordBadgeLabel}
-      onPmsSearchChange={controller.handlePmsSearchChange}
-      onSelectPmsMode={controller.selectPmsMode}
-      onSelectPmsRecord={controller.choosePmsRecord}
-      onSyncPmsGuestRecords={controller.syncPmsGuestRecords}
-    />
-  {/if}
 
   <RoomsSettingsBar
     footerActions={controller.roomsSettingsActions}

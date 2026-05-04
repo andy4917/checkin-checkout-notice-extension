@@ -44,7 +44,10 @@ test("language selection is a segmented bar, not a dropdown", () => {
   const languageButtonRule = cssRule(css, ".language-segmented button");
   const activeLanguageRule = cssRule(css, ".language-segmented button.active");
   assert.match(languageBarRule, /border-radius:\s*999px;/);
+  assert.match(languageBarRule, /padding:\s*2px;/);
   assert.match(languageButtonRule, /border-radius:\s*999px;/);
+  assert.match(languageButtonRule, /min-height:\s*24px;/);
+  assert.match(languageButtonRule, /font-size:\s*12px;/);
   assert.match(activeLanguageRule, /background:\s*#fff;/);
 
   for (const source of [workHeader, settingsPanel, languageControl]) {
@@ -68,20 +71,20 @@ test("customer guidance uses reference card workflow instead of generic template
   assert.match(sidePanel, /selectedGuidanceTemplateId/);
   assert.match(sidePanel, /onSelectGuidanceTemplate/);
   assert.match(customerGuidance, /customer-guidance-card/);
-  assert.match(customerGuidance, /copyTemplate|onTemplateVariableInput|templateSummary/);
+  assert.match(customerGuidance, /copyTemplate|templateSummary/);
   assert.match(controller, /selectGuidanceTemplate/);
   assert.match(catalogTypes, /icon:\s*string;/);
   assert.match(catalog, /TEMPLATE_TYPE_ICONS/);
-  assert.doesNotMatch(customerGuidance, /template-meta|branchScopeLabel|availableLanguageLabel/);
+  assert.doesNotMatch(customerGuidance, /template-meta|branchScopeLabel|availableLanguageLabel|onTemplateVariableInput|<input/);
   assert.doesNotMatch(customerGuidance, /includes\(/);
   assert.doesNotMatch(templateList, /includes\(/);
   assert.doesNotMatch(customerGuidance, /let selectedGuidanceId/);
   assert.match(css, /\.customer-guidance-card/);
-  assert.match(css, /\.customer-guidance-fields/);
+  assert.doesNotMatch(css, /customer-guidance-fields/);
   assert.match(docs, /Customer guidance is a distinct copy workflow/);
 });
 
-test("menu cards are separate and hover does not introduce card borders", () => {
+test("menu cards are compact separate cards and hover does not introduce card borders", () => {
   const homeView = read("src/ui/components/HomeView.svelte");
   const css = read("styles/sidepanel.css");
   const docs = read("docs/FRONTEND_CONNECTION_DESIGN_DIRECTIVE.md");
@@ -91,6 +94,8 @@ test("menu cards are separate and hover does not introduce card borders", () => 
   assert.doesNotMatch(homeView, /home-list-card|selectedMenuId/);
   assert.doesNotMatch(css, /home-list-card/);
   assert.match(docs, /menu cards are separate cards/);
+  const stackRule = cssRule(css, ".home-list-stack");
+  assert.match(stackRule, /gap:\s*4px;/);
 
   const priorityHoverRule = cssRule(css, ".priority-card:hover");
   const customerHoverMatch = /\.customer-guidance-card:has\(\.customer-guidance-select:hover\)\s*\{(?<body>[\s\S]*?)\n\}/.exec(css);
@@ -98,12 +103,20 @@ test("menu cards are separate and hover does not introduce card borders", () => 
   const customerHoverRule = customerHoverMatch.groups.body;
   assert.doesNotMatch(priorityHoverRule, /border|outline/);
   assert.doesNotMatch(customerHoverRule, /border|outline/);
+
+  const customerCardRule = cssRule(css, ".customer-guidance-card");
+  const compactTemplateMatch = /\.template-card\s*\{(?<body>[\s\S]*?min-height:\s*62px;[\s\S]*?padding:\s*10px;[\s\S]*?)\n\}/.exec(css);
+  assert.ok(compactTemplateMatch?.groups?.body, "compact template card rule must exist");
+  const templateCardRule = compactTemplateMatch.groups.body;
+  assert.match(customerCardRule, /min-height:\s*64px;/);
+  assert.match(customerCardRule, /padding:\s*10px;/);
+  assert.match(templateCardRule, /min-height:\s*62px;/);
+  assert.match(templateCardRule, /padding:\s*10px;/);
 });
 
 test("screen transitions, loading image, and drag selection rules are centralized", () => {
   const sidePanel = read("src/ui/components/SidePanelView.svelte");
   const loadingImage = read("src/ui/components/LoadingImage.svelte");
-  const roomBottomBar = read("src/ui/components/RoomBottomBar.svelte");
   const laundryPanel = read("src/ui/components/LaundryPanel.svelte");
   const otaPanel = read("src/ui/components/OtaReservationPanel.svelte");
   const css = read("styles/sidepanel.css");
@@ -113,7 +126,6 @@ test("screen transitions, loading image, and drag selection rules are centralize
   assert.match(sidePanel, /screen-stage/);
   assert.match(loadingImage, /class="loading-image"/);
   assert.match(loadingImage, /src=\{logoUrl\}/);
-  assert.match(roomBottomBar, /LoadingImage/);
   assert.match(laundryPanel, /LoadingImage/);
   assert.match(otaPanel, /LoadingImage/);
   assert.match(css, /@keyframes screen-switch/);
@@ -137,21 +149,29 @@ test("rooms settings bar does not expose unsupported quick actions", () => {
   assert.match(routing, /commandId: RoomsSettingsCommandId;/);
   assert.match(actions, /activeMenu === "ROOM_REMARK_MEMO"/);
   assert.match(routing, /label: "설정"/);
+  assert.match(roomsSettingsBar, /class:hidden=\{bottomSheetOpen\}/);
+  assert.match(css, /\.home-bottom-toggle\.hidden/);
   assert.match(css, /\.home-bottom-toggle[\s\S]*min-width: 152px;/);
   assert.match(css, /\.home-bottom-toggle[\s\S]*min-height: 42px;/);
 });
 
 test("PMS work menus expose WINGS status without broad automation buttons", () => {
   const workHeader = read("src/ui/components/WorkHeader.svelte");
-  const roomBottomBar = read("src/ui/components/RoomBottomBar.svelte");
   const sidePanel = read("src/ui/components/SidePanelView.svelte");
+  const css = read("styles/sidepanel.css");
 
   assert.match(workHeader, /wings-status-pill/);
+  assert.match(workHeader, /roomContextLabel/);
+  assert.match(workHeader, /roomContextMeta/);
+  assert.match(workHeader, /readNationalityFromFields/);
+  assert.match(workHeader, /객실 미선택/);
+  assert.match(sidePanel, /selectedPmsRecord=\{controller\.selectedPmsRecord\}/);
   assert.match(sidePanel, /hasWingsPmsContext/);
-  assert.match(roomBottomBar, /체크인 공항 픽업|recordBadgeLabel/);
-  assert.doesNotMatch(workHeader, /작업 메뉴|selectedMenu\?\.description|work-context-card/);
+  assert.doesNotMatch(sidePanel, /RoomBottomBar|roomBottomMode|room-bottom-bar/);
+  assert.doesNotMatch(css, /room-bottom-bar|selected-room-overlay|roomBottomMode/);
+  assert.match(workHeader, /<MaterialIcon name=\{workIconName\} size=\{18\} filled \/>/);
+  assert.doesNotMatch(workHeader, /작업 메뉴|selectedMenu\?\.description|work-context-card|<h2>\{selectedMenu\?\.title\}<\/h2>/);
   assert.doesNotMatch(workHeader, /debug-panel|console|trace/i);
-  assert.doesNotMatch(roomBottomBar, /WINGS에 입력|자동 입력/);
 });
 
 test("status text is not rendered as a card or generic instruction block", () => {

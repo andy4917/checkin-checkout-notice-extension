@@ -158,7 +158,7 @@ Expected frontend within current structure:
 
 - visible menu is `객실 정보 메모`
 - the UI reference shows the intended final frontend structure
-- selected-room values come from the bottom room selector and are merged into template defaults
+- selected-room values come from the backend-owned selected room state and appear only in the centered work-header context row
 - WINGS remark formatting remains centralized
 - if WINGS guest-record context is missing, show a short blocking reason
 
@@ -643,7 +643,7 @@ The Svelte UI must receive browser dependencies through `src/ui/side-panel-depen
 - Laundry has a record-based frontend/backend path; machine assignment remains deferred until schema-backed.
 - Airport van backend exists through customer 안내/배차 완료 templates and the internal reservation report; it must stay out of WINGS/객실 정보 메모 remark formatting.
 - Settings reference includes broad service menu editing; current storage supports templates and custom templates, not arbitrary service pricing structures.
-- PMS list/sync as a menu panel is not the target UX. The intended direction is a hoverable bottom bar room selector; the selected room appears in the header center with room number and smaller reserver name, and that room context becomes the default for templates and forms.
+- PMS list/sync as a menu panel is not the target UX. The intended direction is one persistent `Rooms & Settings` launcher; selected room context appears in the centered header context row with room number, reserver name, and nationality, and that room context becomes the default for templates and forms.
 
 ## Verification Plan
 

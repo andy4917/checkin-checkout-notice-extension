@@ -252,7 +252,7 @@ Customer guidance is a distinct copy workflow, not a generic template editor vie
 - guidance cards using actual catalog templates and summaries, not reference dummy labels
 - neutral card surfaces by default; selected card gets the only color emphasis
 - copy action remains connected to `copyTemplate()`
-- variable inputs may appear only for the selected card so the default view stays scannable
+- no inline variable inputs inside the guidance card list unless a backend-owned workflow explicitly provides that form
 - no broad metadata rows, body previews, or tutorial text inside each guidance card
 
 Each template card should show:
@@ -329,6 +329,7 @@ Shared interaction rules:
 - card default state is neutral; selection state receives the color emphasis
 - hover may darken the surface slightly, but must not add or emphasize a border
 - card hover must not change layout size
+- hover and press states must be visible enough for day-to-day use, through surface shade, shadow, transform, or icon motion
 - press feedback uses subtle `scale(0.96)` for buttons and compact controls
 - screen changes use a short opacity/translate transition
 - enter/exit motion uses only `opacity` and `transform`
@@ -351,8 +352,10 @@ Shared surface rules:
 Shared navigation rules:
 
 - menu screens use the same compact topbar with small back and home icon buttons
-- top header keeps center breathing room; do not fill it with transient room text
-- selected PMS room identity appears above the room bottom bar, not inside the top header
+- top header keeps center breathing room; the menu title appears once with its catalog icon beside it
+- the lower context row owns PMS room context and stays centered below the menu title
+- selected PMS room identity is not rendered in a separate bottom bar; show room number, reserver name, and nationality only in the centered context row
+- when no PMS room is selected, the room context text is `객실 미선택` in a muted gray tone
 - branch selection opens a selection sheet/popup, not a dropdown
 - language selection is a segmented bar, not a dropdown; its container and active segment must be pill-shaped with rounded ends
 - settings may keep data-management selects for template/category/audience/context, but language must remain segmented
@@ -361,7 +364,8 @@ Shared copy rules:
 
 - use operational Korean labels
 - do not add explanatory tutorial copy inside the app
-- `Rooms & Settings` remains the bottom-bar product label
+- `Rooms & Settings` remains the only persistent bottom-bar product label
+- the `Rooms & Settings` trigger hides while the bottom sheet is open and reappears after the sheet closes
 - WINGS text appears only where the workflow actually touches WINGS/PMS/OTA behavior
 - do not add placeholder guest, room, branch, action, or command labels
 

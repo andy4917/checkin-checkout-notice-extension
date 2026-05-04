@@ -38,6 +38,7 @@
 </script>
 
 <button
+  class:hidden={bottomSheetOpen}
   class:open={bottomSheetOpen}
   class="home-bottom-toggle"
   type="button"

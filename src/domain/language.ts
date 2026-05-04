@@ -60,6 +60,11 @@ export function resolveDefaultLanguageFromNationality(
 export function resolveDefaultLanguageFromNationalityFields(
   values: Record<string, unknown>,
 ): Language {
+  const nationality = readNationalityFromFields(values);
+  return resolveDefaultLanguageFromNationality(nationality);
+}
+
+export function readNationalityFromFields(values: Record<string, unknown>): string {
   const nationality = [
     "NAT_CODE",
     "NATL_CODE",
@@ -71,5 +76,5 @@ export function resolveDefaultLanguageFromNationalityFields(
   ]
     .map((key) => values[key])
     .find((value) => String(value || "").trim());
-  return resolveDefaultLanguageFromNationality(String(nationality || ""));
+  return String(nationality || "").trim();
 }

@@ -91,7 +91,7 @@ src/
       WorkHeader.svelte
       TemplateList.svelte
       SettingsPanel.svelte
-      RoomBottomBar.svelte
+      RoomsSettingsBar.svelte
       LaundryPanel.svelte
       OtaReservationPanel.svelte
 ```

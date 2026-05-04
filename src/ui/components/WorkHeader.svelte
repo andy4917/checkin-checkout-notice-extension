@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { Language } from "../../types.js";
+  import type { Language, PmsGuestRecord } from "../../types.js";
   import type { MenuId, MenuItem } from "../../catalog/menu-routing.js";
   import type { TemplateDefinition } from "../../catalog/template-types.js";
+  import { readNationalityFromFields } from "../../domain/language.js";
   import * as LanguageSegmentedControlModule from "./LanguageSegmentedControl.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
@@ -14,6 +15,7 @@
   export let navigationLocked: boolean;
   export let selectedLanguage: Language;
   export let selectedMenu: MenuItem | null;
+  export let selectedPmsRecord: PmsGuestRecord | null;
   export let showWingsStatus: boolean;
   export let wingsConnected: boolean;
   export let hasAnyTemplateForLanguage: (
@@ -24,6 +26,13 @@
   export let onSelectLanguage: (language: Language) => void;
 
   $: workIconName = selectedMenu?.home?.icon || "design_services";
+  $: selectedRoomLabel = selectedPmsRecord?.displayRoom || selectedPmsRecord?.roomNo || "";
+  $: selectedGuestLabel = selectedPmsRecord?.guestName || "";
+  $: selectedNationalityLabel = selectedPmsRecord
+    ? readNationalityFromFields(selectedPmsRecord.raw)
+    : "";
+  $: roomContextLabel = selectedRoomLabel || "객실 미선택";
+  $: roomContextMeta = [selectedGuestLabel, selectedNationalityLabel].filter(Boolean).join(" · ");
 </script>
 
 <section class="work-header">
@@ -37,7 +46,10 @@
     >
       <MaterialIcon name="arrow_back" size={20} />
     </button>
-    <h1>{selectedMenu?.title}</h1>
+    <h1>
+      <MaterialIcon name={workIconName} size={18} filled />
+      <span>{selectedMenu?.title}</span>
+    </h1>
     <button
       class="work-nav-button"
       type="button"
@@ -50,11 +62,11 @@
   </div>
 
   <div class="work-context-row">
-    <span class="work-icon" aria-hidden="true">
-      <MaterialIcon name={workIconName} size={22} filled />
-    </span>
-    <div class="work-title-copy">
-      <h2>{selectedMenu?.title}</h2>
+    <div class:empty={!selectedPmsRecord} class="work-title-copy">
+      <h2>{showWingsStatus ? roomContextLabel : selectedMenu?.title}</h2>
+      {#if showWingsStatus && roomContextMeta}
+        <span>{roomContextMeta}</span>
+      {/if}
     </div>
     {#if showWingsStatus}
       <div

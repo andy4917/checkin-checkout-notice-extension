@@ -19,16 +19,7 @@
   export let currentWorkContext: () => WorkContext;
   export let onCopyTemplate: (template: TemplateDefinition) => void | Promise<void>;
   export let onSelectGuidanceTemplate: (templateId: string) => void;
-  export let onTemplateVariableInput: (
-    templateId: string,
-    variableName: string,
-    event: Event,
-  ) => void;
-  export let templateInputValue: (template: TemplateDefinition, variableName: string) => string;
   export let templateSummary: (template: TemplateDefinition) => string;
-  export let visibleTemplateVariables: (
-    template: TemplateDefinition,
-  ) => TemplateDefinition["variables"];
 
   function templateIcon(template: TemplateDefinition) {
     return (template as TemplateDefinition & { icon: string }).icon;
@@ -47,7 +38,6 @@
 <section class="customer-guidance-list" aria-label="고객 안내문 목록">
   {#each activeTemplates as template}
     {@const selected = selectedGuidanceTemplateId === template.id}
-    {@const variables = visibleTemplateVariables(template)}
     {@const copyEnabled = canCopy(template)}
     <article
       class:blocked={!copyEnabled}
@@ -80,20 +70,6 @@
       >
         <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={20} />
       </button>
-      {#if selected && variables.length > 0}
-        <div class="customer-guidance-fields">
-          {#each variables as variable}
-            <label>
-              <span>{variable.label}</span>
-              <input
-                name={`${template.id}-${variable.name}`}
-                value={templateInputValue(template, variable.name)}
-                oninput={(event) => onTemplateVariableInput(template.id, variable.name, event)}
-              />
-            </label>
-          {/each}
-        </div>
-      {/if}
     </article>
   {/each}
 </section>
