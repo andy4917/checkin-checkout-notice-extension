@@ -42,7 +42,7 @@
     <div>
       <p class="eyebrow">세탁물</p>
       <h2>
-        <MaterialIcon name="local_laundry_service" size={19} filled />
+        <MaterialIcon name="local_laundry_service" size={19} />
         세탁물 기록
       </h2>
     </div>

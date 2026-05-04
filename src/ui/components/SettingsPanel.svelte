@@ -52,7 +52,7 @@
 <section class="settings-panel">
   <div class="settings-hero">
     <span aria-hidden="true">
-      <MaterialIcon name="design_services" size={24} filled />
+      <MaterialIcon name="design_services" size={24} />
     </span>
     <div>
       <p class="eyebrow">템플릿 설정</p>

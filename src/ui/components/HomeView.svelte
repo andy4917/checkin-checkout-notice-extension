@@ -24,7 +24,7 @@
             onclick={() => openMenu(menu.id)}
           >
             <span class="priority-icon" aria-hidden="true">
-              <MaterialIcon name={menu.home?.icon || menu.icon} size={32} filled />
+              <MaterialIcon name={menu.home?.icon || menu.icon} size={32} />
             </span>
             <span class="menu-text">
               <strong>{menu.home?.title || menu.title}</strong>

@@ -169,9 +169,29 @@ test("PMS work menus expose WINGS status without broad automation buttons", () =
   assert.match(sidePanel, /hasWingsPmsContext/);
   assert.doesNotMatch(sidePanel, /RoomBottomBar|roomBottomMode|room-bottom-bar/);
   assert.doesNotMatch(css, /room-bottom-bar|selected-room-overlay|roomBottomMode/);
-  assert.match(workHeader, /<MaterialIcon name=\{workIconName\} size=\{18\} filled \/>/);
+  assert.match(workHeader, /<MaterialIcon name=\{workIconName\} size=\{18\} \/>/);
+  assert.doesNotMatch(workHeader, /filled/);
   assert.doesNotMatch(workHeader, /작업 메뉴|selectedMenu\?\.description|work-context-card|<h2>\{selectedMenu\?\.title\}<\/h2>/);
   assert.doesNotMatch(workHeader, /debug-panel|console|trace/i);
+});
+
+test("UI icons use outlined material style consistently", () => {
+  const componentSources = [
+    read("src/ui/components/CustomerGuidancePanel.svelte"),
+    read("src/ui/components/HomeView.svelte"),
+    read("src/ui/components/LaundryPanel.svelte"),
+    read("src/ui/components/OtaReservationPanel.svelte"),
+    read("src/ui/components/SettingsPanel.svelte"),
+    read("src/ui/components/TemplateList.svelte"),
+    read("src/ui/components/WorkHeader.svelte"),
+  ].join("\n");
+  const materialIcon = read("src/ui/components/MaterialIcon.svelte");
+  const css = read("styles/sidepanel.css");
+
+  assert.doesNotMatch(componentSources, /<MaterialIcon[^>]*\sfilled\b/);
+  assert.doesNotMatch(materialIcon, /export let filled|--icon-fill/);
+  assert.match(css, /"FILL"\s*0,/);
+  assert.doesNotMatch(css, /--icon-fill/);
 });
 
 test("status text is not rendered as a card or generic instruction block", () => {

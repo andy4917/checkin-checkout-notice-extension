@@ -47,7 +47,7 @@
       <MaterialIcon name="arrow_back" size={20} />
     </button>
     <h1>
-      <MaterialIcon name={workIconName} size={18} filled />
+      <MaterialIcon name={workIconName} size={18} />
       <span>{selectedMenu?.title}</span>
     </h1>
     <button

@@ -20,7 +20,7 @@
     <div>
       <p class="eyebrow">OTA</p>
       <h2>
-        <MaterialIcon name="travel_explore" size={19} filled />
+        <MaterialIcon name="travel_explore" size={19} />
         네이버/스테이션 예약 입력
       </h2>
     </div>

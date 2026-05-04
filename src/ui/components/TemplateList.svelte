@@ -53,7 +53,7 @@
     {@const languageAvailable = isLanguageAvailable(template)}
     <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
       <span class="template-card-icon" aria-hidden="true">
-        <MaterialIcon name={templateIcon(template)} size={22} filled />
+        <MaterialIcon name={templateIcon(template)} size={22} />
       </span>
       <div class="template-main">
         <div class="template-meta">
