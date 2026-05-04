@@ -14,6 +14,8 @@
   export let navigationLocked: boolean;
   export let selectedLanguage: Language;
   export let selectedMenu: MenuItem | null;
+  export let showWingsStatus: boolean;
+  export let wingsConnected: boolean;
   export let hasAnyTemplateForLanguage: (
     templates: readonly TemplateDefinition[],
     language: Language,
@@ -47,16 +49,23 @@
     </button>
   </div>
 
-  <div class="work-context-card">
+  <div class="work-context-row">
     <span class="work-icon" aria-hidden="true">
       <MaterialIcon name={workIconName} size={22} filled />
     </span>
     <div class="work-title-copy">
-      <p class="eyebrow">작업 메뉴</p>
       <h2>{selectedMenu?.title}</h2>
-      <span>{selectedMenu?.description}</span>
     </div>
-    {#if activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT"}
+    {#if showWingsStatus}
+      <div
+        class:connected={wingsConnected}
+        class="wings-status-pill"
+        aria-label={wingsConnected ? "WINGS 연결됨" : "WINGS 연결 안됨"}
+      >
+        <i aria-hidden="true"></i>
+        <span>WINGS</span>
+      </div>
+    {:else if activeMenu !== "SETTINGS" && activeMenu !== "OTA_RESERVATION_INPUT"}
       <div class="work-count" aria-label="템플릿 수">{activeTemplates.length}개</div>
     {/if}
   </div>

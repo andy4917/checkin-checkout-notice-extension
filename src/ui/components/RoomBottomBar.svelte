@@ -9,6 +9,7 @@
   export let selectedPmsRecord: PmsGuestRecord | null;
   export let selectedPmsRecordId: string;
   export let visiblePmsRecords: PmsGuestRecord[];
+  export let recordBadgeLabel: (record: PmsGuestRecord) => string;
   export let onPmsSearchChange: (event: Event) => void;
   export let onSelectPmsMode: (mode: TabMode) => void | Promise<void>;
   export let onSelectPmsRecord: (record: PmsGuestRecord) => void;
@@ -32,6 +33,9 @@
       <strong>{selectedPmsRecord.displayRoom || selectedPmsRecord.roomNo}</strong>
       {#if selectedPmsRecord.guestName}
         <span>{selectedPmsRecord.guestName}</span>
+      {/if}
+      {#if recordBadgeLabel(selectedPmsRecord)}
+        <em>{recordBadgeLabel(selectedPmsRecord)}</em>
       {/if}
     </aside>
   {/if}
@@ -95,6 +99,7 @@
         <article class="pms-record empty">객실을 불러오세요.</article>
       {:else}
         {#each visiblePmsRecords as record}
+          {@const badgeLabel = recordBadgeLabel(record)}
           <button
             class:active={selectedPmsRecordId === record.id}
             class="pms-record pms-record-button"
@@ -105,6 +110,9 @@
               <strong>{record.displayRoom || record.roomNo}</strong>
               {#if record.guestName}
                 <span>{record.guestName}</span>
+              {/if}
+              {#if badgeLabel}
+                <em>{badgeLabel}</em>
               {/if}
             </div>
             <div>

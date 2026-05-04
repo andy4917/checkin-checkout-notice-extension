@@ -50,14 +50,19 @@
       navigationLocked={controller.navigationLocked}
       selectedLanguage={controller.selectedLanguage}
       selectedMenu={controller.selectedMenu}
+      showWingsStatus={controller.activeMenu !== "SETTINGS" &&
+        controller.activeMenu !== "OTA_RESERVATION_INPUT"}
+      wingsConnected={controller.hasWingsPmsContext}
       hasAnyTemplateForLanguage={controller.hasAnyTemplateForLanguage}
       onGoHome={controller.goHome}
       onSelectLanguage={controller.handleLanguageSelect}
     />
 
-    <section class="status-bar" aria-live="polite">
-      {controller.statusMessage}
-    </section>
+    {#if controller.statusMessage}
+      <section class="status-bar" aria-live="polite">
+        {controller.statusMessage}
+      </section>
+    {/if}
 
     {#if controller.activeMenu === "SETTINGS"}
       <SettingsPanel
@@ -155,6 +160,7 @@
       selectedPmsRecord={controller.selectedPmsRecord}
       selectedPmsRecordId={controller.selectedPmsRecordId}
       visiblePmsRecords={controller.visiblePmsRecords}
+      recordBadgeLabel={controller.pmsRecordBadgeLabel}
       onPmsSearchChange={controller.handlePmsSearchChange}
       onSelectPmsMode={controller.selectPmsMode}
       onSelectPmsRecord={controller.choosePmsRecord}
@@ -163,7 +169,8 @@
   {/if}
 
   <RoomsSettingsBar
-    footerActions={controller.homeFooterActions}
+    footerActions={controller.roomsSettingsActions}
     onOpenMenu={controller.openMenu}
+    onRunCommand={controller.runRoomsSettingsCommand}
   />
 </main>

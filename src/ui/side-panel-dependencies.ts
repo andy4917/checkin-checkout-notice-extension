@@ -1,6 +1,8 @@
 import {
   fetchActiveOtaPayload,
   fillActiveWingsReservationForm,
+  readActiveWingsRemark,
+  writeActiveWingsRemark,
 } from "../platform/active-tab-automation.js";
 import {
   readExtensionStateWithRecovery,
@@ -22,7 +24,12 @@ const chromeLocalStorageArea: ChromeStorageArea = Object.freeze({
   },
 });
 
+const localMemoryStorageArea: ChromeStorageArea = createLocalMemoryStorageArea();
+
 const browserPmsFetch: PmsFetch = (input, init) => fetch(input, init);
+const runtimeStorageArea = globalThis.chrome?.storage?.local
+  ? chromeLocalStorageArea
+  : localMemoryStorageArea;
 
 export const browserSidePanelDependencies: SidePanelControllerDependencies = Object.freeze({
   clipboard: Object.freeze({
@@ -32,17 +39,17 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
   }),
   extensionState: Object.freeze({
     readWithRecovery() {
-      return readExtensionStateWithRecovery(chromeLocalStorageArea);
+      return readExtensionStateWithRecovery(runtimeStorageArea);
     },
     setLastBranchId(branchId: BranchId) {
-      return setLastBranchId(branchId, chromeLocalStorageArea);
+      return setLastBranchId(branchId, runtimeStorageArea);
     },
     write(state: StoredExtensionState) {
-      return writeExtensionState(state, chromeLocalStorageArea);
+      return writeExtensionState(state, runtimeStorageArea);
     },
   }),
   laundry: Object.freeze({
-    storageArea: chromeLocalStorageArea,
+    storageArea: runtimeStorageArea,
   }),
   ota: Object.freeze({
     fetchPayload: fetchActiveOtaPayload,
@@ -50,6 +57,10 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
   }),
   pms: Object.freeze({
     fetchImpl: browserPmsFetch,
+  }),
+  wingsRemark: Object.freeze({
+    readRemark: readActiveWingsRemark,
+    writeRemark: writeActiveWingsRemark,
   }),
   tabContext: Object.freeze({
     getActiveTabContext,
@@ -60,3 +71,15 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
     },
   }),
 });
+
+function createLocalMemoryStorageArea(): ChromeStorageArea {
+  let state: Record<string, unknown> = {};
+  return Object.freeze({
+    async get(keys: string[]) {
+      return Object.fromEntries(keys.map((key) => [key, state[key]]));
+    },
+    async set(values: Record<string, unknown>) {
+      state = { ...state, ...values };
+    },
+  });
+}

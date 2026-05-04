@@ -36,7 +36,7 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 | Concern | Source | Frontend rule |
 | --- | --- | --- |
 | Branches | `src/config/branches.ts` | Render options from `getBranchOptions()`. Do not hardcode PMS codes in UI. |
-| Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, and tabs from routing/catalog data. Do not add home-only menu contracts. |
+| Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, home presentation, and bottom-bar actions from routing/catalog data. Do not add component-owned menu contracts. |
 | Template catalog | `src/catalog/template-catalog.ts` | Use `UNIFIED_TEMPLATE_CATALOG`, `applyStoredUnifiedTemplateState()`, and `scopeUnifiedTemplateForBranch()`. |
 | Template rendering | `src/catalog/template-renderer.ts` | Use renderer output for copy text. Do not interpolate template strings inside components. |
 | PMS sync | `src/application/sync-guests.ts`, `src/ui/side-panel-dependencies.ts` | Call `syncGuests({ date, mode, branchId, searchTerm, fetchImpl })` through injected PMS dependencies. |
@@ -47,6 +47,70 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 
 Any new frontend state should be derived from these contracts or stored explicitly through the existing storage schema. Avoid local shadow constants for branch IDs, menu category membership, OTA field rules, PMS field names, or storage recovery policy.
 
+## Rooms & Settings Backend Design
+
+`Rooms & Settings` is a persistent bottom-sheet launcher. The current frontend only exposes the minimal settings action; the next backend work must provide a real action model before additional bottom-bar UI is added.
+
+Backend-owned action source:
+
+- define bottom-bar actions in `src/catalog/menu-routing.ts`, not in Svelte components
+- keep `HomeQuickAction.menuId` required for direct menu actions
+- add a separate discriminated action type before supporting non-menu actions
+- never represent unsupported actions with disabled placeholder UI
+- do not add `WINGS LOGIN`, light mode, dark mode, or demo actions unless there is a real backend contract
+
+Recommended action model:
+
+```ts
+type RoomsSettingsAction =
+  | {
+      kind: "menu";
+      id: string;
+      label: string;
+      icon: string;
+      menuId: MenuId;
+    }
+  | {
+      kind: "command";
+      id: string;
+      label: string;
+      icon: string;
+      commandId: RoomsSettingsCommandId;
+      requiresBranch?: boolean;
+      requiresPmsRecord?: boolean;
+    };
+```
+
+Command actions must be backed by application functions before appearing in the UI. A command cannot be added as a visual-only stub.
+
+Backend responsibilities for bottom-bar commands:
+
+- resolve available actions from current state: selected branch, active menu, selected PMS record, storage state, and navigation lock
+- expose each action's enabled/disabled state and concise disabled reason
+- execute commands through `src/ui/side-panel-dependencies.ts` or application modules, not through direct browser/global imports in components
+- return operational result messages for the existing status surface
+- keep storage mutations explicit through `src/platform/chrome-storage.ts`
+- keep WINGS/PMS/OTA side effects behind existing application/platform boundaries
+- expose the room-remark WINGS command only after a supported room remark template has been selected
+
+Suggested module split:
+
+| Concern | Owner | Rule |
+| --- | --- | --- |
+| Action inventory | `src/catalog/menu-routing.ts` | Static labels, icons, menu destinations, command IDs. |
+| State availability | `src/ui/rooms-settings-actions.ts` | Pure resolver from controller state to visible actions. |
+| Command execution | `src/application/wings-remark.ts` or another focused workflow module | Real behavior only; no fake success and no silent fallback. |
+| Dependency access | `src/ui/side-panel-dependencies.ts` | All Chrome, clipboard, storage, active-tab, and fetch access enters here. |
+| UI rendering | `src/ui/components/RoomsSettingsBar.svelte` | Render provided actions and invoke callbacks only. |
+
+Required backend validation before adding bottom-bar features:
+
+- `npm run typecheck`
+- `npm test`
+- a contract test proving unsupported actions are absent
+- a failure-path test for each command's missing requirement, such as no branch or no selected PMS record
+- a UI contract test proving the bottom bar does not contain placeholder text such as `연결된 동작 없음`, `대기`, `Light`, `Dark`, or `Wings Login`
+
 ## Menu UX Structure
 
 The home state is a dense operations menu with no extra explanatory section.
@@ -54,22 +118,29 @@ The home state is a dense operations menu with no extra explanatory section.
 Required top-level groups:
 
 - `고객 커뮤니케이션`
-- `운영 관리`
-- `보고`
+- `고객 서비스 관리`
+- `업무 관리`
 - `설정`
 
 Required menu items are owned by `menuGroups` and `settingsMenu`:
 
+1.
 - 고객 안내문
 - 빠른 문의 답변
+2.
 - 세탁물 관리
-- 매출 관리
-- 객실 리마크 & 메모
+- 공항밴 관리
+- 매지출 관리
+3.
+- 객실 정보 메모
 - OTA 예약 입력
-- 업무보고 생성
+- 업무 관리
+4.
 - 설정
 
 The frontend may visually arrange the groups, but must not route by title/body text heuristics. All menu membership must come from catalog metadata: `menuId`, `typeId`, `branchScope`, `requiresContext`, and `audience`.
+
+Menu-internal filtering tabs are not part of the current product contract. Do not reintroduce `전체`, `안내문`, `WINGS`, or similar tab filters unless a backend-owned action/filter model is added first.
 
 ## OTA Reservation Input UX
 
@@ -122,7 +193,7 @@ PMS data exists to support copy/remark workflows. It is not a full PMS browser.
 
 Required controls:
 
-- branch select in the persistent header
+- branch trigger in the persistent header, opening the branch picker sheet
 - arrival/departure segmented control
 - search input
 - sync button
@@ -142,7 +213,33 @@ Each PMS record row should prioritize:
 - status if present
 - departure date if present
 
+For PMS-backed menu screens, the work header may show a compact `WINGS` status dot:
+
+- green when the current active tab is a WINGS PMS or reservation record context
+- red when the current active tab is not a WINGS PMS context
+- no card, pill surface, debug text, logs, or explanatory status panel
+
+When a PMS record is selected, the default language should follow guest nationality. Supported nationalities map to `KO`, `EN`, `JP`, or `CN`; unsupported or missing nationalities default to `EN`, with existing template-language availability fallback still applied.
+
 Do not add broad data grids unless there is a direct workflow reason. The side panel should remain quick to scan.
+
+## Airport Van And Sales Management
+
+Airport van and sales management are copy-form workflows, not browser automation workflows.
+
+- do not add WINGS, PMS, OTA, or external-system automatic input for these menus
+- airport van may display lightweight PMS-derived badges only: `체크인 공항 픽업` for arrival mode and `내일 체크아웃 공항 샌딩` for departure mode
+- sales management remains template-copy only until a real storage/application contract is added
+
+## Room Remark Input
+
+Room information memo supports WINGS remark upsert only through the active WINGS reservation information window.
+
+- use `src/domain/remarks.ts` for remark line formatting and upsert rules
+- use `src/application/wings-remark.ts` for the read/upsert/write workflow
+- use `src/platform/active-tab-automation.ts` through `src/ui/side-panel-dependencies.ts` for active-tab scripting
+- when the active tab is not the WINGS reservation information window, fail with `WINGS 예약정보창을 연 뒤 다시 실행해주세요.`
+- do not call reservation creation fill logic or WINGS save behavior for room remarks
 
 ## Template And Copy UX
 
@@ -204,22 +301,62 @@ Apply the `minimalist-ui` direction as a compact operational variant:
 - controls radius: 4px to 6px
 - no gradients
 - no heavy shadows
-- no large blue/purple theme
+- no large purple theme
 - no rounded-full large containers
 - no emojis
 - no generic placeholder names or sample customer data
 
 Use plain operational Korean labels. Avoid marketing copy and AI-style phrasing.
 
-Icons should be quiet and functional. If the dependency is added later, prefer Radix or Phosphor icons. Until then, use minimal text/symbol controls only where they are already catalog-owned, and avoid decorative iconography.
+Icons should be quiet and functional. Use Material Symbols through the shared icon component, and avoid per-menu custom SVGs or decorative iconography.
+
+## Frontend Unity And UX Rules
+
+Use the current home screen as the visual baseline for all menus.
+
+Shared interaction rules:
+
+- card default state is neutral; selection state receives the color emphasis
+- hover may darken the surface slightly, but must not change layout size
+- press feedback uses subtle `scale(0.96)` for buttons and compact controls
+- enter/exit motion uses only `opacity` and `transform`
+- pull-up and popup surfaces use short, interruptible transitions
+- do not use `transition: all`
+- use `will-change` only for `transform` and `opacity`
+
+Shared surface rules:
+
+- cards and popup surfaces use consistent radius and spacing
+- icon buttons are at least 40px by 40px and center icons with grid/place-items
+- Material Symbols icons must be rendered through the shared icon component
+- do not create per-menu custom icons or ad hoc SVGs
+- shadows are light and functional; do not create heavy floating panels
+- do not put cards inside cards
+
+Shared navigation rules:
+
+- menu screens use the same compact topbar with small back and home icon buttons
+- top header keeps center breathing room; do not fill it with transient room text
+- selected PMS room identity appears above the room bottom bar, not inside the top header
+- branch selection opens a selection sheet/popup, not a dropdown
+- language selection is a segmented bar, not a dropdown
+- settings may keep data-management selects for template/category/audience/context, but language must remain segmented
+
+Shared copy rules:
+
+- use operational Korean labels
+- do not add explanatory tutorial copy inside the app
+- `Rooms & Settings` remains the bottom-bar product label
+- WINGS text appears only where the workflow actually touches WINGS/PMS/OTA behavior
+- do not add placeholder guest, room, branch, action, or command labels
 
 ## Layout Specification
 
 Side panel shell:
 
-- sticky or persistent top header with logo, branch select, and back/menu control when inside a menu
+- sticky or persistent top header with logo, branch trigger, and back/menu control when inside a menu
 - main content with 12px to 16px side padding
-- one primary status surface under the work header
+- status text appears only for real operation results or blocking errors, and must not be rendered as a card
 - one active work panel at a time
 - avoid nested cards
 
@@ -233,7 +370,8 @@ Home:
 Work menu:
 
 - header row: menu identity, return action
-- secondary controls: language selector, count, tabs when applicable
+- compact context row only; do not add a large menu-introduction card or generic explanation copy
+- secondary controls: language selector and count when applicable
 - work-specific panel: PMS list or OTA preview
 - template list below for template menus
 
@@ -258,6 +396,7 @@ Status:
 - one short line or compact block
 - no persistent debug logs
 - no trace details unless the user explicitly asks for diagnostics
+- no details of what this menu or options do.
 
 Motion:
 
@@ -269,8 +408,8 @@ Accessibility:
 
 - all actionable buttons need clear labels or `aria-label`
 - status surface uses `aria-live="polite"`
-- tabs use `role="tablist"` and `aria-selected`
-- branch select has an accessible label
+- segmented controls use `aria-pressed` or equivalent selected-state semantics
+- branch trigger and branch picker have accessible labels
 - disabled reasons must be visible through the nearby status or guard message
 
 ## Prohibited Frontend Patterns

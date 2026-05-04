@@ -50,3 +50,26 @@ export function resolveLanguageFromNationality(nationality: string | null | unde
   if (CHINESE_NATIONALITIES.has(normalized)) return "CN";
   return null;
 }
+
+export function resolveDefaultLanguageFromNationality(
+  nationality: string | null | undefined,
+): Language {
+  return resolveLanguageFromNationality(nationality) || "EN";
+}
+
+export function resolveDefaultLanguageFromNationalityFields(
+  values: Record<string, unknown>,
+): Language {
+  const nationality = [
+    "NAT_CODE",
+    "NATL_CODE",
+    "NATIONALITY",
+    "NATION",
+    "COUNTRY",
+    "COUNTRY_CODE",
+    "국적",
+  ]
+    .map((key) => values[key])
+    .find((value) => String(value || "").trim());
+  return resolveDefaultLanguageFromNationality(String(nationality || ""));
+}

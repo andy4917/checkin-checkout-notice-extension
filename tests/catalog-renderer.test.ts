@@ -17,7 +17,11 @@ import {
   getWorkflowTemplate,
   getWorkflowTemplatesByCategory,
 } from "../src/catalog/workflow-catalog.js";
-import { resolveLanguageFromNationality } from "../src/domain/language.js";
+import {
+  resolveDefaultLanguageFromNationality,
+  resolveDefaultLanguageFromNationalityFields,
+  resolveLanguageFromNationality,
+} from "../src/domain/language.js";
 import {
   createRemarkLine,
   getBuiltInRemarkType,
@@ -214,4 +218,7 @@ test("nationality mapping returns only supported template languages", () => {
   assert.equal(resolveLanguageFromNationality("Japan"), "JP");
   assert.equal(resolveLanguageFromNationality("China"), "CN");
   assert.equal(resolveLanguageFromNationality("Brazil"), null);
+  assert.equal(resolveDefaultLanguageFromNationality("Brazil"), "EN");
+  assert.equal(resolveDefaultLanguageFromNationalityFields({ NATL_CODE: "JPN" }), "JP");
+  assert.equal(resolveDefaultLanguageFromNationalityFields({ COUNTRY: "Unknown" }), "EN");
 });

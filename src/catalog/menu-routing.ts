@@ -36,11 +36,27 @@ export type HomeMenuSection = {
 };
 
 export type HomeQuickAction = {
+  kind: "menu";
   id: string;
   label: string;
   icon: string;
   menuId: MenuId;
 };
+
+export type RoomsSettingsCommandId = "UPSERT_WINGS_REMARK";
+
+export type RoomsSettingsCommandAction = {
+  kind: "command";
+  id: string;
+  label: string;
+  icon: string;
+  commandId: RoomsSettingsCommandId;
+  requiresBranch?: boolean;
+  requiresPmsRecord?: boolean;
+  requiresWingsReservationWindow?: boolean;
+};
+
+export type RoomsSettingsAction = HomeQuickAction | RoomsSettingsCommandAction;
 
 export class MenuRoutingError extends Error {
   constructor(message: string) {
@@ -196,10 +212,24 @@ const HOME_SECTION_LABELS: Readonly<Record<HomeMenuSectionId | "settings", strin
 
 export const homeQuickActions: readonly HomeQuickAction[] = Object.freeze([
   Object.freeze({
+    kind: "menu",
     id: "settings",
     label: "설정",
     icon: "settings",
     menuId: "SETTINGS",
+  }),
+]);
+
+export const roomsSettingsActions: readonly RoomsSettingsAction[] = Object.freeze([
+  ...homeQuickActions,
+  Object.freeze({
+    kind: "command",
+    id: "upsert-wings-remark",
+    label: "리마크 입력",
+    icon: "edit_note",
+    commandId: "UPSERT_WINGS_REMARK",
+    requiresPmsRecord: true,
+    requiresWingsReservationWindow: true,
   }),
 ]);
 
