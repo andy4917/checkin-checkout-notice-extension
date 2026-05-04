@@ -25,7 +25,6 @@
   export let onGoHome: () => void;
   export let onSelectLanguage: (language: Language) => void;
 
-  $: workIconName = selectedMenu?.home?.icon || "design_services";
   $: selectedRoomLabel = selectedPmsRecord?.displayRoom || selectedPmsRecord?.roomNo || "";
   $: selectedGuestLabel = selectedPmsRecord?.guestName || "";
   $: selectedNationalityLabel = selectedPmsRecord
@@ -46,10 +45,7 @@
     >
       <MaterialIcon name="arrow_back" size={20} />
     </button>
-    <h1>
-      <MaterialIcon name={workIconName} size={18} />
-      <span>{selectedMenu?.title}</span>
-    </h1>
+    <div class="work-topbar-spacer" aria-hidden="true"></div>
     <button
       class="work-nav-button"
       type="button"

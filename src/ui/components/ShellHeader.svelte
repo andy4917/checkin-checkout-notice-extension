@@ -8,16 +8,25 @@
     headerLabel?: string;
     locationLabel?: string;
   }>;
+  export let activeMenuIcon: string | null = null;
+  export let activeMenuTitle: string | null = null;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
   export let onBranchChange: (event: Event) => void;
 
   const MaterialIcon = MaterialIconModule.default;
   const logoUrl = new URL("../../assets/logo.png", import.meta.url).href;
+  const branchLogoUrls: Record<BranchId, string> = {
+    coex: new URL("../../assets/logo-coex.png", import.meta.url).href,
+    gangnam: new URL("../../assets/logo-gangnam.png", import.meta.url).href,
+    seolleung: new URL("../../assets/logo-seolleung.png", import.meta.url).href,
+  };
   let branchPanelOpen = false;
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
   $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "지점";
+  $: workMode = Boolean(activeMenuTitle);
+  $: activeLogoUrl = workMode && selectedBranchId ? branchLogoUrls[selectedBranchId] : logoUrl;
   $: headerDate = formatHeaderDate(new Date());
 
   function toggleBranchPanel() {
@@ -41,10 +50,11 @@
   }
 </script>
 
-<header class="app-header">
+<header class:work-mode={workMode} class="app-header">
   <div class="header-left-lockup">
-    <img class="brand-logo" src={logoUrl} alt="UH Suite" />
+    <img class="brand-logo" src={activeLogoUrl} alt="UH Suite" />
 
+    {#if !workMode}
     <div class="branch-selector">
       <button
         class:unselected={!selectedBranch}
@@ -61,9 +71,19 @@
         </span>
       </button>
     </div>
+    {/if}
   </div>
 
-  <div class="header-room-slot" aria-hidden="true"></div>
+  <div class="header-room-slot">
+    {#if activeMenuTitle}
+      <h1 class="app-header-title">
+        {#if activeMenuIcon}
+          <MaterialIcon name={activeMenuIcon} size={16} />
+        {/if}
+        <span>{activeMenuTitle}</span>
+      </h1>
+    {/if}
+  </div>
 
   <div class="header-date" aria-label="오늘 날짜">
     <span>{headerDate}</span>

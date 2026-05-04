@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 function read(path: string) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -38,6 +39,8 @@ test("language selection is a segmented bar, not a dropdown", () => {
   assert.match(workHeader, /LanguageSegmentedControl/);
   assert.match(settingsPanel, /LanguageSegmentedControl/);
   assert.match(languageControl, /class="language-segmented"/);
+  assert.doesNotMatch(languageControl, />언어</);
+  assert.match(languageControl, /aria-label="언어 선택"/);
   assert.match(uiOptions, /label: "KR"/);
   assert.match(uiOptions, /label: "CH"/);
   const languageBarRule = cssRule(css, ".language-segmented");
@@ -49,6 +52,8 @@ test("language selection is a segmented bar, not a dropdown", () => {
   assert.match(languageButtonRule, /min-height:\s*24px;/);
   assert.match(languageButtonRule, /font-size:\s*12px;/);
   assert.match(activeLanguageRule, /background:\s*#fff;/);
+  const languageControlRule = cssRule(css, ".language-control");
+  assert.match(languageControlRule, /gap:\s*0;/);
 
   for (const source of [workHeader, settingsPanel, languageControl]) {
     assert.doesNotMatch(source, /template-language|settings-language/);
@@ -169,10 +174,32 @@ test("PMS work menus expose WINGS status without broad automation buttons", () =
   assert.match(sidePanel, /hasWingsPmsContext/);
   assert.doesNotMatch(sidePanel, /RoomBottomBar|roomBottomMode|room-bottom-bar/);
   assert.doesNotMatch(css, /room-bottom-bar|selected-room-overlay|roomBottomMode/);
-  assert.match(workHeader, /<MaterialIcon name=\{workIconName\} size=\{18\} \/>/);
+  assert.match(workHeader, /work-topbar-spacer/);
+  assert.doesNotMatch(workHeader, /<h1>|workIconName/);
   assert.doesNotMatch(workHeader, /filled/);
   assert.doesNotMatch(workHeader, /작업 메뉴|selectedMenu\?\.description|work-context-card|<h2>\{selectedMenu\?\.title\}<\/h2>/);
   assert.doesNotMatch(workHeader, /debug-panel|console|trace/i);
+});
+
+test("work screens use branch logo and centered top header menu title", () => {
+  const shellHeader = read("src/ui/components/ShellHeader.svelte");
+  const sidePanel = read("src/ui/components/SidePanelView.svelte");
+  const css = read("styles/sidepanel.css");
+
+  for (const branchId of ["coex", "gangnam", "seolleung"]) {
+    assert.ok(existsSync(new URL(`../src/assets/logo-${branchId}.png`, import.meta.url)));
+    assert.match(shellHeader, new RegExp(`logo-${branchId}\\.png`));
+  }
+
+  assert.match(sidePanel, /activeMenuTitle=\{controller\.selectedMenu\?\.title \|\| null\}/);
+  assert.match(sidePanel, /activeMenuIcon=\{controller\.selectedMenu\?\.home\?\.icon \|\| null\}/);
+  assert.match(shellHeader, /class:work-mode=\{workMode\}/);
+  assert.match(shellHeader, /class="app-header-title"/);
+  assert.match(shellHeader, /activeLogoUrl = workMode && selectedBranchId/);
+  assert.match(shellHeader, /\{#if !workMode\}/);
+  assert.match(css, /\.app-header\.work-mode/);
+  assert.match(css, /\.app-header-title/);
+  assert.match(css, /\.app-header\.work-mode \.brand-logo/);
 });
 
 test("UI icons use outlined material style consistently", () => {

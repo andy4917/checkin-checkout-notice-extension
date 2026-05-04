@@ -352,7 +352,8 @@ Shared surface rules:
 Shared navigation rules:
 
 - menu screens use the same compact topbar with small back and home icon buttons
-- top header keeps center breathing room; the menu title appears once with its catalog icon beside it
+- top header keeps center breathing room; the active menu title appears once in the top header center with its catalog icon beside it
+- home uses the base UH SUITE logo; work screens use the selected branch logo asset after a branch is selected
 - the lower context row owns PMS room context and stays centered below the menu title
 - selected PMS room identity is not rendered in a separate bottom bar; show room number, reserver name, and nationality only in the centered context row
 - when no PMS room is selected, the room context text is `객실 미선택` in a muted gray tone

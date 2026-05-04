@@ -28,6 +28,8 @@
   class="app-shell"
 >
   <ShellHeader
+    activeMenuIcon={controller.selectedMenu?.home?.icon || null}
+    activeMenuTitle={controller.selectedMenu?.title || null}
     branchOptions={controller.branchOptions}
     navigationLocked={controller.navigationLocked}
     selectedBranchId={controller.selectedBranchId}
