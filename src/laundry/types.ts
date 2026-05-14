@@ -1,5 +1,7 @@
 import type { BranchId } from "../types.js";
 
+export type LaundryMachineType = "WASHER" | "DRYER";
+
 export type LaundryStatus =
   | "RECEIVED"
   | "IN_PROGRESS"
@@ -16,6 +18,7 @@ export type LaundryRecord = {
   status: LaundryStatus;
   itemSummary: string;
   note: string;
+  machineType?: LaundryMachineType;
   receivedAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -30,6 +33,7 @@ export type LaundryRecordDraft = {
   displayRoom: string;
   itemSummary: string;
   note?: string;
+  machineType?: LaundryMachineType;
   sourcePmsGuestId?: string;
 };
 

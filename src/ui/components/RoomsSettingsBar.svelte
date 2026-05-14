@@ -13,9 +13,7 @@
   let selectedFooterAction: ResolvedRoomsSettingsAction | null = null;
 
   $: footerActionTitle = selectedFooterAction?.label || "빠른 실행";
-  $: footerActionDetail =
-    selectedFooterAction?.disabledReason ||
-    (selectedFooterAction?.kind === "command" ? "WINGS에 입력" : "메뉴 열기");
+  $: footerActionDetail = selectedFooterAction?.disabledReason || selectedFooterAction?.detailLabel || "";
 
   function selectFooterAction(action: ResolvedRoomsSettingsAction) {
     selectedFooterAction = action;
@@ -102,7 +100,7 @@
         tabindex={bottomSheetOpen ? 0 : -1}
         onclick={confirmFooterAction}
       >
-        {selectedFooterAction.kind === "command" ? "실행" : "열기"}
+        {selectedFooterAction.confirmLabel}
       </button>
     </section>
   {/if}

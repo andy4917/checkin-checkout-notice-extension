@@ -1,10 +1,12 @@
 import {
   roomsSettingsActions,
-  type MenuId,
   type RoomsSettingsAction,
 } from "../catalog/menu-routing.js";
 import type { TabContext } from "../platform/tab-context.js";
 import type { BranchId, PmsGuestRecord } from "../types.js";
+import type { TemplateDefinition } from "../catalog/template-types.js";
+
+export const UNSUPPORTED_ROOMS_SETTINGS_COMMAND_MESSAGE = "지원하지 않는 실행 명령입니다.";
 
 export type ResolvedRoomsSettingsAction = RoomsSettingsAction & {
   enabled: boolean;
@@ -12,29 +14,27 @@ export type ResolvedRoomsSettingsAction = RoomsSettingsAction & {
 };
 
 export type ResolveRoomsSettingsActionsInput = {
-  activeMenu: MenuId | null;
   navigationLocked: boolean;
   selectedBranchId: BranchId | "";
   selectedPmsRecord: PmsGuestRecord | null;
-  selectedRoomRemarkTemplateId: string;
+  selectedCommandTemplate: TemplateDefinition | null;
   tabContext: TabContext;
 };
 
 export function resolveRoomsSettingsActions({
-  activeMenu,
   navigationLocked,
   selectedBranchId,
   selectedPmsRecord,
-  selectedRoomRemarkTemplateId,
+  selectedCommandTemplate,
   tabContext,
 }: ResolveRoomsSettingsActionsInput): ResolvedRoomsSettingsAction[] {
   return roomsSettingsActions
     .filter((action) => {
       if (action.kind === "menu") return true;
-      if (action.commandId === "UPSERT_WINGS_REMARK") {
-        return activeMenu === "ROOM_REMARK_MEMO" && Boolean(selectedRoomRemarkTemplateId);
+      if (action.visibleWhenSelectedTemplateAudience) {
+        return selectedCommandTemplate?.audience === action.visibleWhenSelectedTemplateAudience;
       }
-      return false;
+      return true;
     })
     .map((action) => ({
       ...action,
@@ -55,7 +55,7 @@ function resolveActionState(
   >,
 ): Pick<ResolvedRoomsSettingsAction, "enabled" | "disabledReason"> {
   if (state.navigationLocked) {
-    return { enabled: false, disabledReason: "작성 또는 설정 중에는 이동할 수 없습니다." };
+    return { enabled: false, disabledReason: "작성을 완료하고 이동해주세요." };
   }
   if (action.kind === "command") {
     if (action.requiresBranch && !state.selectedBranchId) {

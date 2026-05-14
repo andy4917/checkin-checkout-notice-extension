@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { getAvailableTemplateLanguages, hasTemplateLanguage } from "../../catalog/template-renderer.js";
+  import { hasTemplateLanguage } from "../../catalog/template-renderer.js";
   import { guardRequiredContext } from "../../application/context-guard.js";
+  import { resolveTemplateGroups } from "../../catalog/template-groups.js";
   import type { Language } from "../../types.js";
-  import type { TemplateDefinition } from "../../catalog/template-types.js";
+  import type { TemplateDefinition, UnifiedTemplateDefinition } from "../../catalog/template-types.js";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
   const MaterialIcon = MaterialIconModule.default;
@@ -12,10 +13,9 @@
     isGuestRecord: boolean;
   };
 
-  export let activeTemplates: TemplateDefinition[];
+  export let activeTemplates: UnifiedTemplateDefinition[];
   export let copiedTemplateId: string;
   export let selectedLanguage: Language;
-  export let branchScopeLabel: (template: TemplateDefinition) => string;
   export let currentWorkContext: () => WorkContext;
   export let onCopyTemplate: (template: TemplateDefinition) => void | Promise<void>;
   export let onTemplateVariableInput: (
@@ -24,8 +24,6 @@
     event: Event,
   ) => void;
   export let templateInputValue: (template: TemplateDefinition, variableName: string) => string;
-  export let templateSummary: (template: TemplateDefinition) => string;
-  export let templateTypeLabel: (template: TemplateDefinition) => string;
   export let visibleTemplateVariables: (
     template: TemplateDefinition,
   ) => TemplateDefinition["variables"];
@@ -38,60 +36,74 @@
     return hasTemplateLanguage(template, selectedLanguage);
   }
 
-  function availableLanguageLabel(template: TemplateDefinition) {
-    return getAvailableTemplateLanguages(template).join(", ");
+  function templateIcon(template: UnifiedTemplateDefinition) {
+    return template.icon;
   }
 
-  function templateIcon(template: TemplateDefinition) {
-    return (template as TemplateDefinition & { icon: string }).icon;
+  let expandedTemplateId = "";
+
+  function toggleTemplateInputs(templateId: string) {
+    expandedTemplateId = expandedTemplateId === templateId ? "" : templateId;
   }
+
+  $: templateGroups = resolveTemplateGroups(activeTemplates);
 </script>
 
 <section class="template-list" aria-label="템플릿 목록">
-  {#each activeTemplates as template}
-    {@const guard = getTemplateGuard(template)}
-    {@const languageAvailable = isLanguageAvailable(template)}
-    <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
-      <span class="template-card-icon" aria-hidden="true">
-        <MaterialIcon name={templateIcon(template)} size={22} />
-      </span>
-      <div class="template-main">
-        <div class="template-meta">
-          <span>{templateTypeLabel(template)}</span>
-          <span>{branchScopeLabel(template)}</span>
-          <span>{availableLanguageLabel(template)}</span>
-        </div>
-        <h2>{template.title}</h2>
-        <p class="template-summary">{templateSummary(template)}</p>
-        {#if !guard.ok}
-          <p class="guard-message">{guard.message}</p>
-        {:else if !languageAvailable}
-          <p class="guard-message">선택한 언어의 번역본이 없어 비활성화되었습니다.</p>
-        {/if}
-        {#if visibleTemplateVariables(template).length > 0}
-          <div class="template-variable-grid">
-            {#each visibleTemplateVariables(template) as variable}
-              <label>
-                <span>{variable.label}</span>
-                <input
-                  name={`${template.id}-${variable.name}`}
-                  value={templateInputValue(template, variable.name)}
-                  oninput={(event) => onTemplateVariableInput(template.id, variable.name, event)}
-                />
-              </label>
-            {/each}
-          </div>
-        {/if}
+  {#each templateGroups as group}
+    <section class="template-group" aria-label={group.label}>
+      <h2>{group.label}</h2>
+      <div class="template-group-list">
+        {#each group.templates as template}
+          {@const guard = getTemplateGuard(template)}
+          {@const languageAvailable = isLanguageAvailable(template)}
+          {@const variables = visibleTemplateVariables(template)}
+          {@const expanded = expandedTemplateId === template.id}
+          <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
+            <span class="template-card-icon" aria-hidden="true">
+              <MaterialIcon name={templateIcon(template)} size={22} />
+            </span>
+            <div class="template-main">
+              <h3>{template.title}</h3>
+              {#if variables.length > 0}
+                <button
+                  class:expanded
+                  class="template-input-toggle"
+                  type="button"
+                  aria-label={`${template.title} 입력값`}
+                  aria-expanded={expanded}
+                  onclick={() => toggleTemplateInputs(template.id)}
+                >
+                  <MaterialIcon name="expand_more" size={17} />
+                </button>
+              {/if}
+              {#if expanded && variables.length > 0}
+                <div class="template-variable-grid">
+                  {#each variables as variable}
+                    <label>
+                      <span>{variable.label}</span>
+                      <input
+                        name={`${template.id}-${variable.name}`}
+                        value={templateInputValue(template, variable.name)}
+                        oninput={(event) => onTemplateVariableInput(template.id, variable.name, event)}
+                      />
+                    </label>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            <button
+              class="template-copy-button"
+              type="button"
+              aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
+              disabled={!guard.ok || !languageAvailable}
+              onclick={() => onCopyTemplate(template)}
+            >
+              <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={20} />
+            </button>
+          </article>
+        {/each}
       </div>
-      <button
-        class="template-copy-button"
-        type="button"
-        aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
-        disabled={!guard.ok || !languageAvailable}
-        onclick={() => onCopyTemplate(template)}
-      >
-        <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={20} />
-      </button>
-    </article>
+    </section>
   {/each}
 </section>

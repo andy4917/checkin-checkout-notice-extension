@@ -1,7 +1,6 @@
 import { getBranchOptions } from "../config/branches.js";
 import {
   getHomeMenuSections,
-  homeQuickActions,
 } from "../catalog/menu-routing.js";
 import type { Language } from "../types.js";
 import type {
@@ -11,7 +10,6 @@ import type {
 } from "../catalog/template-types.js";
 
 export const homeMenuSections = getHomeMenuSections();
-export const homeFooterActions = homeQuickActions;
 export const branchOptions = getBranchOptions();
 
 export const languageOptions: Array<{ id: Language; label: string }> = [

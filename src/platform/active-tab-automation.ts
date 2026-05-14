@@ -18,11 +18,6 @@ export const WINGS_REMARK_WINDOW_REQUIRED_MESSAGE =
 export const WINGS_REMARK_FIELD_REQUIRED_MESSAGE =
   "WINGS 리마크 입력칸을 찾지 못했습니다.";
 
-export async function getActiveOtaLocator(): Promise<OtaReservationLocator> {
-  const tab = await getActiveTab();
-  return detectOtaReservationLocator(tab.url || "");
-}
-
 export async function fetchActiveOtaPayload(): Promise<{
   locator: OtaReservationLocator;
   payload: unknown;

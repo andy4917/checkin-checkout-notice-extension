@@ -39,9 +39,9 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 | Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, home presentation, and bottom-bar actions from routing/catalog data. Do not add component-owned menu contracts. |
 | Template catalog | `src/catalog/template-catalog.ts` | Use `UNIFIED_TEMPLATE_CATALOG`, `applyStoredUnifiedTemplateState()`, and `scopeUnifiedTemplateForBranch()`. |
 | Template rendering | `src/catalog/template-renderer.ts` | Use renderer output for copy text. Do not interpolate template strings inside components. |
-| PMS sync | `src/application/sync-guests.ts`, `src/ui/side-panel-dependencies.ts` | Call `syncGuests({ date, mode, branchId, searchTerm, fetchImpl })` through injected PMS dependencies. |
+| PMS sync | `src/application/sync-guests.ts`, `src/ui/pms-workflow.ts`, `src/ui/side-panel-dependencies.ts` | Call PMS through `loadPmsGuestRecords(..., dependencies.pms)`, which delegates to `syncGuests({ date, mode, branchId, searchTerm, fetchImpl })`. |
 | Context guard | `src/application/context-guard.ts` | Gate PMS-only or guest-record actions with `guardRequiredContext()`. |
-| OTA preview/fill | `src/application/ota-reservation-input.ts`, `src/ui/side-panel-dependencies.ts` | Use `loadOtaReservationPreview(..., otaDependencies)` then `fillWingsReservationFromPreview(..., otaDependencies)` through injected OTA dependencies. |
+| OTA preview/fill | `src/application/ota-reservation-input.ts`, `src/ui/ota-workflow.ts`, `src/ui/side-panel-dependencies.ts` | Use `loadOtaPreview(...)` and `fillWingsFromOtaPreview(...)`, which delegate to the application OTA preview/fill functions through injected OTA dependencies. |
 | Active tab automation | `src/platform/active-tab-automation.ts` | Treat missing reservation window as a blocking error, not as an empty state. |
 | Storage | `src/platform/chrome-storage.ts`, `src/ui/side-panel-dependencies.ts` | Use injected extension-state dependencies for mount and saves; do not hide `chrome.storage.local` as a default parameter. |
 
@@ -49,17 +49,18 @@ Any new frontend state should be derived from these contracts or stored explicit
 
 ## Rooms & Settings Backend Design
 
-`Rooms & Settings` is a persistent bottom-sheet launcher. The current frontend only exposes the minimal settings action; the next backend work must provide a real action model before additional bottom-bar UI is added.
+`Rooms & Settings` is a persistent bottom-sheet launcher. The current frontend exposes the settings menu action and the WINGS remark command when a supported room-remark template is selected. Additional bottom-bar actions still require a real catalog/application contract before UI is added.
 
 Backend-owned action source:
 
 - define bottom-bar actions in `src/catalog/menu-routing.ts`, not in Svelte components
 - keep `HomeQuickAction.menuId` required for direct menu actions
 - add a separate discriminated action type before supporting non-menu actions
+- keep `detailLabel`, `confirmLabel`, command visibility metadata, and template ownership in the catalog action contract
 - never represent unsupported actions with disabled placeholder UI
 - do not add `WINGS LOGIN`, light mode, dark mode, or demo actions unless there is a real backend contract
 
-Recommended action model:
+Current action model:
 
 ```ts
 type RoomsSettingsAction =
@@ -69,6 +70,8 @@ type RoomsSettingsAction =
       label: string;
       icon: string;
       menuId: MenuId;
+      detailLabel: string;
+      confirmLabel: string;
     }
   | {
       kind: "command";
@@ -76,12 +79,17 @@ type RoomsSettingsAction =
       label: string;
       icon: string;
       commandId: RoomsSettingsCommandId;
+      detailLabel: string;
+      confirmLabel: string;
+      visibleWhenSelectedTemplateAudience?: TemplateAudience;
       requiresBranch?: boolean;
       requiresPmsRecord?: boolean;
+      requiresWingsReservationWindow?: boolean;
     };
 ```
 
 Command actions must be backed by application functions before appearing in the UI. A command cannot be added as a visual-only stub.
+Unknown command IDs must fail visibly through the controller status surface; silent `return` is not allowed.
 
 Backend responsibilities for bottom-bar commands:
 
@@ -103,6 +111,15 @@ Suggested module split:
 | Dependency access | `src/ui/side-panel-dependencies.ts` | All Chrome, clipboard, storage, active-tab, and fetch access enters here. |
 | UI rendering | `src/ui/components/RoomsSettingsBar.svelte` | Render provided actions and invoke callbacks only. |
 
+Menu screen ownership:
+
+- every `MenuItem` declares `screenKind` and `templateFilter`
+- Svelte screen components must not branch on raw menu IDs such as `CUSTOMER_NOTICE`, `SETTINGS`, or `OTA_RESERVATION_INPUT`
+- `templateFilter` is the only menu-owned path for choosing templates; use `kind: "menu"`, `kind: "type"`, or `kind: "none"`
+- shared template family grouping belongs in `src/catalog/template-groups.ts`, not title-text heuristics in components
+- branch logo resolution belongs to the asset owner module, not to `ShellHeader.svelte`
+- production side-panel dependencies must not silently replace `chrome.storage.local` with in-memory storage
+
 Required backend validation before adding bottom-bar features:
 
 - `npm run typecheck`
@@ -110,6 +127,7 @@ Required backend validation before adding bottom-bar features:
 - a contract test proving unsupported actions are absent
 - a failure-path test for each command's missing requirement, such as no branch or no selected PMS record
 - a UI contract test proving the bottom bar does not contain placeholder text such as `연결된 동작 없음`, `대기`, `Light`, `Dark`, or `Wings Login`
+- a guard that rejects tests which approve raw `activeMenu === "..."` or `commandId === "..."` implementation strings instead of exported catalog behavior
 
 ## Menu UX Structure
 
@@ -151,11 +169,11 @@ Required flow:
 1. User selects branch.
 2. User opens a Naver or Station reservation detail tab.
 3. User clicks `예약정보 가져오기`.
-4. Frontend calls `loadOtaReservationPreview(selectedBranchId, otaDependencies)`.
+4. Frontend calls `loadOtaPreview(selectedBranchId, dependencies.ota)`.
 5. Frontend shows only actual preview values that are present.
 6. User opens WINGS reservation creation window.
 7. User clicks `WINGS에 입력`.
-8. Frontend calls `fillWingsReservationFromPreview(otaPreview, otaDependencies)`.
+8. Frontend calls `fillWingsFromOtaPreview(otaPreview, dependencies.ota)`.
 9. User reviews and saves manually inside WINGS.
 
 Required fail-fast behavior:
@@ -219,7 +237,7 @@ For PMS-backed menu screens, the work header may show a compact `WINGS` status d
 - red when the current active tab is not a WINGS PMS context
 - no card, pill surface, debug text, logs, or explanatory status panel
 
-When a PMS record is selected, the default language should follow guest nationality. Supported nationalities map to `KO`, `EN`, `JP`, or `CN`; unsupported or missing nationalities default to `EN`, with existing template-language availability fallback still applied.
+When a PMS record is selected, the default language should follow guest nationality. Supported nationalities map to runtime language IDs `KO`, `EN`, `JP`, or `CN`; the visible segmented labels are `KR`, `EN`, `JP`, and `CH`. Unsupported or missing nationalities default to `EN`, with existing template-language availability fallback still applied.
 
 Do not add broad data grids unless there is a direct workflow reason. The side panel should remain quick to scan.
 
@@ -307,6 +325,7 @@ Apply the `minimalist-ui` direction as a compact operational variant:
 - text: off-black `#111111` or charcoal `#2F3437`
 - secondary text: `#787774`
 - borders: `1px solid #EAEAEA`
+- Korean UI font: local bundled `NanumSquareNeo` variable font
 - surface radius: 8px maximum for cards and panels
 - controls radius: 4px to 6px
 - no gradients
@@ -318,7 +337,7 @@ Apply the `minimalist-ui` direction as a compact operational variant:
 
 Use plain operational Korean labels. Avoid marketing copy and AI-style phrasing.
 
-Icons should be quiet and functional. Use Material Symbols through the shared icon component, and avoid per-menu custom SVGs or decorative iconography.
+Icons should be quiet and functional. Use the shared local SVG icon component, and avoid per-menu custom SVGs or decorative iconography.
 
 ## Frontend Unity And UX Rules
 
@@ -343,20 +362,26 @@ Shared surface rules:
 
 - cards and popup surfaces use consistent radius and spacing
 - menu cards are separate cards with compact gaps; do not merge several menu actions into one parent card
+- template rows are grouped by catalog-owned `typeId` families and separated with a light divider; do not infer groups from template title text
 - icon buttons are at least 40px by 40px and center icons with grid/place-items
-- Material Symbols icons must be rendered through the shared icon component
+- icons must be rendered through the shared local SVG icon component
 - do not create per-menu custom icons or ad hoc SVGs
 - shadows are light and functional; do not create heavy floating panels
 - do not put cards inside cards
 
 Shared navigation rules:
 
-- menu screens use the same compact topbar with small back and home icon buttons
+- menu screens use the same compact topbar with a small back icon button
+- do not render a home icon button on a menu screen when one back action returns directly to the home screen
 - top header keeps center breathing room; the active menu title appears once in the top header center with its catalog icon beside it
 - home uses the base UH SUITE logo; work screens use the selected branch logo asset after a branch is selected
-- the lower context row owns PMS room context and stays centered below the menu title
+- work-screen branch logos must keep the same displayed width as the home UH SUITE logo; branch-logo source assets may extend the original logo height by about 25% at most
+- the lower navigation row always owns the back action
+- the room-context grid with PMS room/status text is rendered only when the active catalog templates require `guestRecord`
+- WINGS status is rendered only when the active catalog templates require a WINGS/PMS context
 - selected PMS room identity is not rendered in a separate bottom bar; show room number, reserver name, and nationality only in the centered context row
-- when no PMS room is selected, the room context text is `객실 미선택` in a muted gray tone
+- when no PMS room is selected, render the backend/domain room-context status message `Room not selected` in a muted gray tone, not a component-owned Korean fallback label
+- the room-context row and the language selector must keep a visible compact gap, with the language selector, separator, and template list separated enough that the controls do not visually merge
 - branch selection opens a selection sheet/popup, not a dropdown
 - language selection is a segmented bar, not a dropdown; its container and active segment must be pill-shaped with rounded ends
 - settings may keep data-management selects for template/category/audience/context, but language must remain segmented
@@ -389,11 +414,12 @@ Home:
 
 Work menu:
 
-- header row: menu identity, return action
+- top header: branch logo, active menu icon/title, date
+- work navigation row: return action; add selected room/status text only for `guestRecord` workflows
 - compact context row only; do not add a large menu-introduction card or generic explanation copy
-- secondary controls: language selector and count when applicable
+- secondary controls: language selector when applicable
 - work-specific panel: PMS list or OTA preview
-- template list below for template menus
+- template list below for template menus, grouped by catalog type family such as 체크인 안내문, 체크아웃 안내문, 객실 관련 안내문, 요금 관련 안내문, and 업무 양식
 
 Small width behavior:
 

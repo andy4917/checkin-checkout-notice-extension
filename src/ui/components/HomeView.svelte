@@ -28,7 +28,6 @@
             </span>
             <span class="menu-text">
               <strong>{menu.home?.title || menu.title}</strong>
-              <small>{menu.home?.description || menu.description}</small>
             </span>
             <span class="menu-arrow" aria-hidden="true">
               <MaterialIcon name="chevron_right" size={24} />

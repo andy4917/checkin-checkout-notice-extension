@@ -3,15 +3,16 @@ import {
   isSettingsDraftDirty,
   resolveActiveTemplates,
   resolveMenuTemplates,
+  requiresSelectedRoomContext,
   resolveScopedTemplates,
   selectPmsRecord as resolveSelectedPmsRecord,
+  usesWingsContext,
 } from "./app-view-model.js";
 import {
   audienceOptions,
   branchOptions,
   categoryOptions,
   contextOptions,
-  homeFooterActions,
   homeMenuSections,
   languageOptions as languages,
 } from "./ui-options.js";
@@ -32,7 +33,6 @@ import {
   visibleTemplateVariables,
 } from "./display-helpers.js";
 import {
-  createDefaultTemplateValues,
   createTemplateValues,
   getTemplateDraftValue,
   getTemplateInputValue,
@@ -60,6 +60,7 @@ import {
   type OtaWorkflowDependencies,
 } from "./ota-workflow.js";
 import {
+  UNSUPPORTED_ROOMS_SETTINGS_COMMAND_MESSAGE,
   resolveRoomsSettingsActions,
   type ResolvedRoomsSettingsAction,
 } from "./rooms-settings-actions.js";
@@ -74,7 +75,13 @@ import {
   UNIFIED_TEMPLATE_CATALOG,
   applyStoredUnifiedTemplateState,
 } from "../catalog/template-catalog.js";
-import { getMenu, type MenuId } from "../catalog/menu-routing.js";
+import {
+  getMenu,
+  getRoomsSettingsCommand,
+  isRoomsSettingsCommandId,
+  type MenuId,
+  type RoomsSettingsCommandId,
+} from "../catalog/menu-routing.js";
 import { getBusinessDateParts } from "../domain/dates.js";
 import { filterPmsGuestRecords } from "../domain/guests.js";
 import { resolveDefaultLanguageFromNationalityFields } from "../domain/language.js";
@@ -86,7 +93,7 @@ import {
 } from "../platform/chrome-storage.js";
 import { EMPTY_TAB_CONTEXT, type TabContext } from "../platform/tab-context.js";
 import type { BranchId, Language, PmsGuestRecord, TabMode } from "../types.js";
-import type { LaundryRecord, LaundryStatus } from "../laundry/types.js";
+import type { LaundryMachineType, LaundryRecord, LaundryStatus } from "../laundry/types.js";
 import { DEFAULT_EXTENSION_STATE } from "../platform/storage-schema.js";
 import type {
   StoredExtensionState,
@@ -156,9 +163,10 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   let selectedGuidanceTemplateId = $state("");
 
   const selectedMenu = $derived(activeMenu ? getMenu(activeMenu) : null);
+  const activeScreenKind = $derived(selectedMenu?.screenKind || null);
   const navigationLocked = $derived(
     isSettingsDraftDirty({
-      activeMenu,
+      activeScreenKind,
       catalogTemplates,
       editBody,
       editBranchScope,
@@ -172,35 +180,48 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   );
   const menuTemplates = $derived(resolveMenuTemplates(activeMenu, catalogTemplates));
   const scopedTemplates = $derived(resolveScopedTemplates(menuTemplates, selectedBranchId));
-  const activeTemplates = $derived(resolveActiveTemplates(activeMenu, scopedTemplates));
+  const activeTemplates = $derived(resolveActiveTemplates(scopedTemplates));
+  const activeMenuRequiresSelectedRoom = $derived(requiresSelectedRoomContext(activeTemplates));
+  const activeMenuUsesWingsContext = $derived(usesWingsContext(activeTemplates));
+  const selectedCommandTemplate = $derived(
+    catalogTemplates.find((item) => item.id === selectedRoomRemarkTemplateId) || null,
+  );
+  const showsSettingsPanel = $derived(activeScreenKind === "settings");
+  const showsOtaReservationPanel = $derived(activeScreenKind === "otaReservationInput");
+  const showsCustomerGuidancePanel = $derived(activeScreenKind === "customerGuidance");
+  const showsLaundryPanel = $derived(activeScreenKind === "laundry");
+  const showsTemplateListPanel = $derived(
+    activeScreenKind === "templateList" || activeScreenKind === "laundry",
+  );
+  const showsWorkLanguageSelector = $derived(
+    activeMenu === "CUSTOMER_NOTICE" || activeMenu === "QUICK_REPLY",
+  );
   const visiblePmsRecords = $derived(filterPmsGuestRecords(pmsRecords, pmsSearchTerm));
   const selectedPmsRecord = $derived(
     resolveSelectedPmsRecord(pmsRecords, selectedPmsRecordId),
   );
   const filteredLaundryRecords = $derived(
-    filterLaundryRecords(
-      laundryRecords,
-      laundryStatusFilter,
-      laundrySearchTerm,
-      laundryStatusLabel,
-    ),
+    showsLaundryPanel
+      ? laundryRecords
+      : filterLaundryRecords(
+          laundryRecords,
+          laundryStatusFilter,
+          laundrySearchTerm,
+          laundryStatusLabel,
+        ),
   );
   const roomsSettingsActions = $derived(
     resolveRoomsSettingsActions({
-      activeMenu,
       navigationLocked,
       selectedBranchId,
       selectedPmsRecord,
-      selectedRoomRemarkTemplateId,
+      selectedCommandTemplate,
       tabContext,
     }),
   );
 
   $effect(() => {
     if (
-      activeMenu &&
-      activeMenu !== "SETTINGS" &&
-      activeMenu !== "OTA_RESERVATION_INPUT" &&
       activeTemplates.length > 0 &&
       !hasAnyTemplateForLanguage(activeTemplates, selectedLanguage)
     ) {
@@ -232,7 +253,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     if (selectedBranchId) {
       await dependencies.extensionState.setLastBranchId(selectedBranchId);
       statusMessage = "선택 지점을 저장했습니다.";
-      if (activeMenu === "LAUNDRY_MANAGEMENT") {
+      if (showsLaundryPanel) {
         await loadLaundryRecords();
       }
     } else {
@@ -251,28 +272,24 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       statusMessage = "작성 또는 설정 중에는 이동할 수 없습니다.";
       return;
     }
+    const nextMenu = getMenu(menuId);
     activeMenu = menuId;
     copiedTemplateId = "";
     selectedGuidanceTemplateId = "";
-    if (menuId !== "ROOM_REMARK_MEMO") {
-      selectedRoomRemarkTemplateId = "";
-    }
+    selectedRoomRemarkTemplateId = "";
     void refreshTabContext();
-    if (menuId === "SETTINGS") {
+    if (nextMenu.screenKind === "settings") {
       refreshEditFields(settingsTemplateId);
     }
-    if (menuId === "OTA_RESERVATION_INPUT") {
+    if (nextMenu.screenKind === "otaReservationInput") {
       otaPreview = null;
     }
-    if (menuId === "LAUNDRY_MANAGEMENT") {
+    if (nextMenu.screenKind === "laundry") {
+      laundrySearchTerm = "";
+      laundryStatusFilter = "ALL";
       void loadLaundryRecords();
     }
-    statusMessage =
-      menuId === "SETTINGS"
-        ? ""
-        : menuId === "OTA_RESERVATION_INPUT"
-          ? ""
-          : "";
+    statusMessage = "";
     scrollToTop();
   }
 
@@ -345,7 +362,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
     selectedPmsRecordId = record.id;
     selectLanguageForPmsRecord(record);
-    if (!laundryItemSummary && activeMenu === "LAUNDRY_MANAGEMENT") {
+    if (!laundryItemSummary && showsLaundryPanel) {
       laundryNote = laundryNote || record.guestName;
     }
     statusMessage = describeSelectedPmsRecord(record);
@@ -370,13 +387,13 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       return;
     }
     if (!laundryItemSummary.trim()) {
-      statusMessage = "세탁물 내용을 입력해주세요.";
+      statusMessage = "객실번호를 입력해주세요.";
       return;
     }
 
     laundryLoading = true;
     try {
-      await createLaundryRecord(
+      const createdRecord = await createLaundryRecord(
         {
           selectedBranchId,
           selectedPmsRecord,
@@ -386,9 +403,14 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
         },
         dependencies.laundry,
       );
+      laundrySearchTerm = "";
+      laundryStatusFilter = "ALL";
+      laundryRecords = [
+        createdRecord,
+        ...laundryRecords.filter((record) => record.id !== createdRecord.id),
+      ];
       laundryItemSummary = "";
       laundryNote = "";
-      await loadLaundryRecords();
       statusMessage = "세탁물 기록을 추가했습니다.";
     } catch (error) {
       statusMessage = error instanceof Error ? error.message : String(error);
@@ -397,10 +419,14 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
   }
 
-  async function setLaundryStatus(record: LaundryRecord, status: LaundryStatus) {
+  async function setLaundryStatus(
+    record: LaundryRecord,
+    status: LaundryStatus,
+    machineType?: LaundryMachineType,
+  ) {
     laundryLoading = true;
     try {
-      await changeLaundryStatus(record, status, dependencies.laundry);
+      await changeLaundryStatus(record, status, dependencies.laundry, machineType);
       await loadLaundryRecords();
       statusMessage = "세탁물 상태를 변경했습니다.";
     } catch (error) {
@@ -446,8 +472,19 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
   }
 
-  async function runRoomsSettingsCommand(commandId: string) {
-    if (commandId !== "UPSERT_WINGS_REMARK") return;
+  async function runRoomsSettingsCommand(commandId: RoomsSettingsCommandId | string) {
+    if (!isRoomsSettingsCommandId(commandId)) {
+      statusMessage = UNSUPPORTED_ROOMS_SETTINGS_COMMAND_MESSAGE;
+      return;
+    }
+    const command = getRoomsSettingsCommand(commandId);
+    const handlers: Record<RoomsSettingsCommandId, () => Promise<void>> = {
+      UPSERT_WINGS_REMARK: runUpsertWingsRemarkCommand,
+    };
+    await handlers[command.commandId]();
+  }
+
+  async function runUpsertWingsRemarkCommand() {
     if (navigationLocked) {
       statusMessage = "작성 또는 설정 중에는 이동할 수 없습니다.";
       return;
@@ -459,7 +496,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       return;
     }
 
-    const template = catalogTemplates.find((item) => item.id === selectedRoomRemarkTemplateId);
+    const template = selectedCommandTemplate;
     if (!template) {
       statusMessage = "객실 메모 항목을 선택해주세요.";
       return;
@@ -599,10 +636,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     statusMessage = "작성 중인 새 항목을 비웠습니다.";
   }
 
-  function defaultValues(): Record<string, string> {
-    return createDefaultTemplateValues(templateValueContext());
-  }
-
   function templateValues(template: TemplateDefinition): Record<string, string> {
     return createTemplateValues(template, templateValueContext());
   }
@@ -670,7 +703,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   }
 
   function pmsRecordBadgeLabel(_record: PmsGuestRecord): string {
-    if (activeMenu !== "AIRPORT_VAN_MANAGEMENT") return "";
+    if (!activeTemplates.some((template) => template.typeId === "airport_van")) return "";
     return pmsMode === "ARRIVAL" ? "체크인 공항 픽업" : "내일 체크아웃 공항 샌딩";
   }
 
@@ -777,7 +810,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     branchOptions,
     categoryOptions,
     contextOptions,
-    homeFooterActions,
     homeMenuSections,
     languages,
     hasAnyTemplateForLanguage,
@@ -832,6 +864,12 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     pmsRecordBadgeLabel,
     get activeMenu() {
       return activeMenu;
+    },
+    get isHomeScreen() {
+      return activeMenu === null;
+    },
+    get activeScreenKind() {
+      return activeScreenKind;
     },
     get selectedBranchId() {
       return selectedBranchId;
@@ -920,11 +958,35 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     get selectedMenu() {
       return selectedMenu;
     },
+    get showsSettingsPanel() {
+      return showsSettingsPanel;
+    },
+    get showsOtaReservationPanel() {
+      return showsOtaReservationPanel;
+    },
+    get showsCustomerGuidancePanel() {
+      return showsCustomerGuidancePanel;
+    },
+    get showsLaundryPanel() {
+      return showsLaundryPanel;
+    },
+    get showsTemplateListPanel() {
+      return showsTemplateListPanel;
+    },
+    get showsWorkLanguageSelector() {
+      return showsWorkLanguageSelector;
+    },
     get navigationLocked() {
       return navigationLocked;
     },
     get activeTemplates() {
       return activeTemplates;
+    },
+    get activeMenuRequiresSelectedRoom() {
+      return activeMenuRequiresSelectedRoom;
+    },
+    get activeMenuUsesWingsContext() {
+      return activeMenuUsesWingsContext;
     },
     get visiblePmsRecords() {
       return visiblePmsRecords;

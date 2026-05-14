@@ -1,8 +1,10 @@
 <script lang="ts">
-  import logoUrl from "../../assets/logo.png";
+  import { getHeaderLogoUrl } from "../../assets/asset-catalog.js";
 
   export let label = "로딩 중";
   export let compact = false;
+
+  const logoUrl = getHeaderLogoUrl("");
 </script>
 
 <span

@@ -25,12 +25,6 @@ const roomNo: TemplateVariable = {
   kind: "pmsRequired",
 };
 
-const manualRoomNo: TemplateVariable = {
-  name: "roomNo",
-  label: "객실번호",
-  kind: "manualOptional",
-};
-
 const branchName: TemplateVariable = {
   name: "branchName",
   label: "지점",

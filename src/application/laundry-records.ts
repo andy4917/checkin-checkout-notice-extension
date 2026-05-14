@@ -8,6 +8,7 @@ import type {
   LaundryRecord,
   LaundryRecordDraft,
   LaundryRecordQuery,
+  LaundryMachineType,
   LaundryStatus,
 } from "../laundry/types.js";
 
@@ -30,6 +31,7 @@ export function createLaundryRecord(
     status: "RECEIVED",
     itemSummary,
     note: draft.note?.trim() || "",
+    machineType: draft.machineType,
     receivedAt: timestamp,
     updatedAt: timestamp,
     sourcePmsGuestId: draft.sourcePmsGuestId,
@@ -70,6 +72,7 @@ export async function updateLaundryStatus(
   recordId: string,
   status: LaundryStatus,
   storageArea: LaundryStorageArea,
+  machineType?: LaundryMachineType,
   now = new Date(),
 ): Promise<LaundryRecord> {
   const records = await readLaundryRecords(storageArea);
@@ -81,6 +84,7 @@ export async function updateLaundryStatus(
     updatedRecord = {
       ...record,
       status,
+      machineType: status === "IN_PROGRESS" ? machineType || record.machineType : undefined,
       updatedAt: timestamp,
       completedAt: status === "READY" ? timestamp : record.completedAt,
       pickedUpAt: status === "PICKED_UP" ? timestamp : record.pickedUpAt,
