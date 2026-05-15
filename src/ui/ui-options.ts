@@ -1,6 +1,8 @@
 import { getBranchOptions } from "../config/branches.js";
 import {
   getHomeMenuSections,
+  homeBottomNavigationItems,
+  homeNavigationGroups,
 } from "../catalog/menu-routing.js";
 import type { Language } from "../types.js";
 import type {
@@ -10,6 +12,8 @@ import type {
 } from "../catalog/template-types.js";
 
 export const homeMenuSections = getHomeMenuSections();
+export const homeNavigation = homeNavigationGroups;
+export const homeBottomNavigation = homeBottomNavigationItems;
 export const branchOptions = getBranchOptions();
 
 export const languageOptions: Array<{ id: Language; label: string }> = [

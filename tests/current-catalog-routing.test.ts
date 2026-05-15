@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 
 import { guardRequiredContext } from "../src/application/context-guard.js";
 import {
@@ -7,6 +8,8 @@ import {
   getHomeMenuSections,
   getMenu,
   getRoomsSettingsCommand,
+  homeBottomNavigationItems,
+  homeNavigationGroups,
 } from "../src/catalog/menu-routing.js";
 import {
   ManualRequiredValueMissingError,
@@ -30,6 +33,49 @@ test("home and customer guidance routing are catalog-owned current contracts", (
   assert.equal(customerNotice.title, "고객 안내문");
   assert.equal(customerNotice.screenKind, "customerGuidance");
   assert.deepEqual(customerNotice.templateFilter, { kind: "menu" });
+});
+
+test("home navigation is a five-group drill-down schema with fixed bottom items", () => {
+  assert.deepEqual(
+    homeNavigationGroups.map((group) => group.title),
+    [
+      "고객 안내문",
+      "빠른 문의 답변",
+      "고객 서비스 관리",
+      "업무 관리",
+      "템플릿 / 양식 편집",
+    ],
+  );
+
+  assert.deepEqual(
+    homeNavigationGroups[0]?.items.map((item) => item.title),
+    ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
+  );
+  assert.deepEqual(
+    homeNavigationGroups[2]?.items.map((item) => item.title),
+    ["세탁물 관리", "매출 관리", "공항밴 관리"],
+  );
+  assert.deepEqual(
+    homeBottomNavigationItems.map((item) => item.title),
+    ["체크인 목록", "체크아웃 목록", "객실 선택", "설정"],
+  );
+});
+
+test("home navigation styling contract keeps shared typography and divider tokens", () => {
+  const css = readFileSync("styles/sidepanel.css", "utf8");
+
+  assert.match(css, /--font-korean-title:\s*"NAVERNANUM"/);
+  assert.match(css, /--font-korean-body:\s*"Noto Sans KR"/);
+  assert.match(css, /--font-latin:\s*"Plus Jakarta Sans",\s*"Jakarta Sans"/);
+  assert.match(css, /font-family:\s*"NAVERNANUM";/);
+  assert.match(css, /NotoSansKR-VariableFont_wght\.ttf/);
+  assert.match(css, /PlusJakartaSans-VariableFont_wght\.ttf/);
+  assert.match(css, /--text-tracking-tight:\s*0;/);
+  assert.match(css, /--color-home-divider:\s*#ececea;/);
+  assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*1px solid var\(--color-home-divider\);/s);
+  assert.match(css, /\.home-nav-icon\s*\{[^}]*background:\s*transparent;/s);
+  assert.equal(existsSync("assets/fonts/NotoSansKR-VariableFont_wght.ttf"), true);
+  assert.equal(existsSync("assets/fonts/PlusJakartaSans-VariableFont_wght.ttf"), true);
 });
 
 test("template filtering uses catalog metadata, branch scope, and attachment exclusion", () => {

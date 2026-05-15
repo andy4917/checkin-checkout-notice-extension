@@ -92,6 +92,7 @@
   </div>
 
   <div class="header-date" aria-label="오늘 날짜">
+    <MaterialIcon name="calendar_today" size={15} />
     <span>{headerDate}</span>
   </div>
 </header>

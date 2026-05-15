@@ -43,7 +43,8 @@
     <section class="screen-stage" aria-label={controller.isHomeScreen ? "홈" : "업무 화면"}>
       {#if controller.isHomeScreen}
         <HomeView
-          sections={controller.homeMenuSections}
+          bottomItems={controller.homeBottomNavigation}
+          groups={controller.homeNavigation}
           onOpenMenu={controller.openMenu}
         />
       {:else}
