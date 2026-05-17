@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import type {
     HomeBottomNavigationItem,
     HomeNavigationGroup,
@@ -13,39 +14,66 @@
   export let onOpenMenu: (menuId: MenuId) => void;
 
   let activeGroupId = "";
-  let motionDirection: "forward" | "back" = "forward";
+  let lastOpenedGroupButton: HTMLButtonElement | null = null;
+  let motionDirection: "forward" | "backward" | "replace" = "replace";
+  let detailBackButton: HTMLButtonElement | null = null;
 
   $: activeGroup = groups.find((group) => group.id === activeGroupId) || null;
 
-  function openGroup(groupId: string) {
+  async function openGroup(groupId: string, triggerButton: HTMLButtonElement) {
+    if (activeGroupId === groupId) {
+      return;
+    }
+
+    lastOpenedGroupButton = triggerButton;
     activeGroupId = groupId;
     motionDirection = "forward";
+    await tick();
+    detailBackButton?.focus();
   }
 
-  function goRoot() {
+  async function goRoot() {
     activeGroupId = "";
-    motionDirection = "back";
+    motionDirection = "backward";
+    await tick();
+    lastOpenedGroupButton?.focus();
   }
 
   function openMenu(menuId: MenuId) {
     onOpenMenu(menuId);
   }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key !== "Escape" || !activeGroup) {
+      return;
+    }
+
+    event.preventDefault();
+    void goRoot();
+  }
 </script>
 
 <section class="home-surface" aria-label="홈 메뉴">
   <div
-    class:back={motionDirection === "back"}
+    class:backward={motionDirection === "backward"}
+    class:replace={motionDirection === "replace"}
     class:submenu-active={activeGroup}
     class="home-navigation-viewport"
+    data-motion-direction={motionDirection}
   >
     <div class="home-navigation-track">
-      <nav class="home-navigation-panel root-panel" aria-label="업무 그룹">
+      <nav
+        class="home-navigation-panel root-panel"
+        aria-hidden={Boolean(activeGroup)}
+        aria-label="업무 그룹"
+      >
         {#each groups as group}
           <button
             class="home-nav-root-item"
             type="button"
             aria-label={`${group.title} 메뉴 열기`}
-            onclick={() => openGroup(group.id)}
+            tabindex={activeGroup ? -1 : 0}
+            onclick={(event) => openGroup(group.id, event.currentTarget)}
           >
             <span class="home-nav-icon" aria-hidden="true">
               <MaterialIcon name={group.icon} size={22} />
@@ -58,9 +86,19 @@
         {/each}
       </nav>
 
-      <nav class="home-navigation-panel detail-panel" aria-label={activeGroup?.title || "하위 메뉴"}>
+      <nav
+        class="home-navigation-panel detail-panel"
+        aria-hidden={!activeGroup}
+        aria-label={activeGroup?.title || "하위 메뉴"}
+      >
         {#if activeGroup}
-          <button class="home-nav-back" type="button" onclick={goRoot}>
+          <button
+            bind:this={detailBackButton}
+            class="home-nav-back"
+            type="button"
+            onkeydown={handleKeydown}
+            onclick={goRoot}
+          >
             <MaterialIcon name="arrow_back" size={18} />
             <span>{activeGroup.title}</span>
           </button>
@@ -69,6 +107,8 @@
               <button
                 class="home-submenu-item"
                 type="button"
+                tabindex={activeGroup ? 0 : -1}
+                onkeydown={handleKeydown}
                 onclick={() => openMenu(item.menuId)}
               >
                 <span class="home-nav-icon" aria-hidden="true">

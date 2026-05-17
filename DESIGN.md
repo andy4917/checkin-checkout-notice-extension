@@ -21,7 +21,9 @@
   - `assets/fonts/PlusJakartaSans-VariableFont_wght.ttf`
   - `src/assets/logo*.png`
   - `docs/FRONTEND_CONNECTION_DESIGN_DIRECTIVE.md`
+  - `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`
   - `docs/TEST_CONTRACT.md`
+  - User-provided `UI_MOTION_META_DESIGN_PLAN_v2.md`
 
 ## Brand
 - Personality: quiet, operational, compact, Korean-first, precise staff-console feel.
@@ -72,6 +74,7 @@
 - Principle 1: Operational stability over decoration. Header/footer stay fixed; motion only clarifies navigation state.
 - Principle 2: Catalog-owned UI labels. Components render schema; they do not own business labels, route IDs, PMS codes, endpoint paths, or fake data.
 - Principle 3: White-family restraint. Use warm white surfaces, pale dividers, and neutral hover states instead of saturated decorative color.
+- Principle 4: Common motion grammar. Nested panel navigation uses the shared direction, focus, reduced-motion, and responsive rules in `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`.
 - Tradeoffs:
   - Root menu items use bottom dividers only, so the UI reads as a clean work list rather than card-heavy marketing UI.
   - `--text-tracking-tight` stays `0` because current frontend rules prohibit negative letter spacing, even though tighter perceived text was requested.
@@ -106,8 +109,10 @@
   - Avoid nested cards and heavy shadows.
 - Motion:
   - Use `opacity` and `transform`.
-  - Standard timing: 150ms-210ms with `cubic-bezier(0.2, 0, 0, 1)`.
+  - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-panel-duration`, `--motion-panel-duration-compact`, `--motion-fade-duration`, `--motion-hover-duration`, `--motion-reveal-duration`, and `--motion-standard`.
   - Navigation viewport slides left/right; header/footer do not transition.
+  - `forward`, `backward`, and `replace` are explicit navigation intents, not inferred from menu labels.
+  - Framer sidebar is a reference for responsive polish, hover line affordance, and small content reveal only; do not copy its full drawer, heavy backdrop, large typography expansion, or mobile menu model.
 - Imagery/iconography:
   - Use shared `MaterialIcon.svelte`.
   - Home navigation icon backgrounds are transparent in default and hover states.
@@ -127,12 +132,13 @@
   - `ShellHeader.svelte` includes the calendar icon/date and enlarged home-mode logo/branch treatment.
   - `HomeView.stories.ts` documents and verifies the root and drill-down states in Storybook.
 - Variants and states:
-  - Root navigation: default, hover, active/pressed, focus-visible.
-  - Drill-down detail: back button, submenu rows, selected route click.
+  - Root navigation: default, hover with subtle row movement and 1px accent-line reveal, active/pressed, focus-visible.
+  - Drill-down detail: explicit forward/backward direction, back button, submenu rows, selected route click, Escape-to-back, and focus restoration.
   - Bottom navigation: enabled and real-disabled states only.
   - Header: home mode and work mode.
 - Token/component ownership:
   - Shared visual tokens live in `styles/sidepanel.css`.
+  - Shared panel motion and responsive interaction contract lives in `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`.
   - Menu schema and order live in `src/catalog/menu-routing.ts`.
   - Browser/global dependencies remain routed through `src/ui/side-panel-dependencies.ts`.
 
@@ -142,6 +148,8 @@
   - Interactive rows are real buttons.
   - Focus-visible states must remain visible.
   - Disabled bottom actions use actual disabled button state when no real route exists.
+  - Nested home navigation moves focus into the child panel and restores focus to the opening row after returning.
+  - Escape returns one nested level when a child panel is active.
 - Contrast/readability:
   - Text uses high-contrast neutral ink on white-family surfaces.
   - Disabled states remain visually distinct but not hidden.
@@ -152,16 +160,19 @@
 - Reduced motion and sensory considerations:
   - Motion must be transform/opacity based and restrained.
   - No decorative animation loops, flashing, or bounce/elastic effects.
+  - Reduced motion removes slide choreography while preserving the selected panel and focus behavior.
 
 ## Responsive behavior
 - Supported breakpoints/devices: Chrome extension side panel desktop width. Mobile layout is not a target.
 - Layout adaptations:
   - Main design assumes roughly 320px-400px side-panel width.
+  - Home navigation uses container-aware density rules for compressed widths instead of switching to a mobile drawer.
   - Fixed header/footer remain aligned to side-panel width.
   - Long Korean/English labels truncate or wrap without overlapping icons.
 - Touch/hover differences:
   - Hover states may be subtle on pointer devices.
   - Click/press feedback uses light scale/compression only.
+  - Coarse pointer surfaces keep practical 44px hit targets and cannot depend on hover-only disclosure.
 
 ## Interaction states
 - Loading:
@@ -196,6 +207,7 @@
   - Styling is centralized in `styles/sidepanel.css`.
 - Design-token constraints:
   - Prefer existing CSS custom properties.
+  - New panel motion durations, layer values, and responsive motion adjustments must reuse the shared CSS tokens and common contract.
   - Do not scatter fonts, colors, route IDs, PMS values, or operation codes inside components.
   - Keep `--text-tracking-tight: 0`; negative letter spacing is not allowed by higher-level frontend rules.
 - Performance constraints:
