@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { homeBottomNavigationItems, homeNavigationGroups } from "../catalog/menu-routing.js";
+import {
+  homeBottomNavigationItems,
+  homeNavigationGroups,
+  homeNavigationLabels,
+} from "../catalog/menu-routing.js";
 import HomeView from "../ui/components/HomeView.svelte";
 
 const meta = {
@@ -13,6 +17,7 @@ const meta = {
   args: {
     bottomItems: homeBottomNavigationItems,
     groups: homeNavigationGroups,
+    labels: homeNavigationLabels,
     onOpenMenu: fn(),
   },
 } satisfies Meta<typeof HomeView>;

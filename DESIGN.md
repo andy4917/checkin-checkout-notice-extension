@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-05-15
+- Last refreshed: 2026-05-17
 - Primary product surfaces: Chrome extension Svelte side panel home navigation, fixed shell header, fixed bottom work navigation, customer guidance/template list workflows.
 - Evidence reviewed:
   - `PRODUCT.md`
@@ -11,6 +11,7 @@
   - `src/ui/components/HomeView.svelte`
   - `src/ui/components/ShellHeader.svelte`
   - `src/ui/components/SidePanelView.svelte`
+  - `src/ui/components/RouteMotionFrame.svelte`
   - `src/ui/components/CustomerGuidancePanel.svelte`
   - `src/ui/components/RoomsSettingsBar.svelte`
   - `src/ui/components/MaterialIcon.svelte`
@@ -22,8 +23,10 @@
   - `src/assets/logo*.png`
   - `docs/FRONTEND_CONNECTION_DESIGN_DIRECTIVE.md`
   - `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`
+  - `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
   - `docs/TEST_CONTRACT.md`
   - User-provided `UI_MOTION_META_DESIGN_PLAN_v2.md`
+  - User-provided Framer sidebar reference application plan
 
 ## Brand
 - Personality: quiet, operational, compact, Korean-first, precise staff-console feel.
@@ -108,11 +111,12 @@
   - Cards elsewhere stay restrained, max 8px-12px radius depending on existing component pattern.
   - Avoid nested cards and heavy shadows.
 - Motion:
-  - Use `opacity` and `transform`.
-  - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-panel-duration`, `--motion-panel-duration-compact`, `--motion-fade-duration`, `--motion-hover-duration`, `--motion-reveal-duration`, and `--motion-standard`.
+  - Use transform-first motion for navigation and keep opacity effects away from the home drill-down route.
+  - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-panel-duration`, `--motion-panel-duration-compact`, `--motion-fade-duration`, `--motion-hover-duration`, `--motion-reveal-duration`, `--motion-press-duration`, `--route-motion-duration`, `--sidepanel-motion-duration`, `--sidepanel-motion-duration-fast`, `--sidepanel-motion-ease`, and `--motion-standard`.
+  - Home drill-down rows do not use stagger variables or chevron movement; the reference motion is carried by the clipped transform slide and text underline hover.
   - Navigation viewport slides left/right; header/footer do not transition.
   - `forward`, `backward`, and `replace` are explicit navigation intents, not inferred from menu labels.
-  - Framer sidebar is a reference for responsive polish, hover line affordance, and small content reveal only; do not copy its full drawer, heavy backdrop, large typography expansion, or mobile menu model.
+  - Framer sidebar is a reference for state, transform motion, hover underline, responsive polish, and emphasis grammar only; do not copy its full drawer, heavy backdrop, large typography expansion, social/legal footer, fixed five-link model, or mobile menu model.
 - Imagery/iconography:
   - Use shared `MaterialIcon.svelte`.
   - Home navigation icon backgrounds are transparent in default and hover states.
@@ -128,12 +132,15 @@
   - `LanguageSegmentedControl.svelte`
   - `CustomerGuidancePanel.svelte`
 - New/changed components:
+  - `RouteMotionFrame.svelte` clips and animates the central Home/Work route layer from controller-owned route intent.
   - `HomeView.svelte` renders data-driven root groups, nested submenu panels, and fixed bottom navigation.
   - `ShellHeader.svelte` includes the calendar icon/date and enlarged home-mode logo/branch treatment.
   - `HomeView.stories.ts` documents and verifies the root and drill-down states in Storybook.
 - Variants and states:
-  - Root navigation: default, hover with subtle row movement and 1px accent-line reveal, active/pressed, focus-visible.
+  - Root navigation: default, hover with text underline expansion only, active/pressed, focus-visible.
   - Drill-down detail: explicit forward/backward direction, back button, submenu rows, selected route click, Escape-to-back, and focus restoration.
+  - Route frame: `forward`, `backward`, and `replace`.
+  - Sheet surfaces: hidden, opening/open, selected action, disabled action, and reduced-motion states.
   - Bottom navigation: enabled and real-disabled states only.
   - Header: home mode and work mode.
 - Token/component ownership:
@@ -158,7 +165,7 @@
   - Icon-only controls require `aria-label`.
   - Icons used only for decoration are `aria-hidden`.
 - Reduced motion and sensory considerations:
-  - Motion must be transform/opacity based and restrained.
+  - Navigation motion must be transform-first and restrained; opacity effects must not drive the home drill-down.
   - No decorative animation loops, flashing, or bounce/elastic effects.
   - Reduced motion removes slide choreography while preserving the selected panel and focus behavior.
 
@@ -169,6 +176,7 @@
   - Home navigation uses container-aware density rules for compressed widths instead of switching to a mobile drawer.
   - Fixed header/footer remain aligned to side-panel width.
   - Long Korean/English labels truncate or wrap without overlapping icons.
+  - Home drill-down content does not stagger rows; narrow side-panel heights must stay usable without waiting on list choreography.
 - Touch/hover differences:
   - Hover states may be subtle on pointer devices.
   - Click/press feedback uses light scale/compression only.
@@ -211,7 +219,7 @@
   - Do not scatter fonts, colors, route IDs, PMS values, or operation codes inside components.
   - Keep `--text-tracking-tight: 0`; negative letter spacing is not allowed by higher-level frontend rules.
 - Performance constraints:
-  - Keep motion to transform/opacity.
+  - Keep navigation motion to transform so route changes do not animate layout or create horizontal page scroll.
   - Avoid layout-shifting hover states.
   - Added font files are bundled assets; note that `NotoSansKR-VariableFont_wght.ttf` is large and should be reviewed if extension size becomes a concern.
 - Compatibility constraints:

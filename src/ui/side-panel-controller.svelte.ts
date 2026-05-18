@@ -14,6 +14,7 @@ import {
   categoryOptions,
   contextOptions,
   homeBottomNavigation,
+  homeLabels,
   homeMenuSections,
   homeNavigation,
   languageOptions as languages,
@@ -81,6 +82,8 @@ import {
   getMenu,
   getRoomsSettingsCommand,
   isRoomsSettingsCommandId,
+  usesAirportVanPanel,
+  usesWorkLanguageSelector,
   type MenuId,
   type RoomsSettingsCommandId,
 } from "../catalog/menu-routing.js";
@@ -106,6 +109,8 @@ import type {
   UnifiedTemplateDefinition,
 } from "../catalog/template-types.js";
 
+export type NavigationDirection = "forward" | "backward" | "replace";
+
 export type SidePanelControllerDependencies = {
   clipboard: {
     writeText(text: string): Promise<void>;
@@ -129,6 +134,8 @@ export type SidePanelControllerDependencies = {
 
 export function createSidePanelController(dependencies: SidePanelControllerDependencies) {
   let activeMenu = $state<MenuId | null>(null);
+  let navigationDirection = $state<NavigationDirection>("replace");
+  let routeTransitionKey = $state(0);
   let selectedBranchId = $state<BranchId | "">("");
   let selectedLanguage = $state<Language>("KO");
   let tabContext = $state({ ...EMPTY_TAB_CONTEXT });
@@ -192,12 +199,11 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   const showsOtaReservationPanel = $derived(activeScreenKind === "otaReservationInput");
   const showsCustomerGuidancePanel = $derived(activeScreenKind === "customerGuidance");
   const showsLaundryPanel = $derived(activeScreenKind === "laundry");
+  const showsAirportVanPanel = $derived(usesAirportVanPanel(activeMenu));
   const showsTemplateListPanel = $derived(
     activeScreenKind === "templateList" || activeScreenKind === "laundry",
   );
-  const showsWorkLanguageSelector = $derived(
-    activeMenu === "CUSTOMER_NOTICE" || activeMenu === "QUICK_REPLY",
-  );
+  const showsWorkLanguageSelector = $derived(usesWorkLanguageSelector(activeMenu));
   const visiblePmsRecords = $derived(filterPmsGuestRecords(pmsRecords, pmsSearchTerm));
   const selectedPmsRecord = $derived(
     resolveSelectedPmsRecord(pmsRecords, selectedPmsRecordId),
@@ -233,6 +239,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
 
   async function mount() {
     activeMenu = null;
+    navigationDirection = "replace";
+    routeTransitionKey += 1;
     tabContext = await dependencies.tabContext.getActiveTabContext();
     try {
       const { state: loadedState, recovered } = await dependencies.extensionState.readWithRecovery();
@@ -274,7 +282,12 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       statusMessage = "작성 또는 설정 중에는 이동할 수 없습니다.";
       return;
     }
+    if (activeMenu === menuId) {
+      return;
+    }
     const nextMenu = getMenu(menuId);
+    navigationDirection = activeMenu === null ? "forward" : "replace";
+    routeTransitionKey += 1;
     activeMenu = menuId;
     copiedTemplateId = "";
     selectedGuidanceTemplateId = "";
@@ -300,6 +313,11 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       statusMessage = "저장하거나 취소한 뒤 이동할 수 있습니다.";
       return;
     }
+    if (activeMenu === null) {
+      return;
+    }
+    navigationDirection = "backward";
+    routeTransitionKey += 1;
     activeMenu = null;
     copiedTemplateId = "";
     selectedRoomRemarkTemplateId = "";
@@ -815,6 +833,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     homeMenuSections,
     homeNavigation,
     homeBottomNavigation,
+    homeLabels,
     languages,
     hasAnyTemplateForLanguage,
     laundryStatusLabel,
@@ -868,6 +887,15 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     pmsRecordBadgeLabel,
     get activeMenu() {
       return activeMenu;
+    },
+    get navigationDirection() {
+      return navigationDirection;
+    },
+    get routeTransitionKey() {
+      return routeTransitionKey;
+    },
+    get activeViewKey() {
+      return activeMenu || "home";
     },
     get isHomeScreen() {
       return activeMenu === null;
@@ -973,6 +1001,9 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     },
     get showsLaundryPanel() {
       return showsLaundryPanel;
+    },
+    get showsAirportVanPanel() {
+      return showsAirportVanPanel;
     },
     get showsTemplateListPanel() {
       return showsTemplateListPanel;

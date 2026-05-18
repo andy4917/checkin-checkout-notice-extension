@@ -10,6 +10,9 @@ import {
   getRoomsSettingsCommand,
   homeBottomNavigationItems,
   homeNavigationGroups,
+  homeNavigationLabels,
+  usesAirportVanPanel,
+  usesWorkLanguageSelector,
 } from "../src/catalog/menu-routing.js";
 import {
   ManualRequiredValueMissingError,
@@ -51,6 +54,10 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
     homeNavigationGroups[0]?.items.map((item) => item.title),
     ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
   );
+  assert.equal(
+    homeNavigationGroups[3]?.items.find((item) => item.id === "work-ota")?.badgeLabel,
+    "WINGS",
+  );
   assert.deepEqual(
     homeNavigationGroups[2]?.items.map((item) => item.title),
     ["세탁물 관리", "매출 관리", "공항밴 관리"],
@@ -59,6 +66,12 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
     homeBottomNavigationItems.map((item) => item.title),
     ["체크인 목록", "체크아웃 목록", "객실 선택", "설정"],
   );
+  assert.equal(homeNavigationLabels.backToRootLabel, "홈 메뉴로 돌아가기");
+  assert.equal(homeNavigationLabels.openSubmenuLabel("고객 안내문"), "고객 안내문 메뉴 열기");
+  assert.equal(usesWorkLanguageSelector("CUSTOMER_NOTICE"), true);
+  assert.equal(usesWorkLanguageSelector("WORK_REPORT"), false);
+  assert.equal(usesAirportVanPanel("AIRPORT_VAN_MANAGEMENT"), true);
+  assert.equal(usesAirportVanPanel("CUSTOMER_NOTICE"), false);
 });
 
 test("home navigation styling contract keeps shared typography and divider tokens", () => {
@@ -74,6 +87,43 @@ test("home navigation styling contract keeps shared typography and divider token
   assert.match(css, /--color-home-divider:\s*#ececea;/);
   assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*1px solid var\(--color-home-divider\);/s);
   assert.match(css, /\.home-nav-icon\s*\{[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.home-nav-badge\s*\{/);
+  assert.match(css, /--home-focus-ring:\s*#aeb5ae;/);
+  assert.match(css, /--home-header-block-space:\s*78px;/);
+  assert.match(css, /--home-root-row-height:\s*58px;/);
+  assert.match(css, /--home-submenu-row-height:\s*52px;/);
+  assert.match(css, /--home-root-row-gap:\s*6px;/);
+  assert.match(css, /--sidepanel-motion-duration:\s*280ms;/);
+  assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\);/);
+  assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding-bottom:\s*0;/s);
+  assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*min-height:\s*calc\(100dvh - var\(--home-header-block-space\)\);/s);
+  assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
+  assert.match(css, /\.home-navigation-track\s*\{[^}]*transition:\s*transform var\(--sidepanel-motion-duration\) var\(--sidepanel-motion-ease\);/s);
+  assert.match(css, /\.home-nav-root-item:hover,\s*\.home-submenu-item:hover\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(css, /\.interactive-label::after\s*\{/);
+
+  const homeView = readFileSync("src/ui/components/HomeView.svelte", "utf8");
+  assert.match(homeView, /aria-haspopup="true"/);
+  assert.match(homeView, /aria-expanded=\{activeGroup\?\.id === group\.id\}/);
+  assert.match(homeView, /aria-controls=\{getSubmenuPanelId\(group\.id\)\}/);
+  assert.match(homeView, /aria-label=\{labels\.backToRootLabel\}/);
+  assert.doesNotMatch(homeView, /--stagger-index/);
+  assert.doesNotMatch(readFileSync("src/ui/components/ShellHeader.svelte", "utf8"), /--stagger-index/);
+  assert.doesNotMatch(readFileSync("src/ui/components/RoomsSettingsBar.svelte", "utf8"), /--stagger-index/);
+  assert.doesNotMatch(readFileSync("src/ui/components/TemplateList.svelte", "utf8"), /--stagger-index/);
+  const routeMotionFrame = readFileSync("src/ui/components/RouteMotionFrame.svelte", "utf8");
+  assert.match(routeMotionFrame, /--sidepanel-motion-duration/);
+  assert.doesNotMatch(routeMotionFrame, /ROUTE_START_OPACITY|opacity:/);
+  assert.doesNotMatch(css, /\.priority-card\b/);
+  assert.doesNotMatch(css, /\.priority-menu\b/);
+  assert.doesNotMatch(css, /\.home-list-item\b/);
+  assert.doesNotMatch(css, /\.home-menu-section\b/);
+  assert.doesNotMatch(css, /@keyframes home-item-reveal/);
+  assert.doesNotMatch(css, /@keyframes home-detail-reveal/);
+  assert.doesNotMatch(css, /\.home-submenu-section-label\b/);
+  assert.doesNotMatch(css, /--stagger-index|--stagger-base-delay|--stagger-step-delay|--stagger-max-delay/);
+  assert.doesNotMatch(css, /\.home-navigation-viewport\s*\{[^}]*486px/s);
+  assert.doesNotMatch(css, /@container home-panel[^}]+\.home-navigation-viewport\s*\{[^}]*520px/s);
   assert.equal(existsSync("assets/fonts/NotoSansKR-VariableFont_wght.ttf"), true);
   assert.equal(existsSync("assets/fonts/PlusJakartaSans-VariableFont_wght.ttf"), true);
 });

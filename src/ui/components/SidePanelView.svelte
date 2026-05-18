@@ -5,6 +5,7 @@
   import * as LaundryPanelModule from "./LaundryPanel.svelte";
   import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
   import * as RoomsSettingsBarModule from "./RoomsSettingsBar.svelte";
+  import * as RouteMotionFrameModule from "./RouteMotionFrame.svelte";
   import * as SettingsPanelModule from "./SettingsPanel.svelte";
   import * as ShellHeaderModule from "./ShellHeader.svelte";
   import * as TemplateListModule from "./TemplateList.svelte";
@@ -17,6 +18,7 @@
   const LaundryPanel = LaundryPanelModule.default;
   const OtaReservationPanel = OtaReservationPanelModule.default;
   const RoomsSettingsBar = RoomsSettingsBarModule.default;
+  const RouteMotionFrame = RouteMotionFrameModule.default;
   const SettingsPanel = SettingsPanelModule.default;
   const ShellHeader = ShellHeaderModule.default;
   const TemplateList = TemplateListModule.default;
@@ -39,12 +41,17 @@
     onGoHome={controller.goHome}
   />
 
-  {#key controller.activeMenu}
-    <section class="screen-stage" aria-label={controller.isHomeScreen ? "홈" : "업무 화면"}>
+  <RouteMotionFrame
+    direction={controller.navigationDirection}
+    label={controller.isHomeScreen ? "홈" : "업무 화면"}
+    routeKey={controller.routeTransitionKey}
+  >
+    <div class="screen-stage" data-view-key={controller.activeViewKey}>
       {#if controller.isHomeScreen}
         <HomeView
           bottomItems={controller.homeBottomNavigation}
           groups={controller.homeNavigation}
+          labels={controller.homeLabels}
           onOpenMenu={controller.openMenu}
         />
       {:else}
@@ -108,7 +115,7 @@
         onLoadOtaReservation={controller.loadOtaReservation}
       />
         {:else}
-          {#if controller.activeMenu === "AIRPORT_VAN_MANAGEMENT"}
+          {#if controller.showsAirportVanPanel}
             <AirportVanPanel
           activeTemplates={controller.activeTemplates}
           copiedTemplateId={controller.copiedTemplateId}
@@ -142,7 +149,7 @@
         />
           {/if}
 
-          {#if controller.showsTemplateListPanel && controller.activeMenu !== "AIRPORT_VAN_MANAGEMENT"}
+          {#if controller.showsTemplateListPanel && !controller.showsAirportVanPanel}
             <TemplateList
           activeTemplates={controller.activeTemplates}
           copiedTemplateId={controller.copiedTemplateId}
@@ -156,8 +163,8 @@
           {/if}
         {/if}
       {/if}
-    </section>
-  {/key}
+    </div>
+  </RouteMotionFrame>
 
   <RoomsSettingsBar
     footerActions={controller.roomsSettingsActions}

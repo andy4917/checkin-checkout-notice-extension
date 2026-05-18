@@ -59,7 +59,10 @@
           {@const languageAvailable = isLanguageAvailable(template)}
           {@const variables = visibleTemplateVariables(template)}
           {@const expanded = expandedTemplateId === template.id}
-          <article class:blocked={!guard.ok || !languageAvailable} class="template-card">
+          <article
+            class:blocked={!guard.ok || !languageAvailable}
+            class="template-card"
+          >
             <span class="template-card-icon" aria-hidden="true">
               <MaterialIcon name={templateIcon(template)} size={22} />
             </span>

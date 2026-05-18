@@ -56,6 +56,7 @@ export type HomeNavigationItem = {
   title: string;
   icon: string;
   menuId: MenuId;
+  badgeLabel?: string;
 };
 
 export type HomeNavigationGroup = {
@@ -70,6 +71,15 @@ export type HomeBottomNavigationItem = {
   title: string;
   icon: string;
   menuId?: MenuId;
+};
+
+export type HomeNavigationLabels = {
+  rootLabel: string;
+  rootMenuLabel: string;
+  bottomMenuLabel: string;
+  defaultSubmenuLabel: string;
+  backToRootLabel: string;
+  openSubmenuLabel: (title: string) => string;
 };
 
 export type HomeQuickAction = {
@@ -336,7 +346,7 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     icon: "assignment",
     items: Object.freeze([
       Object.freeze({ id: "work-room-remark", title: "객실 정보 리마크", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
-      Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT" }),
+      Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT", badgeLabel: "WINGS" }),
       Object.freeze({ id: "work-report", title: "업무보고 양식", icon: "summarize", menuId: "WORK_REPORT" }),
     ]),
   }),
@@ -357,6 +367,27 @@ export const homeBottomNavigationItems: readonly HomeBottomNavigationItem[] = Ob
   Object.freeze({ id: "room-select", title: "객실 선택", icon: "meeting_room" }),
   Object.freeze({ id: "settings", title: "설정", icon: "settings", menuId: "SETTINGS" }),
 ]);
+
+export const homeNavigationLabels: HomeNavigationLabels = Object.freeze({
+  rootLabel: "홈 메뉴",
+  rootMenuLabel: "업무 그룹",
+  bottomMenuLabel: "하단 업무 메뉴",
+  defaultSubmenuLabel: "하위 메뉴",
+  backToRootLabel: "홈 메뉴로 돌아가기",
+  openSubmenuLabel: (title: string) => `${title} 메뉴 열기`,
+});
+
+export function usesWorkLanguageSelector(menuId: MenuId | null): boolean {
+  if (!menuId) return false;
+  const menu = getMenu(menuId);
+  return menu.screenKind === "customerGuidance" || menu.id === "QUICK_REPLY";
+}
+
+export function usesAirportVanPanel(menuId: MenuId | null): boolean {
+  if (!menuId) return false;
+  const menu = getMenu(menuId);
+  return menu.templateFilter.kind === "type" && menu.templateFilter.typeId === "airport_van";
+}
 
 export function getHomeMenuSections(): HomeMenuSection[] {
   const menus = menuGroups.flatMap((group) => group.items);

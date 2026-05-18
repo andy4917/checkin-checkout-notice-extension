@@ -28,9 +28,11 @@
     if (!selectedFooterAction || !selectedFooterAction.enabled) return;
     if (selectedFooterAction.kind === "menu") {
       onOpenMenu(selectedFooterAction.menuId);
-    } else {
-      void onRunCommand(selectedFooterAction.commandId);
+      closeBottomSheet();
+      return;
     }
+
+    void onRunCommand(selectedFooterAction.commandId);
     closeBottomSheet();
   }
 </script>
