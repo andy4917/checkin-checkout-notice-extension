@@ -1,11 +1,25 @@
 import type {
   TemplateMenuId,
+  TemplateTypeId,
+  TemplateAudience,
   UnifiedTemplateDefinition,
 } from "./template-types.js";
 
 export type MenuId = TemplateMenuId | "AIRPORT_VAN_MANAGEMENT" | "OTA_RESERVATION_INPUT" | "SETTINGS";
 
 export type HomeMenuSectionId = "primary" | "room-operations" | "work-forms";
+
+export type MenuScreenKind =
+  | "customerGuidance"
+  | "laundry"
+  | "templateList"
+  | "otaReservationInput"
+  | "settings";
+
+export type MenuTemplateFilter =
+  | { kind: "menu" }
+  | { kind: "type"; typeId: TemplateTypeId }
+  | { kind: "none" };
 
 export type HomeMenuPresentation = {
   sectionId: HomeMenuSectionId;
@@ -21,6 +35,8 @@ export type MenuItem = {
   title: string;
   description: string;
   icon: string;
+  screenKind: MenuScreenKind;
+  templateFilter: MenuTemplateFilter;
   home?: HomeMenuPresentation;
 };
 
@@ -35,12 +51,64 @@ export type HomeMenuSection = {
   items: readonly MenuItem[];
 };
 
+export type HomeNavigationItem = {
+  id: string;
+  title: string;
+  icon: string;
+  menuId: MenuId;
+  badgeLabel?: string;
+};
+
+export type HomeNavigationGroup = {
+  id: string;
+  title: string;
+  icon: string;
+  items: readonly HomeNavigationItem[];
+};
+
+export type HomeBottomNavigationItem = {
+  id: string;
+  title: string;
+  icon: string;
+  menuId?: MenuId;
+};
+
+export type HomeNavigationLabels = {
+  rootLabel: string;
+  rootMenuLabel: string;
+  bottomMenuLabel: string;
+  defaultSubmenuLabel: string;
+  backToRootLabel: string;
+  openSubmenuLabel: (title: string) => string;
+};
+
 export type HomeQuickAction = {
+  kind: "menu";
   id: string;
   label: string;
   icon: string;
   menuId: MenuId;
+  detailLabel: string;
+  confirmLabel: string;
 };
+
+export type RoomsSettingsCommandId = "UPSERT_WINGS_REMARK";
+
+export type RoomsSettingsCommandAction = {
+  kind: "command";
+  id: string;
+  label: string;
+  icon: string;
+  commandId: RoomsSettingsCommandId;
+  detailLabel: string;
+  confirmLabel: string;
+  visibleWhenSelectedTemplateAudience?: TemplateAudience;
+  requiresBranch?: boolean;
+  requiresPmsRecord?: boolean;
+  requiresWingsReservationWindow?: boolean;
+};
+
+export type RoomsSettingsAction = HomeQuickAction | RoomsSettingsCommandAction;
 
 export class MenuRoutingError extends Error {
   constructor(message: string) {
@@ -58,6 +126,8 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "고객 안내문",
         description: "입실과 재실 안내",
         icon: "info",
+        screenKind: "customerGuidance",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "primary",
           title: "고객 안내문",
@@ -72,9 +142,11 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "빠른 문의 답변",
         description: "자주 묻는 문의 응대",
         icon: "chat_bubble",
+        screenKind: "templateList",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "primary",
-          title: "빠른 답변",
+          title: "빠른 문의 답변",
           description: "고객 문의 응대 템플릿",
           icon: "chat_bubble",
           order: 20,
@@ -90,6 +162,8 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "세탁물 관리",
         description: "세탁 완료와 전달 안내",
         icon: "local_laundry_service",
+        screenKind: "laundry",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "room-operations",
           title: "세탁물 관리",
@@ -103,6 +177,8 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "공항밴 관리",
         description: "공항밴 안내와 배차 확인",
         icon: "airport_shuttle",
+        screenKind: "templateList",
+        templateFilter: Object.freeze({ kind: "type", typeId: "airport_van" }),
         home: Object.freeze({
           sectionId: "room-operations",
           title: "공항밴 관리",
@@ -113,9 +189,11 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
       }),
       Object.freeze({
         id: "SALES_MANAGEMENT",
-        title: "매지출 관리",
-        description: "매지출과 드오디네 기록",
+        title: "매출 관리",
+        description: "매출과 지출 기록",
         icon: "payments",
+        screenKind: "templateList",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "room-operations",
           title: "매지출 관리",
@@ -126,12 +204,14 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
       }),
       Object.freeze({
         id: "ROOM_REMARK_MEMO",
-        title: "객실 정보 메모",
+        title: "객실 정보 리마크",
         description: "객실 물품과 메모 작성",
         icon: "bedroom_parent",
+        screenKind: "templateList",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "work-forms",
-          title: "객실 정보 메모",
+          title: "객실 정보 리마크",
           description: "객실 물품과 특이사항 메모",
           icon: "bedroom_parent",
           order: 10,
@@ -139,12 +219,14 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
       }),
       Object.freeze({
         id: "OTA_RESERVATION_INPUT",
-        title: "OTA 예약 입력",
+        title: "NAVER / STATION 예약입력",
         description: "네이버/스테이션 값을 WINGS에 입력",
         icon: "travel_explore",
+        screenKind: "otaReservationInput",
+        templateFilter: Object.freeze({ kind: "none" }),
         home: Object.freeze({
           sectionId: "work-forms",
-          title: "OTA 예약 입력",
+          title: "NAVER / STATION 예약입력",
           description: "예약 정보를 WINGS에 반영",
           icon: "travel_explore",
           order: 20,
@@ -157,12 +239,14 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
     items: Object.freeze([
       Object.freeze({
         id: "WORK_REPORT",
-        title: "업무 관리",
+        title: "업무보고 양식",
         description: "일일 업무와 예약 보고",
         icon: "assignment",
+        screenKind: "templateList",
+        templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "work-forms",
-          title: "업무 관리",
+          title: "업무보고 양식",
           description: "일일 업무와 예약 보고",
           icon: "assignment",
           order: 30,
@@ -174,12 +258,14 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
 
 export const settingsMenu: MenuItem = Object.freeze({
   id: "SETTINGS",
-  title: "설정",
+  title: "템플릿 / 양식 편집",
   description: "템플릿 기본값과 사용자 항목",
   icon: "design_services",
+  screenKind: "settings",
+  templateFilter: Object.freeze({ kind: "none" }),
   home: Object.freeze({
     sectionId: "work-forms",
-    title: "템플릿 설정",
+    title: "템플릿 / 양식 편집",
     description: "문구와 사용자 항목 관리",
     icon: "design_services",
     order: 90,
@@ -196,12 +282,112 @@ const HOME_SECTION_LABELS: Readonly<Record<HomeMenuSectionId | "settings", strin
 
 export const homeQuickActions: readonly HomeQuickAction[] = Object.freeze([
   Object.freeze({
+    kind: "menu",
     id: "settings",
     label: "설정",
     icon: "settings",
     menuId: "SETTINGS",
+    detailLabel: "설정 열기",
+    confirmLabel: "열기",
   }),
 ]);
+
+export const roomsSettingsActions: readonly RoomsSettingsAction[] = Object.freeze([
+  ...homeQuickActions,
+  Object.freeze({
+    kind: "command",
+    id: "upsert-wings-remark",
+    label: "리마크 입력",
+    icon: "edit_note",
+    commandId: "UPSERT_WINGS_REMARK",
+    detailLabel: "WINGS 리마크에 입력",
+    confirmLabel: "실행",
+    visibleWhenSelectedTemplateAudience: "pmsRemark",
+    requiresPmsRecord: true,
+    requiresWingsReservationWindow: true,
+  }),
+]);
+
+export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freeze([
+  Object.freeze({
+    id: "customer-guidance",
+    title: "고객 안내문",
+    icon: "info",
+    items: Object.freeze([
+      Object.freeze({ id: "customer-checkin", title: "체크인 안내문", icon: "login", menuId: "CUSTOMER_NOTICE" }),
+      Object.freeze({ id: "customer-checkout", title: "체크아웃 안내문", icon: "keyboard_return", menuId: "CUSTOMER_NOTICE" }),
+      Object.freeze({ id: "customer-room", title: "객실 관련 안내문", icon: "bedroom_parent", menuId: "CUSTOMER_NOTICE" }),
+      Object.freeze({ id: "customer-fee", title: "각종 요금 관련 안내문", icon: "payments", menuId: "CUSTOMER_NOTICE" }),
+    ]),
+  }),
+  Object.freeze({
+    id: "quick-replies",
+    title: "빠른 문의 답변",
+    icon: "chat_bubble",
+    items: Object.freeze([
+      Object.freeze({ id: "quick-rental", title: "물품 대여 문의", icon: "inventory_2", menuId: "QUICK_REPLY" }),
+      Object.freeze({ id: "quick-lost-item", title: "분실물 문의", icon: "manage_search", menuId: "QUICK_REPLY" }),
+      Object.freeze({ id: "quick-room-visit", title: "객실 방문 예정", icon: "meeting_room", menuId: "QUICK_REPLY" }),
+    ]),
+  }),
+  Object.freeze({
+    id: "service-management",
+    title: "고객 서비스 관리",
+    icon: "room_service",
+    items: Object.freeze([
+      Object.freeze({ id: "service-laundry", title: "세탁물 관리", icon: "local_laundry_service", menuId: "LAUNDRY_MANAGEMENT" }),
+      Object.freeze({ id: "service-sales", title: "매출 관리", icon: "payments", menuId: "SALES_MANAGEMENT" }),
+      Object.freeze({ id: "service-airport-van", title: "공항밴 관리", icon: "airport_shuttle", menuId: "AIRPORT_VAN_MANAGEMENT" }),
+    ]),
+  }),
+  Object.freeze({
+    id: "work-management",
+    title: "업무 관리",
+    icon: "assignment",
+    items: Object.freeze([
+      Object.freeze({ id: "work-room-remark", title: "객실 정보 리마크", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
+      Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT", badgeLabel: "WINGS" }),
+      Object.freeze({ id: "work-report", title: "업무보고 양식", icon: "summarize", menuId: "WORK_REPORT" }),
+    ]),
+  }),
+  Object.freeze({
+    id: "template-editor",
+    title: "템플릿 / 양식 편집",
+    icon: "design_services",
+    items: Object.freeze([
+      Object.freeze({ id: "template-customer", title: "고객 템플릿 / 빠른답변", icon: "description", menuId: "SETTINGS" }),
+      Object.freeze({ id: "template-work", title: "업무 내용 변경", icon: "edit_note", menuId: "SETTINGS" }),
+    ]),
+  }),
+]);
+
+export const homeBottomNavigationItems: readonly HomeBottomNavigationItem[] = Object.freeze([
+  Object.freeze({ id: "checkin-list", title: "체크인 목록", icon: "login" }),
+  Object.freeze({ id: "checkout-list", title: "체크아웃 목록", icon: "keyboard_return" }),
+  Object.freeze({ id: "room-select", title: "객실 선택", icon: "meeting_room" }),
+  Object.freeze({ id: "settings", title: "설정", icon: "settings", menuId: "SETTINGS" }),
+]);
+
+export const homeNavigationLabels: HomeNavigationLabels = Object.freeze({
+  rootLabel: "홈 메뉴",
+  rootMenuLabel: "업무 그룹",
+  bottomMenuLabel: "하단 업무 메뉴",
+  defaultSubmenuLabel: "하위 메뉴",
+  backToRootLabel: "홈 메뉴로 돌아가기",
+  openSubmenuLabel: (title: string) => `${title} 메뉴 열기`,
+});
+
+export function usesWorkLanguageSelector(menuId: MenuId | null): boolean {
+  if (!menuId) return false;
+  const menu = getMenu(menuId);
+  return menu.screenKind === "customerGuidance" || menu.id === "QUICK_REPLY";
+}
+
+export function usesAirportVanPanel(menuId: MenuId | null): boolean {
+  if (!menuId) return false;
+  const menu = getMenu(menuId);
+  return menu.templateFilter.kind === "type" && menu.templateFilter.typeId === "airport_van";
+}
 
 export function getHomeMenuSections(): HomeMenuSection[] {
   const menus = menuGroups.flatMap((group) => group.items);
@@ -235,16 +421,38 @@ export function filterTemplatesForMenu(
   menuId: MenuId,
   templates: readonly UnifiedTemplateDefinition[],
 ): UnifiedTemplateDefinition[] {
-  if (menuId === "OTA_RESERVATION_INPUT" || menuId === "SETTINGS") return [];
-  if (menuId === "AIRPORT_VAN_MANAGEMENT") {
-    return templates.filter((template) => template.typeId === "airport_van");
+  const menu = getMenu(menuId);
+  if (menu.templateFilter.kind === "none") return [];
+  if (menu.templateFilter.kind === "type") {
+    const { typeId } = menu.templateFilter;
+    return templates.filter((template) => template.typeId === typeId);
   }
   return templates.filter((template) => template.menuId === menuId);
 }
 
+export function isRoomsSettingsCommandId(input: string): input is RoomsSettingsCommandId {
+  return roomsSettingsActions.some(
+    (action) => action.kind === "command" && action.commandId === input,
+  );
+}
+
+export function getRoomsSettingsCommand(
+  commandId: RoomsSettingsCommandId,
+): RoomsSettingsCommandAction {
+  const command = roomsSettingsActions.find(
+    (action): action is RoomsSettingsCommandAction =>
+      action.kind === "command" && action.commandId === commandId,
+  );
+  if (!command) {
+    throw new MenuRoutingError(`Unknown Rooms & Settings command: ${commandId}`);
+  }
+  return command;
+}
+
 export function getMenu(menuId: MenuId): MenuItem {
-  if (menuId === "SETTINGS") return settingsMenu;
-  const menu = menuGroups.flatMap((group) => group.items).find((item) => item.id === menuId);
+  const menu = [...menuGroups.flatMap((group) => group.items), settingsMenu].find(
+    (item) => item.id === menuId,
+  );
   if (!menu) {
     throw new MenuRoutingError(`Unknown menu: ${menuId}`);
   }

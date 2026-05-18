@@ -1,20 +1,24 @@
 <script lang="ts">
   import * as HomeViewModule from "./HomeView.svelte";
+  import * as AirportVanPanelModule from "./AirportVanPanel.svelte";
+  import * as CustomerGuidancePanelModule from "./CustomerGuidancePanel.svelte";
   import * as LaundryPanelModule from "./LaundryPanel.svelte";
   import * as OtaReservationPanelModule from "./OtaReservationPanel.svelte";
-  import * as RoomBottomBarModule from "./RoomBottomBar.svelte";
   import * as RoomsSettingsBarModule from "./RoomsSettingsBar.svelte";
+  import * as RouteMotionFrameModule from "./RouteMotionFrame.svelte";
   import * as SettingsPanelModule from "./SettingsPanel.svelte";
   import * as ShellHeaderModule from "./ShellHeader.svelte";
   import * as TemplateListModule from "./TemplateList.svelte";
   import * as WorkHeaderModule from "./WorkHeader.svelte";
   import type { createSidePanelController } from "../side-panel-controller.svelte.js";
 
+  const AirportVanPanel = AirportVanPanelModule.default;
   const HomeView = HomeViewModule.default;
+  const CustomerGuidancePanel = CustomerGuidancePanelModule.default;
   const LaundryPanel = LaundryPanelModule.default;
   const OtaReservationPanel = OtaReservationPanelModule.default;
-  const RoomBottomBar = RoomBottomBarModule.default;
   const RoomsSettingsBar = RoomsSettingsBarModule.default;
+  const RouteMotionFrame = RouteMotionFrameModule.default;
   const SettingsPanel = SettingsPanelModule.default;
   const ShellHeader = ShellHeaderModule.default;
   const TemplateList = TemplateListModule.default;
@@ -24,43 +28,48 @@
 </script>
 
 <main
-  class:home-mode={controller.activeMenu === null}
-  class:roomBottomMode={controller.activeMenu !== null &&
-    controller.activeMenu !== "SETTINGS" &&
-    controller.activeMenu !== "OTA_RESERVATION_INPUT"}
+  class:home-mode={controller.isHomeScreen}
   class="app-shell"
 >
   <ShellHeader
+    activeMenuIcon={controller.selectedMenu?.home?.icon || null}
+    activeMenuTitle={controller.selectedMenu?.title || null}
     branchOptions={controller.branchOptions}
     navigationLocked={controller.navigationLocked}
     selectedBranchId={controller.selectedBranchId}
     onBranchChange={controller.handleBranchChange}
+    onGoHome={controller.goHome}
   />
 
-  {#if controller.activeMenu === null}
-    <HomeView
-      sections={controller.homeMenuSections}
-      onOpenMenu={controller.openMenu}
-    />
-  {:else}
-    <WorkHeader
-      activeMenu={controller.activeMenu}
+  <RouteMotionFrame
+    direction={controller.navigationDirection}
+    label={controller.isHomeScreen ? "홈" : "업무 화면"}
+    routeKey={controller.routeTransitionKey}
+  >
+    <div class="screen-stage" data-view-key={controller.activeViewKey}>
+      {#if controller.isHomeScreen}
+        <HomeView
+          bottomItems={controller.homeBottomNavigation}
+          groups={controller.homeNavigation}
+          labels={controller.homeLabels}
+          onOpenMenu={controller.openMenu}
+        />
+      {:else}
+        <WorkHeader
       activeTemplates={controller.activeTemplates}
       languages={controller.languages}
-      navigationLocked={controller.navigationLocked}
       selectedLanguage={controller.selectedLanguage}
-      selectedMenu={controller.selectedMenu}
+      selectedPmsRecord={controller.selectedPmsRecord}
+      showLanguageSelector={controller.showsWorkLanguageSelector}
+      showRoomContext={controller.activeMenuRequiresSelectedRoom}
+      showWingsStatus={controller.activeMenuUsesWingsContext}
+      wingsConnected={controller.hasWingsPmsContext}
       hasAnyTemplateForLanguage={controller.hasAnyTemplateForLanguage}
-      onGoHome={controller.goHome}
       onSelectLanguage={controller.handleLanguageSelect}
     />
 
-    <section class="status-bar" aria-live="polite">
-      {controller.statusMessage}
-    </section>
-
-    {#if controller.activeMenu === "SETTINGS"}
-      <SettingsPanel
+        {#if controller.showsSettingsPanel}
+          <SettingsPanel
         audienceOptions={controller.audienceOptions}
         branchOptions={controller.branchOptions}
         catalogTemplates={controller.catalogTemplates}
@@ -97,73 +106,69 @@
         onSaveTemplateEdit={controller.saveTemplateEdit}
         onSettingsTemplateChange={controller.handleSettingsTemplateChange}
       />
-    {:else if controller.activeMenu === "OTA_RESERVATION_INPUT"}
-      <OtaReservationPanel
+        {:else if controller.showsOtaReservationPanel}
+          <OtaReservationPanel
         otaLoading={controller.otaLoading}
         otaPreview={controller.otaPreview}
         selectedBranchId={controller.selectedBranchId}
-        otaPreviewSummary={controller.otaPreviewSummary}
         onFillWingsReservation={controller.fillWingsReservation}
         onLoadOtaReservation={controller.loadOtaReservation}
       />
-    {:else}
-      {#if controller.activeMenu === "LAUNDRY_MANAGEMENT"}
-        <LaundryPanel
+        {:else}
+          {#if controller.showsAirportVanPanel}
+            <AirportVanPanel
+          activeTemplates={controller.activeTemplates}
+          copiedTemplateId={controller.copiedTemplateId}
+          selectedLanguage={controller.selectedLanguage}
+          currentWorkContext={controller.currentWorkContext}
+          onCopyTemplate={controller.copyTemplate}
+          onTemplateVariableInput={controller.handleTemplateVariableInput}
+          templateInputValue={controller.templateInputValue}
+        />
+          {:else if controller.showsCustomerGuidancePanel}
+            <CustomerGuidancePanel
+          activeTemplates={controller.activeTemplates}
+          copiedTemplateId={controller.copiedTemplateId}
+          selectedGuidanceTemplateId={controller.selectedGuidanceTemplateId}
+          selectedLanguage={controller.selectedLanguage}
+          currentWorkContext={controller.currentWorkContext}
+          onCopyTemplate={controller.copyTemplate}
+          onSelectGuidanceTemplate={controller.selectGuidanceTemplate}
+        />
+          {:else if controller.showsLaundryPanel}
+            <LaundryPanel
           filteredLaundryRecords={controller.filteredLaundryRecords}
           laundryItemSummary={controller.laundryItemSummary}
           laundryLoading={controller.laundryLoading}
-          laundryNote={controller.laundryNote}
-          laundrySearchTerm={controller.laundrySearchTerm}
-          laundryStatusFilter={controller.laundryStatusFilter}
           selectedBranchId={controller.selectedBranchId}
           selectedPmsRecord={controller.selectedPmsRecord}
-          laundryStatusLabel={controller.laundryStatusLabel}
-          nextLaundryStatus={controller.nextLaundryStatus}
           onAddLaundry={controller.addLaundry}
           onLaundryItemSummaryChange={controller.setLaundryItemSummary}
-          onLaundryNoteChange={controller.setLaundryNote}
-          onLaundrySearchTermChange={controller.setLaundrySearchTerm}
-          onLaundryStatusFilterChange={controller.setLaundryStatusFilter}
           onLoadLaundryRecords={controller.loadLaundryRecords}
           onSetLaundryStatus={controller.setLaundryStatus}
         />
+          {/if}
+
+          {#if controller.showsTemplateListPanel && !controller.showsAirportVanPanel}
+            <TemplateList
+          activeTemplates={controller.activeTemplates}
+          copiedTemplateId={controller.copiedTemplateId}
+          selectedLanguage={controller.selectedLanguage}
+          currentWorkContext={controller.currentWorkContext}
+          onCopyTemplate={controller.copyTemplate}
+          onTemplateVariableInput={controller.handleTemplateVariableInput}
+          templateInputValue={controller.templateInputValue}
+          visibleTemplateVariables={controller.visibleTemplateVariables}
+        />
+          {/if}
+        {/if}
       {/if}
-
-      <TemplateList
-        activeTemplates={controller.activeTemplates}
-        copiedTemplateId={controller.copiedTemplateId}
-        selectedLanguage={controller.selectedLanguage}
-        branchScopeLabel={controller.branchScopeLabel}
-        currentWorkContext={controller.currentWorkContext}
-        onCopyTemplate={controller.copyTemplate}
-        onTemplateVariableInput={controller.handleTemplateVariableInput}
-        templateInputValue={controller.templateInputValue}
-        templateSummary={controller.templateSummary}
-        templateTypeLabel={controller.templateTypeLabel}
-        visibleTemplateVariables={controller.visibleTemplateVariables}
-      />
-    {/if}
-  {/if}
-
-  {#if controller.activeMenu !== null && controller.activeMenu !== "SETTINGS" && controller.activeMenu !== "OTA_RESERVATION_INPUT"}
-    <RoomBottomBar
-      pmsLoading={controller.pmsLoading}
-      pmsMode={controller.pmsMode}
-      pmsRecords={controller.pmsRecords}
-      pmsSearchTerm={controller.pmsSearchTerm}
-      selectedBranchId={controller.selectedBranchId}
-      selectedPmsRecord={controller.selectedPmsRecord}
-      selectedPmsRecordId={controller.selectedPmsRecordId}
-      visiblePmsRecords={controller.visiblePmsRecords}
-      onPmsSearchChange={controller.handlePmsSearchChange}
-      onSelectPmsMode={controller.selectPmsMode}
-      onSelectPmsRecord={controller.choosePmsRecord}
-      onSyncPmsGuestRecords={controller.syncPmsGuestRecords}
-    />
-  {/if}
+    </div>
+  </RouteMotionFrame>
 
   <RoomsSettingsBar
-    footerActions={controller.homeFooterActions}
+    footerActions={controller.roomsSettingsActions}
     onOpenMenu={controller.openMenu}
+    onRunCommand={controller.runRoomsSettingsCommand}
   />
 </main>

@@ -13,11 +13,10 @@ export class ActiveTabAutomationError extends Error {
 
 export const WINGS_RESERVATION_WINDOW_REQUIRED_MESSAGE =
   "WINGS 예약생성창을 생성한 뒤 다시 실행해주세요.";
-
-export async function getActiveOtaLocator(): Promise<OtaReservationLocator> {
-  const tab = await getActiveTab();
-  return detectOtaReservationLocator(tab.url || "");
-}
+export const WINGS_REMARK_WINDOW_REQUIRED_MESSAGE =
+  "WINGS 예약정보창을 연 뒤 다시 실행해주세요.";
+export const WINGS_REMARK_FIELD_REQUIRED_MESSAGE =
+  "WINGS 리마크 입력칸을 찾지 못했습니다.";
 
 export async function fetchActiveOtaPayload(): Promise<{
   locator: OtaReservationLocator;
@@ -68,6 +67,43 @@ export async function fillActiveWingsReservationForm(
   };
 }
 
+export async function readActiveWingsRemark(): Promise<string> {
+  const tab = await getActiveTab();
+  if (!isAllowedWingsReservationInfoUrl(tab.url || "")) {
+    throw new ActiveTabAutomationError(WINGS_REMARK_WINDOW_REQUIRED_MESSAGE);
+  }
+
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId: requireTabId(tab) },
+    world: "MAIN",
+    func: readRemarkInPage,
+  });
+
+  if (!result?.ok) {
+    throw new ActiveTabAutomationError(result?.error || WINGS_REMARK_FIELD_REQUIRED_MESSAGE);
+  }
+
+  return result.value;
+}
+
+export async function writeActiveWingsRemark(nextRemark: string): Promise<void> {
+  const tab = await getActiveTab();
+  if (!isAllowedWingsReservationInfoUrl(tab.url || "")) {
+    throw new ActiveTabAutomationError(WINGS_REMARK_WINDOW_REQUIRED_MESSAGE);
+  }
+
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId: requireTabId(tab) },
+    world: "MAIN",
+    func: writeRemarkInPage,
+    args: [nextRemark],
+  });
+
+  if (!result?.ok) {
+    throw new ActiveTabAutomationError(result?.error || WINGS_REMARK_FIELD_REQUIRED_MESSAGE);
+  }
+}
+
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
   if (!chrome.tabs?.query || !chrome.scripting?.executeScript) {
     throw new ActiveTabAutomationError("Chrome 탭 자동입력 권한을 사용할 수 없습니다.");
@@ -93,6 +129,22 @@ function isAllowedPmsUrl(tabUrl: string): boolean {
     return (
       EXTENSION_CONFIG.allowedPmsOrigins.includes(url.origin) &&
       url.pathname.includes("/pms/view/ir01_0310_V03.do")
+    );
+  } catch (_error) {
+    return false;
+  }
+}
+
+function isAllowedWingsReservationInfoUrl(tabUrl: string): boolean {
+  try {
+    const url = new URL(tabUrl);
+    if (!EXTENSION_CONFIG.allowedPmsOrigins.includes(url.origin)) return false;
+    const target = `${url.pathname} ${url.search}`.toLowerCase();
+    return (
+      target.includes("guest") ||
+      target.includes("rsvn") ||
+      target.includes("folio") ||
+      target.includes("ir04")
     );
   } catch (_error) {
     return false;
@@ -198,6 +250,23 @@ function fillFormFieldsInPage(fields: WingsReservationFieldMap) {
   return { ok: true, filled, missing };
 }
 
+function readRemarkInPage() {
+  const element = findRemarkInput();
+  if (!element) {
+    return { ok: false, error: "WINGS 리마크 입력칸을 찾지 못했습니다.", value: "" };
+  }
+  return { ok: true, value: element.value || "" };
+}
+
+function writeRemarkInPage(nextRemark: string) {
+  const element = findRemarkInput();
+  if (!element) {
+    return { ok: false, error: "WINGS 리마크 입력칸을 찾지 못했습니다." };
+  }
+  setInputValue(element, nextRemark);
+  return { ok: true };
+}
+
 function hasReservationCreationForm(): boolean {
   return Boolean(
     findInput("ARRV_DATE") &&
@@ -212,6 +281,44 @@ function findInput(name: string): HTMLInputElement | HTMLTextAreaElement | HTMLS
     `input[name="${escaped}"], textarea[name="${escaped}"], select[name="${escaped}"], #${escaped}`,
   )) as Array<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
   return elements.find(isPreferredFillTarget) || elements[0] || null;
+}
+
+function findRemarkInput(): HTMLInputElement | HTMLTextAreaElement | null {
+  const candidates = Array.from(
+    document.querySelectorAll("textarea, input[type='text'], input:not([type])"),
+  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
+  const preferred = candidates.filter(isPreferredRemarkTarget);
+  return (
+    preferred.find((element) => isRemarkFieldName(element, true)) ||
+    preferred.find((element) => isRemarkFieldName(element, false)) ||
+    null
+  );
+}
+
+function isPreferredRemarkTarget(element: HTMLInputElement | HTMLTextAreaElement): boolean {
+  if (element instanceof HTMLInputElement && element.type === "hidden") return false;
+  return !element.disabled && !element.readOnly;
+}
+
+function isRemarkFieldName(
+  element: HTMLInputElement | HTMLTextAreaElement,
+  strict: boolean,
+): boolean {
+  const source = [
+    element.name,
+    element.id,
+    element.getAttribute("data-field"),
+    element.getAttribute("aria-label"),
+    element.getAttribute("placeholder"),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toUpperCase();
+  if (!source) return false;
+  if (strict) {
+    return /\b(RSVN_)?(REMARKS?|RMK|MEMO)(_TXT)?\b/.test(source);
+  }
+  return /REMARK|RMK|MEMO|리마크|메모/.test(source);
 }
 
 function isPreferredFillTarget(

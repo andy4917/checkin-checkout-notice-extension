@@ -1,5 +1,5 @@
 import { isBranchId } from "../config/branches.js";
-import type { LaundryRecord, LaundryStatus } from "./types.js";
+import type { LaundryMachineType, LaundryRecord, LaundryStatus } from "./types.js";
 
 export const LAUNDRY_STORAGE_KEY = "laundryRecords:v1";
 
@@ -61,12 +61,22 @@ function normalizeLaundryRecord(input: unknown, fieldName: string): LaundryRecor
     status,
     itemSummary: requiredText(input.itemSummary, `${fieldName}.itemSummary`),
     note: text(input.note, `${fieldName}.note`),
+    machineType: optionalLaundryMachineType(input.machineType, `${fieldName}.machineType`),
     receivedAt: requiredText(input.receivedAt, `${fieldName}.receivedAt`),
     updatedAt: requiredText(input.updatedAt, `${fieldName}.updatedAt`),
     completedAt: optionalText(input.completedAt),
     pickedUpAt: optionalText(input.pickedUpAt),
     sourcePmsGuestId: optionalText(input.sourcePmsGuestId),
   };
+}
+
+function optionalLaundryMachineType(
+  input: unknown,
+  fieldName: string,
+): LaundryMachineType | undefined {
+  if (input === undefined || input === null || input === "") return undefined;
+  if (input === "WASHER" || input === "DRYER") return input;
+  throw new LaundryStorageError(`${fieldName} is unknown: ${input}`);
 }
 
 function isLaundryStatus(input: string): input is LaundryStatus {

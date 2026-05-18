@@ -7,8 +7,7 @@
   export let onSelectLanguage: (language: Language) => void;
 </script>
 
-<div class="language-control" role="group" aria-label="언어">
-  <span>언어</span>
+<div class="language-control" role="group" aria-label="언어 선택">
   <div class="language-segmented">
     {#each languages as lang}
       {@const disabled = isLanguageDisabled(lang.id)}

@@ -5,8 +5,8 @@ This document is a historical cleanup note from 2026-04-30. It records what was 
 ## Scope
 
 - Workspace: `C:\Users\anise\code\Dev-Product\입실퇴실 안내문 생성기`
-- Authority checked at the time: `C:\Users\anise\code\Dev-Management\docs\GLOBAL_AGENT_WORKFLOW.md`
-- Repo contract checked: `AGENTS.md`
+- Authority checked at the time: a now-superseded external Dev-Management workflow reference. That reference is not current authority and must not be reread as part of normal repo work.
+- Repo contract checked: `agents.md` (the repository file is lower-case on disk)
 - Goal: identify and remove previous-session or tool-generated contamination that should not remain as repo source.
 
 ## Findings
@@ -20,9 +20,9 @@ Removed contamination:
 - `.serena\cache`
 - `.serena\project.local.yml`
 
-Not removed:
+Superseded cleanup decision:
 
-- `.agent-runs\*\gate_receipt.json` is tracked repo evidence. It was initially misclassified as contamination during this cleanup, then restored from git.
+- `.agent-runs\*\gate_receipt.json` was previously restored as tracked evidence. That decision is superseded: agent run receipts are generated execution byproducts and must not remain tracked in this repo.
 
 Retained source changes:
 

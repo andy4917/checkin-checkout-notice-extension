@@ -1,7 +1,5 @@
 import type { BranchId } from "../types.js";
 
-export const DEFAULT_BRANCH_ID = null;
-
 export const BRANCHES = Object.freeze({
   coex: Object.freeze({
     id: "coex",

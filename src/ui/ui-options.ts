@@ -1,7 +1,9 @@
 import { getBranchOptions } from "../config/branches.js";
 import {
   getHomeMenuSections,
-  homeQuickActions,
+  homeBottomNavigationItems,
+  homeNavigationLabels,
+  homeNavigationGroups,
 } from "../catalog/menu-routing.js";
 import type { Language } from "../types.js";
 import type {
@@ -11,14 +13,16 @@ import type {
 } from "../catalog/template-types.js";
 
 export const homeMenuSections = getHomeMenuSections();
-export const homeFooterActions = homeQuickActions;
+export const homeNavigation = homeNavigationGroups;
+export const homeBottomNavigation = homeBottomNavigationItems;
+export const homeLabels = homeNavigationLabels;
 export const branchOptions = getBranchOptions();
 
 export const languageOptions: Array<{ id: Language; label: string }> = [
-  { id: "KO", label: "한국어" },
-  { id: "EN", label: "English" },
-  { id: "JP", label: "日本語" },
-  { id: "CN", label: "中文" },
+  { id: "KO", label: "KR" },
+  { id: "EN", label: "EN" },
+  { id: "JP", label: "JP" },
+  { id: "CN", label: "CH" },
 ];
 
 export const categoryOptions: Array<{ id: TemplateCategory; label: string }> = [

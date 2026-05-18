@@ -10,6 +10,7 @@ import type {
   CustomTemplate,
   StoredExtensionState,
   TemplateDefinition,
+  TemplateTypeId,
   UnifiedTemplateDefinition,
 } from "./template-types.js";
 
@@ -42,7 +43,7 @@ export const TEMPLATE_DUPLICATE_GROUPS = Object.freeze({
   ]),
 });
 
-const TEMPLATE_METADATA: Record<string, CatalogSourceMetadata> = {
+const TEMPLATE_METADATA: Record<string, Omit<CatalogSourceMetadata, "icon">> = {
   "guest-arrival-notice": {
     menuId: "CUSTOMER_NOTICE",
     typeId: "arrival_notice",
@@ -212,6 +213,30 @@ const TEMPLATE_METADATA: Record<string, CatalogSourceMetadata> = {
   },
 };
 
+const TEMPLATE_TYPE_ICONS: Readonly<Record<TemplateTypeId, string>> = Object.freeze({
+  arrival_notice: "info",
+  prestay_notice: "event_note",
+  prearrival_csm: "forum",
+  self_checkin: "vpn_key",
+  early_checkin: "schedule",
+  parking: "local_parking",
+  cleaning_notice: "recycling",
+  room_upgrade: "hotel_class",
+  room_upgrade_closed: "hotel_class",
+  laundry_complete: "local_laundry_service",
+  card_key: "key",
+  rental_item: "inventory_2",
+  lost_item: "manage_search",
+  room_visit: "meeting_room",
+  airport_van: "airport_shuttle",
+  partner_service: "room_service",
+  day_night_report: "assignment",
+  branch_daily_report: "summarize",
+  room_sales: "payments",
+  dodine_sales: "payments",
+  reservation_report: "event_note",
+});
+
 export const UNIFIED_TEMPLATE_CATALOG: readonly UnifiedTemplateDefinition[] = Object.freeze(
   WORKFLOW_TEMPLATE_CATALOG.map(toUnifiedTemplate),
 );
@@ -246,10 +271,10 @@ export function applyStoredUnifiedTemplateState(
 
 function toUnifiedTemplate(template: TemplateDefinition): UnifiedTemplateDefinition {
   const metadata = metadataForTemplate(template);
-  return { ...template, ...metadata };
+  return { ...template, ...metadata, icon: TEMPLATE_TYPE_ICONS[metadata.typeId] };
 }
 
-function metadataForTemplate(template: TemplateDefinition): CatalogSourceMetadata {
+function metadataForTemplate(template: TemplateDefinition): Omit<CatalogSourceMetadata, "icon"> {
   const metadata = TEMPLATE_METADATA[template.id];
   if (metadata) return metadata;
   if (isCustomTemplate(template)) return metadataForCustomTemplate(template);
@@ -261,7 +286,7 @@ function isCustomTemplate(template: TemplateDefinition): template is CustomTempl
   return "builtIn" in template && template.builtIn === false;
 }
 
-function metadataForCustomTemplate(template: CustomTemplate): CatalogSourceMetadata {
+function metadataForCustomTemplate(template: CustomTemplate): Omit<CatalogSourceMetadata, "icon"> {
   if (template.category === "CUSTOMER_RECORDS") {
     return {
       menuId: "ROOM_REMARK_MEMO",

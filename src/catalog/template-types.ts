@@ -68,6 +68,7 @@ export type TemplateTypeId =
 export type CatalogSourceMetadata = {
   menuId: TemplateMenuId;
   typeId: TemplateTypeId;
+  icon: string;
   summary: string;
   sourceRefs: string[];
   duplicateGroupId: string | null;

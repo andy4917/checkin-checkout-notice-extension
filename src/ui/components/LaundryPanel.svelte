@@ -1,136 +1,239 @@
 <script lang="ts">
   import type { BranchId, PmsGuestRecord } from "../../types.js";
-  import type { LaundryRecord, LaundryStatus } from "../../laundry/types.js";
+  import type {
+    LaundryMachineType,
+    LaundryRecord,
+    LaundryStatus,
+  } from "../../laundry/types.js";
+  import * as LoadingImageModule from "./LoadingImage.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const LoadingImage = LoadingImageModule.default;
   const MaterialIcon = MaterialIconModule.default;
-
-  const statusOptions: Array<LaundryStatus | "ALL"> = [
-    "ALL",
-    "RECEIVED",
-    "IN_PROGRESS",
-    "READY",
-    "PICKED_UP",
-  ];
 
   export let filteredLaundryRecords: LaundryRecord[];
   export let laundryItemSummary: string;
   export let laundryLoading: boolean;
-  export let laundryNote: string;
-  export let laundrySearchTerm: string;
-  export let laundryStatusFilter: LaundryStatus | "ALL";
   export let selectedBranchId: BranchId | "";
   export let selectedPmsRecord: PmsGuestRecord | null;
-  export let laundryStatusLabel: (status: LaundryStatus) => string;
-  export let nextLaundryStatus: (status: LaundryStatus) => LaundryStatus;
   export let onAddLaundry: () => void | Promise<void>;
   export let onLaundryItemSummaryChange: (value: string) => void;
-  export let onLaundryNoteChange: (value: string) => void;
-  export let onLaundrySearchTermChange: (value: string) => void;
-  export let onLaundryStatusFilterChange: (status: LaundryStatus | "ALL") => void;
   export let onLoadLaundryRecords: () => void | Promise<void>;
   export let onSetLaundryStatus: (
     record: LaundryRecord,
     status: LaundryStatus,
+    machineType?: LaundryMachineType,
   ) => void | Promise<void>;
+
+  const dragMimeType = "application/x-laundry-record-id";
+
+  function roomLabel(record: LaundryRecord) {
+    return record.displayRoom || record.roomNo || "객실";
+  }
+
+  function machineRecords(machineType: LaundryMachineType) {
+    return filteredLaundryRecords.filter(
+      (record) => record.status === "IN_PROGRESS" && record.machineType === machineType,
+    );
+  }
+
+  function laneRecords(status: LaundryStatus) {
+    return filteredLaundryRecords.filter((record) => record.status === status);
+  }
+
+  function dropRecord(
+    event: DragEvent,
+    status: LaundryStatus,
+    machineType?: LaundryMachineType,
+  ) {
+    event.preventDefault();
+    const recordId = event.dataTransfer?.getData(dragMimeType) || event.dataTransfer?.getData("text/plain");
+    const record = filteredLaundryRecords.find((candidate) => candidate.id === recordId);
+    if (!record || laundryLoading) return;
+    void onSetLaundryStatus(record, status, machineType);
+  }
+
+  function startDrag(event: DragEvent, record: LaundryRecord) {
+    event.dataTransfer?.setData(dragMimeType, record.id);
+    event.dataTransfer?.setData("text/plain", record.id);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  }
+
+  function allowDrop(event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+  }
+
+  function submitRoomBlock(event: SubmitEvent) {
+    event.preventDefault();
+    void onAddLaundry();
+  }
+
+  $: washerRecords = machineRecords("WASHER");
+  $: dryerRecords = machineRecords("DRYER");
+  $: waitingRecords = laneRecords("RECEIVED");
+  $: readyRecords = laneRecords("READY");
+  $: selectedRoomLabel = selectedPmsRecord?.displayRoom || selectedPmsRecord?.roomNo || "";
+  $: washerCount = washerRecords.length;
+  $: dryerCount = dryerRecords.length;
 </script>
 
-<section class="laundry-panel" aria-label="세탁물 관리">
-  <div class="pms-panel-header">
-    <div>
-      <p class="eyebrow">세탁물</p>
-      <h2>
-        <MaterialIcon name="local_laundry_service" size={19} filled />
-        세탁물 기록
-      </h2>
-    </div>
-    <button type="button" disabled={laundryLoading} onclick={onLoadLaundryRecords}>
-      {laundryLoading ? "불러오는 중" : "새로고침"}
+<section class="laundry-manager" aria-label="세탁물 관리">
+  <header class="laundry-manager-header">
+    <button
+      class="icon-refresh-button"
+      type="button"
+      disabled={laundryLoading}
+      aria-label="새로고침"
+      onclick={onLoadLaundryRecords}
+    >
+      {#if laundryLoading}
+        <LoadingImage compact label="세탁물 로딩 중" />
+      {:else}
+        <MaterialIcon name="sync" size={20} />
+      {/if}
     </button>
-  </div>
+  </header>
 
-  <div class="laundry-form">
-    <label>
-      <span>세탁물 내용</span>
-      <input
-        name="laundry-item-summary"
-        value={laundryItemSummary}
-        oninput={(event) => onLaundryItemSummaryChange((event.target as HTMLInputElement).value)}
-      />
-    </label>
-    <label>
-      <span>메모</span>
-      <input
-        name="laundry-note"
-        value={laundryNote}
-        oninput={(event) => onLaundryNoteChange((event.target as HTMLInputElement).value)}
-      />
-    </label>
-    <button type="button" disabled={laundryLoading || !selectedBranchId} onclick={onAddLaundry}>
-      추가
-    </button>
-  </div>
-
-  <div class="laundry-filters">
-    <div class="segmented-control" aria-label="세탁물 상태">
-      {#each statusOptions as status}
-        <button
-          class:active={laundryStatusFilter === status}
-          type="button"
-          onclick={() => onLaundryStatusFilterChange(status)}
-        >
-          {status === "ALL" ? "전체" : laundryStatusLabel(status)}
-        </button>
-      {/each}
+  <section class="laundry-machine-section" aria-label="활성 머신">
+    <div class="laundry-section-heading">
+      <h3>세탁 / 건조</h3>
+      <span>{washerCount + dryerCount}</span>
     </div>
-    <label>
-      <span>검색</span>
-      <input
-        name="laundry-search"
-        value={laundrySearchTerm}
-        oninput={(event) => onLaundrySearchTermChange((event.target as HTMLInputElement).value)}
-      />
-    </label>
-  </div>
-
-  <div class="laundry-list">
-    {#if !selectedBranchId}
-      <article class="pms-record empty">지점을 선택해주세요.</article>
-    {:else if filteredLaundryRecords.length === 0}
-      <article class="pms-record empty">세탁물 기록이 없습니다.</article>
-    {:else}
-      {#each filteredLaundryRecords as record}
-        <article class="laundry-record">
-          <div class="laundry-record-main">
-            <strong>{record.displayRoom || record.roomNo || "객실 미지정"}</strong>
-            <span>{record.guestName || selectedPmsRecord?.guestName || "고객명 미입력"}</span>
-            <p>{record.itemSummary}</p>
-            {#if record.note}
-              <small>{record.note}</small>
-            {/if}
-          </div>
-          <div class="laundry-record-actions">
-            <span>{laundryStatusLabel(record.status)}</span>
-            {#if nextLaundryStatus(record.status) !== record.status}
+    <div class="laundry-machine-grid">
+      <article
+        class="laundry-machine-card"
+        aria-label="세탁기"
+        ondragover={allowDrop}
+        ondrop={(event) => dropRecord(event, "IN_PROGRESS", "WASHER")}
+      >
+        <div class="laundry-machine-topline">
+          <MaterialIcon name="local_laundry_service" size={26} />
+          <span>{washerCount}</span>
+        </div>
+        <h4>세탁기</h4>
+        <div class="laundry-machine-slots">
+          {#if washerRecords.length > 0}
+            {#each washerRecords as record}
               <button
+                class="laundry-room-chip dark"
                 type="button"
-                disabled={laundryLoading}
-                onclick={() => onSetLaundryStatus(record, nextLaundryStatus(record.status))}
+                draggable="true"
+                ondragstart={(event) => startDrag(event, record)}
               >
-                다음
+                {roomLabel(record)}
               </button>
-            {/if}
-            <button
-              class="secondary"
-              type="button"
-              disabled={laundryLoading || record.status === "CANCELLED"}
-              onclick={() => onSetLaundryStatus(record, "CANCELLED")}
+            {/each}
+          {/if}
+        </div>
+        <div class="laundry-progress-track"><span style={`width: ${washerCount > 0 ? 65 : 0}%`}></span></div>
+      </article>
+
+      <article
+        class="laundry-machine-card"
+        aria-label="건조기"
+        ondragover={allowDrop}
+        ondrop={(event) => dropRecord(event, "IN_PROGRESS", "DRYER")}
+      >
+        <div class="laundry-machine-topline">
+          <MaterialIcon name="mode_fan" size={26} />
+          <span>{dryerCount}</span>
+        </div>
+        <h4>건조기</h4>
+        <div class="laundry-machine-slots">
+          {#if dryerRecords.length > 0}
+            {#each dryerRecords as record}
+              <button
+                class="laundry-room-chip muted"
+                type="button"
+                draggable="true"
+                ondragstart={(event) => startDrag(event, record)}
+              >
+                {roomLabel(record)}
+              </button>
+            {/each}
+          {/if}
+        </div>
+        <div class="laundry-progress-track"><span style={`width: ${dryerCount > 0 ? 45 : 0}%`}></span></div>
+      </article>
+    </div>
+  </section>
+
+  <form class="laundry-start-process" aria-label="객실 블록 생성" onsubmit={submitRoomBlock}>
+    <label>
+      <span>객실번호</span>
+      <div>
+        <input
+          name="laundry-room-number"
+          aria-label="객실번호"
+          placeholder={selectedRoomLabel || "객실번호"}
+          value={laundryItemSummary}
+          oninput={(event) => onLaundryItemSummaryChange((event.target as HTMLInputElement).value)}
+        />
+        <MaterialIcon name="door_front" size={20} />
+      </div>
+    </label>
+    <button type="submit" disabled={laundryLoading || !selectedBranchId || !laundryItemSummary.trim()}>
+      객실 블록 생성
+    </button>
+  </form>
+
+  <section class="laundry-board" aria-label="세탁물 상태 보드">
+    <div
+      class="laundry-lane"
+      role="list"
+      ondragover={allowDrop}
+      ondrop={(event) => dropRecord(event, "RECEIVED")}
+    >
+      <div class="laundry-section-heading">
+        <h3>대기</h3>
+        <span>{waitingRecords.length}</span>
+      </div>
+      <div class="laundry-lane-stack">
+        {#if waitingRecords.length > 0}
+          {#each waitingRecords as record}
+            <article
+              class="laundry-task-card"
+              draggable="true"
+              ondragstart={(event) => startDrag(event, record)}
             >
-              취소
-            </button>
-          </div>
-        </article>
-      {/each}
-    {/if}
-  </div>
+              <span><MaterialIcon name="hourglass_empty" size={22} /></span>
+              <div>
+                <strong>Room {roomLabel(record)}</strong>
+              </div>
+              <MaterialIcon name="drag_indicator" size={20} />
+            </article>
+          {/each}
+        {/if}
+      </div>
+    </div>
+
+    <div
+      class="laundry-lane ready"
+      role="list"
+      ondragover={allowDrop}
+      ondrop={(event) => dropRecord(event, "READY")}
+    >
+      <div class="laundry-section-heading">
+        <h3>완료</h3>
+        <span>{readyRecords.length}</span>
+      </div>
+      <div class="laundry-lane-stack">
+        {#if readyRecords.length > 0}
+          {#each readyRecords as record}
+            <article
+              class="laundry-task-card ready"
+              draggable="true"
+              ondragstart={(event) => startDrag(event, record)}
+            >
+              <span><MaterialIcon name="check_circle" size={22} /></span>
+              <div>
+                <strong>Room {roomLabel(record)}</strong>
+              </div>
+            </article>
+          {/each}
+        {/if}
+      </div>
+    </div>
+  </section>
 </section>

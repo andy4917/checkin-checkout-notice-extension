@@ -2,6 +2,8 @@ node_modules/
 dist/
 coverage/
 
+.agent-runs/
+
 .serena/cache/
 .serena/project.local.yml
 
@@ -18,3 +20,6 @@ reports/*.log
 
 .DS_Store
 Thumbs.db
+
+*storybook.log
+storybook-static

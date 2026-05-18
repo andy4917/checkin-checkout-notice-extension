@@ -1,6 +1,8 @@
 import {
   fetchActiveOtaPayload,
   fillActiveWingsReservationForm,
+  readActiveWingsRemark,
+  writeActiveWingsRemark,
 } from "../platform/active-tab-automation.js";
 import {
   readExtensionStateWithRecovery,
@@ -15,14 +17,15 @@ import type { SidePanelControllerDependencies } from "./side-panel-controller.sv
 
 const chromeLocalStorageArea: ChromeStorageArea = Object.freeze({
   get(keys) {
-    return chrome.storage.local.get(keys);
+    return requireChromeLocalStorage().get(keys);
   },
   set(values) {
-    return chrome.storage.local.set(values);
+    return requireChromeLocalStorage().set(values);
   },
 });
 
 const browserPmsFetch: PmsFetch = (input, init) => fetch(input, init);
+const runtimeStorageArea = chromeLocalStorageArea;
 
 export const browserSidePanelDependencies: SidePanelControllerDependencies = Object.freeze({
   clipboard: Object.freeze({
@@ -32,17 +35,17 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
   }),
   extensionState: Object.freeze({
     readWithRecovery() {
-      return readExtensionStateWithRecovery(chromeLocalStorageArea);
+      return readExtensionStateWithRecovery(runtimeStorageArea);
     },
     setLastBranchId(branchId: BranchId) {
-      return setLastBranchId(branchId, chromeLocalStorageArea);
+      return setLastBranchId(branchId, runtimeStorageArea);
     },
     write(state: StoredExtensionState) {
-      return writeExtensionState(state, chromeLocalStorageArea);
+      return writeExtensionState(state, runtimeStorageArea);
     },
   }),
   laundry: Object.freeze({
-    storageArea: chromeLocalStorageArea,
+    storageArea: runtimeStorageArea,
   }),
   ota: Object.freeze({
     fetchPayload: fetchActiveOtaPayload,
@@ -50,6 +53,10 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
   }),
   pms: Object.freeze({
     fetchImpl: browserPmsFetch,
+  }),
+  wingsRemark: Object.freeze({
+    readRemark: readActiveWingsRemark,
+    writeRemark: writeActiveWingsRemark,
   }),
   tabContext: Object.freeze({
     getActiveTabContext,
@@ -60,3 +67,10 @@ export const browserSidePanelDependencies: SidePanelControllerDependencies = Obj
     },
   }),
 });
+
+function requireChromeLocalStorage(): chrome.storage.LocalStorageArea {
+  if (!globalThis.chrome?.storage?.local) {
+    throw new Error("Chrome storage dependency is not available.");
+  }
+  return chrome.storage.local;
+}

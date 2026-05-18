@@ -18,11 +18,11 @@ Prepare the extension for the next implementation stage after TypeScript compila
 4. If no saved branch exists, the side panel stays in a branch-required state and does not query PMS.
 5. Staff selects `coex`, `gangnam`, or `seolleung`.
 6. The selected branch is saved as `lastBranchId`.
-7. The app fetches PMS guests for the selected branch, current business date, and active tab.
-8. Staff searches by guest name or room.
-9. Staff clicks a language/template action.
-10. The app validates branch, language, template, variables, and asset scope.
-11. The app copies the generated message and shows any branch-scoped attachment reminder.
+7. Staff opens a workflow menu from the catalog-owned home menu.
+8. PMS guest records are fetched only for workflows that need selected-room context or explicit PMS sync.
+9. Staff clicks a language/template action or a workflow action.
+10. The app validates branch, language, template, variables, context, command availability, and asset scope.
+11. The app copies the generated message, updates local workflow state, or performs a guarded active-tab action.
 12. Staff can open settings to edit template copy, branch scope, language variants, and attachments.
 
 ## Runtime Surfaces
@@ -48,9 +48,11 @@ src/
     ota-reservation-input.ts
     sync-guests.ts
     template-settings.ts
+    wings-remark.ts
   catalog/
     menu-routing.ts
     template-catalog.ts
+    template-groups.ts
     template-renderer.ts
     template-schema.ts
     template-types.ts
@@ -63,6 +65,7 @@ src/
     guests.ts
     language.ts
     remarks.ts
+    room-context.ts
     rooms.ts
   platform/
     active-tab-automation.ts
@@ -76,24 +79,33 @@ src/
   ui/
     App.svelte
     side-panel-controller.svelte.ts
+    side-panel-dependencies.ts
     app-state-helpers.ts
     app-view-model.ts
     display-helpers.ts
     pms-workflow.ts
     laundry-workflow.ts
     ota-workflow.ts
+    rooms-settings-actions.ts
     template-runtime-values.ts
     template-settings-workflow.ts
+    ui-options.ts
     components/
       SidePanelView.svelte
       ShellHeader.svelte
       HomeView.svelte
       WorkHeader.svelte
+      CustomerGuidancePanel.svelte
       TemplateList.svelte
       SettingsPanel.svelte
-      RoomBottomBar.svelte
+      RoomsSettingsBar.svelte
       LaundryPanel.svelte
       OtaReservationPanel.svelte
+      LanguageSegmentedControl.svelte
+      LoadingImage.svelte
+      MaterialIcon.svelte
+  wings/
+    reservation-draft.ts
 ```
 
 The old `src/sidepanel/*` DOM renderer has been removed. New UI work must stay under `src/ui/*`. `App.svelte` stays an entry skeleton; side-panel composition belongs in `components/SidePanelView.svelte`, state orchestration belongs in `side-panel-controller.svelte.ts`, and feature calculations belong in the workflow/helper modules.
@@ -175,23 +187,22 @@ The side panel should display these as user-actionable states instead of generic
 - `src/messages/*` legacy message layer has been removed.
 - `src/ui/App.svelte` is a skeleton entry.
 - Browser globals are injected through `src/ui/side-panel-dependencies.ts`.
-- PMS, OTA, storage, catalog rendering, laundry records, and template settings have owner modules.
+- PMS, OTA, storage, catalog rendering, template grouping, laundry records, WINGS remark upsert, and template settings have owner modules.
+- Menu screens are resolved through catalog-owned `screenKind` and `templateFilter`, not raw Svelte menu-ID branches.
+- Rooms & Settings actions are catalog-owned and resolved through `src/ui/rooms-settings-actions.ts`; unsupported commands surface `지원하지 않는 실행 명령입니다.`
 - Tests are organized by product contract in `docs/TEST_CONTRACT.md`.
 
 ## Remaining Implementation Order
 
-1. Catalog-driven message expansion
-   - make `template-catalog.ts` the runtime entry point
-   - support `templateId + lang + branchId + variables`
-   - import only real template-pack content with source evidence
+1. Catalog completion and source evidence
+   - keep `template-catalog.ts` as the runtime catalog entry point
+   - continue importing only real template-pack content with source evidence
    - keep unsupported language, missing PMS value, and missing manual required value observable
 
-2. Settings panel
-   - list templates by category and branch scope
-   - edit language body and attachments
-   - preview with operator-provided guest variables
-   - validate before save
-   - reset one template or all overrides
+2. Settings panel refinement
+   - keep the current schema-validated editor
+   - improve grouping and repeated form rows only when backed by existing template/storage schema
+   - avoid broad JSON/system configuration surfaces
 
 3. Frontend reference normalization
    - keep `App.svelte` as skeleton

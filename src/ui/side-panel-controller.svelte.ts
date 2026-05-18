@@ -3,16 +3,20 @@ import {
   isSettingsDraftDirty,
   resolveActiveTemplates,
   resolveMenuTemplates,
+  requiresSelectedRoomContext,
   resolveScopedTemplates,
   selectPmsRecord as resolveSelectedPmsRecord,
+  usesWingsContext,
 } from "./app-view-model.js";
 import {
   audienceOptions,
   branchOptions,
   categoryOptions,
   contextOptions,
-  homeFooterActions,
+  homeBottomNavigation,
+  homeLabels,
   homeMenuSections,
+  homeNavigation,
   languageOptions as languages,
 } from "./ui-options.js";
 import {
@@ -32,7 +36,6 @@ import {
   visibleTemplateVariables,
 } from "./display-helpers.js";
 import {
-  createDefaultTemplateValues,
   createTemplateValues,
   getTemplateDraftValue,
   getTemplateInputValue,
@@ -59,16 +62,34 @@ import {
   loadOtaPreview,
   type OtaWorkflowDependencies,
 } from "./ota-workflow.js";
+import {
+  UNSUPPORTED_ROOMS_SETTINGS_COMMAND_MESSAGE,
+  resolveRoomsSettingsActions,
+  type ResolvedRoomsSettingsAction,
+} from "./rooms-settings-actions.js";
 import { isBranchId } from "../config/branches.js";
 import { guardRequiredContext } from "../application/context-guard.js";
+import {
+  upsertWingsRemarkLine,
+  type WingsRemarkDependencies,
+} from "../application/wings-remark.js";
 import { hasTemplateLanguage, renderTemplate } from "../catalog/template-renderer.js";
 import {
   UNIFIED_TEMPLATE_CATALOG,
   applyStoredUnifiedTemplateState,
 } from "../catalog/template-catalog.js";
-import { getMenu, type MenuId } from "../catalog/menu-routing.js";
+import {
+  getMenu,
+  getRoomsSettingsCommand,
+  isRoomsSettingsCommandId,
+  usesAirportVanPanel,
+  usesWorkLanguageSelector,
+  type MenuId,
+  type RoomsSettingsCommandId,
+} from "../catalog/menu-routing.js";
 import { getBusinessDateParts } from "../domain/dates.js";
 import { filterPmsGuestRecords } from "../domain/guests.js";
+import { resolveDefaultLanguageFromNationalityFields } from "../domain/language.js";
 import { createRemarkLine, getBuiltInRemarkType } from "../domain/remarks.js";
 import type { OtaReservationInputPreview } from "../application/ota-reservation-input.js";
 import {
@@ -77,7 +98,7 @@ import {
 } from "../platform/chrome-storage.js";
 import { EMPTY_TAB_CONTEXT, type TabContext } from "../platform/tab-context.js";
 import type { BranchId, Language, PmsGuestRecord, TabMode } from "../types.js";
-import type { LaundryRecord, LaundryStatus } from "../laundry/types.js";
+import type { LaundryMachineType, LaundryRecord, LaundryStatus } from "../laundry/types.js";
 import { DEFAULT_EXTENSION_STATE } from "../platform/storage-schema.js";
 import type {
   StoredExtensionState,
@@ -87,6 +108,8 @@ import type {
   TemplateDefinition,
   UnifiedTemplateDefinition,
 } from "../catalog/template-types.js";
+
+export type NavigationDirection = "forward" | "backward" | "replace";
 
 export type SidePanelControllerDependencies = {
   clipboard: {
@@ -100,6 +123,7 @@ export type SidePanelControllerDependencies = {
   laundry: LaundryWorkflowDependencies;
   ota: OtaWorkflowDependencies;
   pms: PmsWorkflowDependencies;
+  wingsRemark: WingsRemarkDependencies;
   tabContext: {
     getActiveTabContext(): Promise<TabContext>;
   };
@@ -110,12 +134,14 @@ export type SidePanelControllerDependencies = {
 
 export function createSidePanelController(dependencies: SidePanelControllerDependencies) {
   let activeMenu = $state<MenuId | null>(null);
+  let navigationDirection = $state<NavigationDirection>("replace");
+  let routeTransitionKey = $state(0);
   let selectedBranchId = $state<BranchId | "">("");
   let selectedLanguage = $state<Language>("KO");
   let tabContext = $state({ ...EMPTY_TAB_CONTEXT });
   let storedState = $state<StoredExtensionState>({ ...DEFAULT_EXTENSION_STATE });
   let catalogTemplates = $state<UnifiedTemplateDefinition[]>([...UNIFIED_TEMPLATE_CATALOG]);
-  let statusMessage = $state("지점을 선택하고 메뉴를 열어주세요.");
+  let statusMessage = $state("");
   let copiedTemplateId = $state("");
   let settingsTemplateId = $state(UNIFIED_TEMPLATE_CATALOG[0]?.id || "");
   let editTitle = $state("");
@@ -142,11 +168,14 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   let laundryLoading = $state(false);
   let otaLoading = $state(false);
   let otaPreview = $state<OtaReservationInputPreview | null>(null);
+  let selectedRoomRemarkTemplateId = $state("");
+  let selectedGuidanceTemplateId = $state("");
 
   const selectedMenu = $derived(activeMenu ? getMenu(activeMenu) : null);
+  const activeScreenKind = $derived(selectedMenu?.screenKind || null);
   const navigationLocked = $derived(
     isSettingsDraftDirty({
-      activeMenu,
+      activeScreenKind,
       catalogTemplates,
       editBody,
       editBranchScope,
@@ -160,25 +189,47 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
   );
   const menuTemplates = $derived(resolveMenuTemplates(activeMenu, catalogTemplates));
   const scopedTemplates = $derived(resolveScopedTemplates(menuTemplates, selectedBranchId));
-  const activeTemplates = $derived(resolveActiveTemplates(activeMenu, scopedTemplates));
+  const activeTemplates = $derived(resolveActiveTemplates(scopedTemplates));
+  const activeMenuRequiresSelectedRoom = $derived(requiresSelectedRoomContext(activeTemplates));
+  const activeMenuUsesWingsContext = $derived(usesWingsContext(activeTemplates));
+  const selectedCommandTemplate = $derived(
+    catalogTemplates.find((item) => item.id === selectedRoomRemarkTemplateId) || null,
+  );
+  const showsSettingsPanel = $derived(activeScreenKind === "settings");
+  const showsOtaReservationPanel = $derived(activeScreenKind === "otaReservationInput");
+  const showsCustomerGuidancePanel = $derived(activeScreenKind === "customerGuidance");
+  const showsLaundryPanel = $derived(activeScreenKind === "laundry");
+  const showsAirportVanPanel = $derived(usesAirportVanPanel(activeMenu));
+  const showsTemplateListPanel = $derived(
+    activeScreenKind === "templateList" || activeScreenKind === "laundry",
+  );
+  const showsWorkLanguageSelector = $derived(usesWorkLanguageSelector(activeMenu));
   const visiblePmsRecords = $derived(filterPmsGuestRecords(pmsRecords, pmsSearchTerm));
   const selectedPmsRecord = $derived(
     resolveSelectedPmsRecord(pmsRecords, selectedPmsRecordId),
   );
   const filteredLaundryRecords = $derived(
-    filterLaundryRecords(
-      laundryRecords,
-      laundryStatusFilter,
-      laundrySearchTerm,
-      laundryStatusLabel,
-    ),
+    showsLaundryPanel
+      ? laundryRecords
+      : filterLaundryRecords(
+          laundryRecords,
+          laundryStatusFilter,
+          laundrySearchTerm,
+          laundryStatusLabel,
+        ),
+  );
+  const roomsSettingsActions = $derived(
+    resolveRoomsSettingsActions({
+      navigationLocked,
+      selectedBranchId,
+      selectedPmsRecord,
+      selectedCommandTemplate,
+      tabContext,
+    }),
   );
 
   $effect(() => {
     if (
-      activeMenu &&
-      activeMenu !== "SETTINGS" &&
-      activeMenu !== "OTA_RESERVATION_INPUT" &&
       activeTemplates.length > 0 &&
       !hasAnyTemplateForLanguage(activeTemplates, selectedLanguage)
     ) {
@@ -188,6 +239,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
 
   async function mount() {
     activeMenu = null;
+    navigationDirection = "replace";
+    routeTransitionKey += 1;
     tabContext = await dependencies.tabContext.getActiveTabContext();
     try {
       const { state: loadedState, recovered } = await dependencies.extensionState.readWithRecovery();
@@ -210,7 +263,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     if (selectedBranchId) {
       await dependencies.extensionState.setLastBranchId(selectedBranchId);
       statusMessage = "선택 지점을 저장했습니다.";
-      if (activeMenu === "LAUNDRY_MANAGEMENT") {
+      if (showsLaundryPanel) {
         await loadLaundryRecords();
       }
     } else {
@@ -229,23 +282,29 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       statusMessage = "작성 또는 설정 중에는 이동할 수 없습니다.";
       return;
     }
+    if (activeMenu === menuId) {
+      return;
+    }
+    const nextMenu = getMenu(menuId);
+    navigationDirection = activeMenu === null ? "forward" : "replace";
+    routeTransitionKey += 1;
     activeMenu = menuId;
     copiedTemplateId = "";
-    if (menuId === "SETTINGS") {
+    selectedGuidanceTemplateId = "";
+    selectedRoomRemarkTemplateId = "";
+    void refreshTabContext();
+    if (nextMenu.screenKind === "settings") {
       refreshEditFields(settingsTemplateId);
     }
-    if (menuId === "OTA_RESERVATION_INPUT") {
+    if (nextMenu.screenKind === "otaReservationInput") {
       otaPreview = null;
     }
-    if (menuId === "LAUNDRY_MANAGEMENT") {
+    if (nextMenu.screenKind === "laundry") {
+      laundrySearchTerm = "";
+      laundryStatusFilter = "ALL";
       void loadLaundryRecords();
     }
-    statusMessage =
-      menuId === "SETTINGS"
-        ? "수정할 항목을 선택해주세요."
-        : menuId === "OTA_RESERVATION_INPUT"
-          ? "OTA 상세 예약 탭에서 예약정보를 가져오세요."
-          : "템플릿을 선택해 복사하세요.";
+    statusMessage = "";
     scrollToTop();
   }
 
@@ -254,9 +313,16 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       statusMessage = "저장하거나 취소한 뒤 이동할 수 있습니다.";
       return;
     }
+    if (activeMenu === null) {
+      return;
+    }
+    navigationDirection = "backward";
+    routeTransitionKey += 1;
     activeMenu = null;
     copiedTemplateId = "";
-    statusMessage = "시작화면으로 돌아왔습니다.";
+    selectedRoomRemarkTemplateId = "";
+    selectedGuidanceTemplateId = "";
+    statusMessage = "";
     scrollToTop();
   }
 
@@ -315,7 +381,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       copiedTemplateId = "";
     }
     selectedPmsRecordId = record.id;
-    if (!laundryItemSummary && activeMenu === "LAUNDRY_MANAGEMENT") {
+    selectLanguageForPmsRecord(record);
+    if (!laundryItemSummary && showsLaundryPanel) {
       laundryNote = laundryNote || record.guestName;
     }
     statusMessage = describeSelectedPmsRecord(record);
@@ -340,13 +407,13 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       return;
     }
     if (!laundryItemSummary.trim()) {
-      statusMessage = "세탁물 내용을 입력해주세요.";
+      statusMessage = "객실번호를 입력해주세요.";
       return;
     }
 
     laundryLoading = true;
     try {
-      await createLaundryRecord(
+      const createdRecord = await createLaundryRecord(
         {
           selectedBranchId,
           selectedPmsRecord,
@@ -356,9 +423,14 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
         },
         dependencies.laundry,
       );
+      laundrySearchTerm = "";
+      laundryStatusFilter = "ALL";
+      laundryRecords = [
+        createdRecord,
+        ...laundryRecords.filter((record) => record.id !== createdRecord.id),
+      ];
       laundryItemSummary = "";
       laundryNote = "";
-      await loadLaundryRecords();
       statusMessage = "세탁물 기록을 추가했습니다.";
     } catch (error) {
       statusMessage = error instanceof Error ? error.message : String(error);
@@ -367,10 +439,14 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
   }
 
-  async function setLaundryStatus(record: LaundryRecord, status: LaundryStatus) {
+  async function setLaundryStatus(
+    record: LaundryRecord,
+    status: LaundryStatus,
+    machineType?: LaundryMachineType,
+  ) {
     laundryLoading = true;
     try {
-      await changeLaundryStatus(record, status, dependencies.laundry);
+      await changeLaundryStatus(record, status, dependencies.laundry, machineType);
       await loadLaundryRecords();
       statusMessage = "세탁물 상태를 변경했습니다.";
     } catch (error) {
@@ -416,6 +492,56 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     }
   }
 
+  async function runRoomsSettingsCommand(commandId: RoomsSettingsCommandId | string) {
+    if (!isRoomsSettingsCommandId(commandId)) {
+      statusMessage = UNSUPPORTED_ROOMS_SETTINGS_COMMAND_MESSAGE;
+      return;
+    }
+    const command = getRoomsSettingsCommand(commandId);
+    const handlers: Record<RoomsSettingsCommandId, () => Promise<void>> = {
+      UPSERT_WINGS_REMARK: runUpsertWingsRemarkCommand,
+    };
+    await handlers[command.commandId]();
+  }
+
+  async function runUpsertWingsRemarkCommand() {
+    if (navigationLocked) {
+      statusMessage = "작성 또는 설정 중에는 이동할 수 없습니다.";
+      return;
+    }
+
+    const refreshedContext = await refreshTabContext();
+    if (!refreshedContext.isGuestRecord) {
+      statusMessage = "WINGS 예약정보창을 연 뒤 다시 실행해주세요.";
+      return;
+    }
+
+    const template = selectedCommandTemplate;
+    if (!template) {
+      statusMessage = "객실 메모 항목을 선택해주세요.";
+      return;
+    }
+
+    const remarkType = getBuiltInRemarkType(template.id);
+    if (!remarkType) {
+      statusMessage = "WINGS에 입력할 수 있는 객실 메모가 아닙니다.";
+      return;
+    }
+
+    try {
+      await upsertWingsRemarkLine(
+        {
+          type: remarkType,
+          values: templateValues(template),
+        },
+        dependencies.wingsRemark,
+      );
+      statusMessage = "WINGS 리마크에 입력했습니다.";
+    } catch (error) {
+      statusMessage = error instanceof Error ? error.message : String(error);
+    }
+  }
+
   async function copyTemplate(template: TemplateDefinition) {
     const guard = guardRequiredContext(template.requiresContext, currentWorkContext());
     if (!guard.ok) {
@@ -436,6 +562,9 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
         : renderTemplate(template, selectedLanguage, values);
       await dependencies.clipboard.writeText(text);
       copiedTemplateId = template.id;
+      if (remarkType) {
+        selectedRoomRemarkTemplateId = template.id;
+      }
       statusMessage = "복사되었습니다.";
     } catch (error) {
       statusMessage = error instanceof Error ? error.message : String(error);
@@ -527,10 +656,6 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     statusMessage = "작성 중인 새 항목을 비웠습니다.";
   }
 
-  function defaultValues(): Record<string, string> {
-    return createDefaultTemplateValues(templateValueContext());
-  }
-
   function templateValues(template: TemplateDefinition): Record<string, string> {
     return createTemplateValues(template, templateValueContext());
   }
@@ -553,6 +678,10 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     );
   }
 
+  function selectGuidanceTemplate(templateId: string) {
+    selectedGuidanceTemplateId = selectedGuidanceTemplateId === templateId ? "" : templateId;
+  }
+
   function templateValueContext() {
     return {
       branchOptions,
@@ -568,6 +697,8 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     selectedPmsRecordId = "";
     templateDraftValues = {};
     copiedTemplateId = "";
+    selectedRoomRemarkTemplateId = "";
+    selectedGuidanceTemplateId = "";
   }
 
   function currentWorkContext() {
@@ -576,6 +707,24 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
       isPmsPage: tabContext.isPmsPage || hasSelectedRoom,
       isGuestRecord: tabContext.isGuestRecord || hasSelectedRoom,
     };
+  }
+
+  async function refreshTabContext(): Promise<TabContext> {
+    tabContext = await dependencies.tabContext.getActiveTabContext();
+    return tabContext;
+  }
+
+  function selectLanguageForPmsRecord(record: PmsGuestRecord) {
+    const nextLanguage = resolveDefaultLanguageFromNationalityFields(record.raw);
+    selectedLanguage =
+      activeTemplates.length > 0 && !hasAnyTemplateForLanguage(activeTemplates, nextLanguage)
+        ? getFirstAvailableLanguage(activeTemplates, languages) || nextLanguage
+        : nextLanguage;
+  }
+
+  function pmsRecordBadgeLabel(_record: PmsGuestRecord): string {
+    if (!activeTemplates.some((template) => template.typeId === "airport_van")) return "";
+    return pmsMode === "ARRIVAL" ? "체크인 공항 픽업" : "내일 체크아웃 공항 샌딩";
   }
 
   function handleSettingsTemplateChange(event: Event) {
@@ -681,8 +830,10 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     branchOptions,
     categoryOptions,
     contextOptions,
-    homeFooterActions,
     homeMenuSections,
+    homeNavigation,
+    homeBottomNavigation,
+    homeLabels,
     languages,
     hasAnyTemplateForLanguage,
     laundryStatusLabel,
@@ -704,6 +855,7 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     setLaundryStatus,
     loadOtaReservation,
     fillWingsReservation,
+    runRoomsSettingsCommand,
     copyTemplate,
     saveTemplateEdit,
     resetTemplateEdit,
@@ -725,13 +877,31 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     setLaundryNote,
     setLaundrySearchTerm,
     setLaundryStatusFilter,
+    handleTemplateVariableInput,
+    selectGuidanceTemplate,
     templateInputValue,
     templateSummary,
     otaPreviewSummary,
     branchScopeLabel,
     isBuiltInTemplate,
+    pmsRecordBadgeLabel,
     get activeMenu() {
       return activeMenu;
+    },
+    get navigationDirection() {
+      return navigationDirection;
+    },
+    get routeTransitionKey() {
+      return routeTransitionKey;
+    },
+    get activeViewKey() {
+      return activeMenu || "home";
+    },
+    get isHomeScreen() {
+      return activeMenu === null;
+    },
+    get activeScreenKind() {
+      return activeScreenKind;
     },
     get selectedBranchId() {
       return selectedBranchId;
@@ -747,6 +917,9 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     },
     get copiedTemplateId() {
       return copiedTemplateId;
+    },
+    get selectedGuidanceTemplateId() {
+      return selectedGuidanceTemplateId;
     },
     get settingsTemplateId() {
       return settingsTemplateId;
@@ -817,11 +990,38 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     get selectedMenu() {
       return selectedMenu;
     },
+    get showsSettingsPanel() {
+      return showsSettingsPanel;
+    },
+    get showsOtaReservationPanel() {
+      return showsOtaReservationPanel;
+    },
+    get showsCustomerGuidancePanel() {
+      return showsCustomerGuidancePanel;
+    },
+    get showsLaundryPanel() {
+      return showsLaundryPanel;
+    },
+    get showsAirportVanPanel() {
+      return showsAirportVanPanel;
+    },
+    get showsTemplateListPanel() {
+      return showsTemplateListPanel;
+    },
+    get showsWorkLanguageSelector() {
+      return showsWorkLanguageSelector;
+    },
     get navigationLocked() {
       return navigationLocked;
     },
     get activeTemplates() {
       return activeTemplates;
+    },
+    get activeMenuRequiresSelectedRoom() {
+      return activeMenuRequiresSelectedRoom;
+    },
+    get activeMenuUsesWingsContext() {
+      return activeMenuUsesWingsContext;
     },
     get visiblePmsRecords() {
       return visiblePmsRecords;
@@ -831,6 +1031,12 @@ export function createSidePanelController(dependencies: SidePanelControllerDepen
     },
     get filteredLaundryRecords() {
       return filteredLaundryRecords;
+    },
+    get roomsSettingsActions(): ResolvedRoomsSettingsAction[] {
+      return roomsSettingsActions;
+    },
+    get hasWingsPmsContext() {
+      return tabContext.isPmsPage || tabContext.isGuestRecord;
     },
   };
 }

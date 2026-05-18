@@ -50,17 +50,17 @@
 </script>
 
 <section class="settings-panel">
-  <div class="settings-hero">
-    <span aria-hidden="true">
-      <MaterialIcon name="design_services" size={24} filled />
-    </span>
-    <div>
-      <p class="eyebrow">템플릿 설정</p>
-      <h2>템플릿 설정</h2>
-    </div>
-  </div>
-  <div class="settings-editor">
-    <h3>기존 항목 수정</h3>
+  <details class="settings-editor-card">
+    <summary>
+      <span class="settings-entry-icon" aria-hidden="true">
+        <MaterialIcon name="description" size={22} />
+      </span>
+      <span>
+        <strong>기존 항목 수정</strong>
+      </span>
+      <MaterialIcon name="expand_more" size={20} />
+    </summary>
+    <div class="settings-editor">
     <label>
       <span>수정 항목</span>
       <select
@@ -114,14 +114,21 @@
     <div class="settings-actions">
       <button type="button" onclick={onSaveTemplateEdit}>저장</button>
       <button class="secondary" type="button" onclick={onCancelTemplateEdit}>취소</button>
-      <button class="secondary" type="button" onclick={onResetTemplateEdit}>
-        {isBuiltInTemplate(settingsTemplateId) ? "기본값" : "삭제"}
-      </button>
     </div>
-  </div>
+    </div>
+  </details>
 
-  <div class="settings-editor">
-    <h3>새 항목 추가</h3>
+  <details class="settings-editor-card">
+    <summary>
+      <span class="settings-entry-icon" aria-hidden="true">
+        <MaterialIcon name="add_notes" size={22} />
+      </span>
+      <span>
+        <strong>새 항목 추가</strong>
+      </span>
+      <MaterialIcon name="expand_more" size={20} />
+    </summary>
+    <div class="settings-editor">
     <div class="settings-row">
       <label>
         <span>메뉴</span>
@@ -201,5 +208,16 @@
       <button type="button" onclick={onAddCustomTemplate}>추가</button>
       <button class="secondary" type="button" onclick={onClearNewTemplateDraft}>비우기</button>
     </div>
-  </div>
+    </div>
+  </details>
+
+  <section class="settings-danger-zone" aria-label="위험 작업">
+    <div>
+      <h3>초기화</h3>
+    </div>
+    <button type="button" onclick={onResetTemplateEdit}>
+      <MaterialIcon name={isBuiltInTemplate(settingsTemplateId) ? "restart_alt" : "delete_forever"} size={18} />
+      {isBuiltInTemplate(settingsTemplateId) ? "기본값" : "삭제"}
+    </button>
+  </section>
 </section>

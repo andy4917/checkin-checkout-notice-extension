@@ -1,4 +1,8 @@
-import { filterTemplatesForMenu, type MenuId } from "../catalog/menu-routing.js";
+import {
+  filterTemplatesForMenu,
+  type MenuId,
+  type MenuScreenKind,
+} from "../catalog/menu-routing.js";
 import { scopeUnifiedTemplateForBranch } from "../catalog/template-catalog.js";
 import { ALL_BRANCH_IDS } from "../catalog/template-schema.js";
 import type { TemplateDefinition, UnifiedTemplateDefinition } from "../catalog/template-types.js";
@@ -6,10 +10,8 @@ import type { LaundryRecord, LaundryStatus } from "../laundry/types.js";
 import type { BranchId, Language, PmsGuestRecord } from "../types.js";
 import { branchScopeChanged } from "./app-state-helpers.js";
 
-type TemplateMenuId = Exclude<MenuId, "OTA_RESERVATION_INPUT" | "SETTINGS">;
-
 type SettingsDraftState = {
-  activeMenu: MenuId | null;
+  activeScreenKind: MenuScreenKind | null;
   catalogTemplates: readonly TemplateDefinition[];
   editBody: string;
   editBranchScope: Record<BranchId, boolean>;
@@ -21,15 +23,11 @@ type SettingsDraftState = {
   settingsTemplateId: string;
 };
 
-function isTemplateMenu(menuId: MenuId | null): menuId is TemplateMenuId {
-  return menuId !== null && menuId !== "SETTINGS" && menuId !== "OTA_RESERVATION_INPUT";
-}
-
 export function resolveMenuTemplates(
   activeMenu: MenuId | null,
   catalogTemplates: readonly UnifiedTemplateDefinition[],
 ): UnifiedTemplateDefinition[] {
-  return isTemplateMenu(activeMenu) ? filterTemplatesForMenu(activeMenu, catalogTemplates) : [];
+  return activeMenu ? filterTemplatesForMenu(activeMenu, catalogTemplates) : [];
 }
 
 export function resolveScopedTemplates(
@@ -43,11 +41,19 @@ export function resolveScopedTemplates(
 }
 
 export function resolveActiveTemplates(
-  activeMenu: MenuId | null,
   scopedTemplates: readonly UnifiedTemplateDefinition[],
 ): UnifiedTemplateDefinition[] {
-  if (!isTemplateMenu(activeMenu)) return [];
   return [...scopedTemplates];
+}
+
+export function requiresSelectedRoomContext(
+  templates: readonly TemplateDefinition[],
+): boolean {
+  return templates.some((template) => template.requiresContext === "guestRecord");
+}
+
+export function usesWingsContext(templates: readonly TemplateDefinition[]): boolean {
+  return templates.some((template) => template.requiresContext !== "none");
 }
 
 export function selectPmsRecord(
@@ -82,7 +88,7 @@ export function filterLaundryRecords(
 }
 
 export function isSettingsDraftDirty(state: SettingsDraftState): boolean {
-  if (state.activeMenu !== "SETTINGS") return false;
+  if (state.activeScreenKind !== "settings") return false;
   const template = state.catalogTemplates.find((item) => item.id === state.settingsTemplateId);
   const currentTitle = template?.title || "";
   const currentBody = template?.languages[state.selectedLanguage] || template?.defaultValue || "";

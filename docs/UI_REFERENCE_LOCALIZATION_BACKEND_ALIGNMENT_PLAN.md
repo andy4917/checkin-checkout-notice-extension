@@ -80,12 +80,12 @@ Backend path:
 
 - `getBranchOptions()`
 - `setLastBranchId()`
-- no PMS call until a workflow needs it
+- no PMS call until a workflow needs selected-room context or explicit PMS sync
 
 ### Simulation B: Guest Asks For Check-In / Facility Guidance
 
-1. Staff opens `고객 안내`.
-2. Language segmented control defaults to Korean but allows `KO / EN / JP / CN`.
+1. Staff opens `고객 안내문`.
+2. Language segmented control defaults to Korean but allows runtime `KO / EN / JP / CN` with visible labels `KR / EN / JP / CH`.
 3. Staff selects a template row such as 사전/당일 안내, 셀프 체크인, 주차, 에어컨, 보일러, TV 리모컨.
 4. App shows only compact title/summary and a copy icon.
 5. Copy output is generated from the selected language and available variables.
@@ -158,7 +158,7 @@ Expected frontend within current structure:
 
 - visible menu is `객실 정보 메모`
 - the UI reference shows the intended final frontend structure
-- selected-room values come from the bottom room selector and are merged into template defaults
+- selected-room values come from the backend-owned selected room state and appear only in the centered work-header context row
 - WINGS remark formatting remains centralized
 - if WINGS guest-record context is missing, show a short blocking reason
 
@@ -188,8 +188,9 @@ Expected frontend within current structure:
 
 Backend path:
 
-- `loadOtaReservationPreview(selectedBranchId, otaDependencies)`
-- `fillWingsReservationFromPreview(otaPreview, otaDependencies)`
+- UI workflow: `loadOtaPreview(selectedBranchId, dependencies.ota)`
+- UI workflow: `fillWingsFromOtaPreview(otaPreview, dependencies.ota)`
+- Application owner: `loadOtaReservationPreview()` and `fillWingsReservationFromPreview()`
 - active tab automation
 
 ### Simulation G: Work Forms And Expenditure
@@ -303,13 +304,14 @@ Design rule:
 
 Korean labels to use:
 
-- 고객 안내
+- 고객 안내문
 - 빠른 답변
-- 세탁 관리
-- 매지출
-- 객실 리마크
+- 세탁물 관리
+- 공항밴 관리
+- 매지출 관리
+- 객실 정보 메모
 - OTA 예약 입력
-- 업무 양식
+- 업무 관리
 - 템플릿 설정
 
 ### 3. Customer Guidance / Guest Notice
@@ -331,7 +333,7 @@ Backend mapping:
 
 - `TemplateCategory = "GUEST_NOTICE"`
 - `menuId = "CUSTOMER_NOTICE"`
-- `languages: Partial<Record<Language, string>>`
+- `languages: Partial<Record<Language, string>>`, where runtime Chinese is `CN` and the UI label is `CH`
 - render through `renderTemplate()`, not direct string interpolation in Svelte.
 
 Required work:
@@ -410,8 +412,9 @@ Reference elements:
 
 Current backend surface:
 
-- `loadOtaReservationPreview(selectedBranchId, otaDependencies)`
-- `fillWingsReservationFromPreview(otaPreview, otaDependencies)`
+- UI workflow: `loadOtaPreview(selectedBranchId, dependencies.ota)`
+- UI workflow: `fillWingsFromOtaPreview(otaPreview, dependencies.ota)`
+- Application owner: `loadOtaReservationPreview()` and `fillWingsReservationFromPreview()`
 - active tab automation under `src/platform/active-tab-automation.ts`
 
 Design rule:
@@ -570,9 +573,9 @@ Design rule:
 | Concern | Must use | Must not do |
 | --- | --- | --- |
 | branch choice | `getBranchOptions()`, `requireBranch()` | hardcode PMS codes in UI |
-| PMS list | `syncGuests(..., injected fetchImpl)` | query PMS from Svelte directly |
-| OTA extraction | `loadOtaReservationPreview(..., otaDependencies)` | create fake preview records |
-| WINGS fill | `fillWingsReservationFromPreview(..., otaDependencies)` | auto-save reservation |
+| PMS list | `loadPmsGuestRecords(..., dependencies.pms)` -> `syncGuests(..., injected fetchImpl)` | query PMS from Svelte directly |
+| OTA extraction | `loadOtaPreview(..., dependencies.ota)` -> `loadOtaReservationPreview(...)` | create fake preview records |
+| WINGS fill | `fillWingsFromOtaPreview(..., dependencies.ota)` -> `fillWingsReservationFromPreview(...)` | auto-save reservation |
 | template copy | `renderTemplate()` | interpolate templates in UI component |
 | context gating | `guardRequiredContext()` | enable PMS-only copy everywhere |
 | settings save | schema validators + storage adapter | write arbitrary JSON |
@@ -612,7 +615,7 @@ The Svelte UI must receive browser dependencies through `src/ui/side-panel-depen
 - Match extract-summary-action flow from the reference.
 - Keep detected source and actual preview values only.
 - Preserve branch-required and WINGS-missing errors.
-- Final-stage checks may call `loadOtaReservationPreview(..., otaDependencies)` and `fillWingsReservationFromPreview(..., otaDependencies)` only when proving the real touched OTA path or a visible failure condition.
+- Final-stage checks may call the UI workflow wrappers or the application OTA functions only when proving the real touched OTA path or a visible failure condition.
 
 ### Slice 5: Room Info Memo UX
 
@@ -638,12 +641,17 @@ The Svelte UI must receive browser dependencies through `src/ui/side-panel-depen
 ## Current Gaps To Resolve Before Coding
 
 - The UI reference is strongly connected to the current UX/UI; implementation must preserve the reference component patterns while replacing names/data with real product labels and real backend values.
-- The current language type is `CN`; if a UI reference displays `CH`, map only the visible label and keep runtime values as `CN`.
+- Runtime language type uses `CN`; the current UI maps it to the visible label `CH`.
 - The current template catalog has far fewer templates than the provided packs.
 - Laundry has a record-based frontend/backend path; machine assignment remains deferred until schema-backed.
 - Airport van backend exists through customer 안내/배차 완료 templates and the internal reservation report; it must stay out of WINGS/객실 정보 메모 remark formatting.
 - Settings reference includes broad service menu editing; current storage supports templates and custom templates, not arbitrary service pricing structures.
-- PMS list/sync as a menu panel is not the target UX. The intended direction is a hoverable bottom bar room selector; the selected room appears in the header center with room number and smaller reserver name, and that room context becomes the default for templates and forms.
+- PMS list/sync as a menu panel is not the target UX. The intended direction is one persistent `Rooms & Settings` launcher; selected room context appears in the centered header context row with room number, reserver name, and nationality, and that room context becomes the default for templates and forms. If no room is selected, the UI renders the domain-owned English status message `Room not selected` instead of a component-owned fallback label.
+- Work-screen branch logos keep the home logo display width and use source assets no taller than about 125% of the base logo source height, so the top header remains aligned with the home baseline.
+- Template grouping must come from catalog metadata (`typeId`) rather than title text. Customer notices and generic template lists separate groups with light dividers for families such as check-in, check-out, room-related, rate-related, and work forms.
+- Menu screens are resolved from catalog-owned `screenKind` and `templateFilter`; Svelte components must not route by raw menu ID strings.
+- Rooms & Settings command labels, confirmation labels, and visibility requirements are catalog-owned. Unknown commands must be observable failures, not silent no-ops.
+- Contract tests must not pin implementation strings as expected source text when the real requirement is an exported catalog or application behavior.
 
 ## Verification Plan
 

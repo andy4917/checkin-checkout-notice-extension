@@ -1,18 +1,21 @@
 <script lang="ts">
-  import type { HomeQuickAction, MenuId } from "../../catalog/menu-routing.js";
+  import type { MenuId, RoomsSettingsCommandId } from "../../catalog/menu-routing.js";
+  import type { ResolvedRoomsSettingsAction } from "../rooms-settings-actions.js";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
   const MaterialIcon = MaterialIconModule.default;
 
-  export let footerActions: readonly HomeQuickAction[];
+  export let footerActions: readonly ResolvedRoomsSettingsAction[];
   export let onOpenMenu: (menuId: MenuId) => void;
+  export let onRunCommand: (commandId: RoomsSettingsCommandId) => void | Promise<void>;
 
   let bottomSheetOpen = false;
-  let selectedFooterAction: HomeQuickAction | null = null;
+  let selectedFooterAction: ResolvedRoomsSettingsAction | null = null;
 
   $: footerActionTitle = selectedFooterAction?.label || "빠른 실행";
+  $: footerActionDetail = selectedFooterAction?.disabledReason || selectedFooterAction?.detailLabel || "";
 
-  function selectFooterAction(action: HomeQuickAction) {
+  function selectFooterAction(action: ResolvedRoomsSettingsAction) {
     selectedFooterAction = action;
   }
 
@@ -22,13 +25,20 @@
   }
 
   function confirmFooterAction() {
-    if (!selectedFooterAction) return;
-    onOpenMenu(selectedFooterAction.menuId);
+    if (!selectedFooterAction || !selectedFooterAction.enabled) return;
+    if (selectedFooterAction.kind === "menu") {
+      onOpenMenu(selectedFooterAction.menuId);
+      closeBottomSheet();
+      return;
+    }
+
+    void onRunCommand(selectedFooterAction.commandId);
     closeBottomSheet();
   }
 </script>
 
 <button
+  class:hidden={bottomSheetOpen}
   class:open={bottomSheetOpen}
   class="home-bottom-toggle"
   type="button"
@@ -65,8 +75,10 @@
     {#each footerActions as action}
       <button
         class:selected={selectedFooterAction?.id === action.id}
+        class:disabled={!action.enabled}
         type="button"
         aria-pressed={selectedFooterAction?.id === action.id}
+        aria-disabled={!action.enabled}
         tabindex={bottomSheetOpen ? 0 : -1}
         onclick={() => selectFooterAction(action)}
       >
@@ -82,14 +94,15 @@
     <section class="home-action-popover" aria-label={`${footerActionTitle} 조정`}>
       <div>
         <strong>{footerActionTitle}</strong>
-        <span>메뉴 열기</span>
+        <span>{footerActionDetail}</span>
       </div>
       <button
         type="button"
+        disabled={!selectedFooterAction.enabled}
         tabindex={bottomSheetOpen ? 0 : -1}
         onclick={confirmFooterAction}
       >
-        열기
+        {selectedFooterAction.confirmLabel}
       </button>
     </section>
   {/if}

@@ -59,16 +59,6 @@ export function resetOneTemplateOverride(
   return { ...current, templateOverrides };
 }
 
-export async function saveImportedTemplateSettings(
-  payload: unknown,
-  storageArea: ChromeStorageArea,
-): Promise<StoredExtensionState> {
-  const current = await readExtensionState(storageArea);
-  const nextState = importTemplateSettings(current, payload);
-  await writeExtensionState(nextState, storageArea);
-  return nextState;
-}
-
 export async function clearTemplateSettings(
   storageArea: ChromeStorageArea,
 ): Promise<StoredExtensionState> {
@@ -80,10 +70,10 @@ export async function clearTemplateSettings(
 
 function normalizeTemplateSettingsPayload(payload: unknown): TemplateSettingsExport {
   if (!isRecord(payload)) {
-    throw new Error("템플릿 설정 payload는 object여야 합니다.");
+    throw new Error("템플릿 설정 데이터가 올바르지 않습니다.");
   }
   if (payload.schemaVersion !== 1) {
-    throw new Error("지원하지 않는 템플릿 설정 버전입니다.");
+    throw new Error("지원하지 않는 템플릿 설정입니다.");
   }
 
   const templateOverrides: Record<string, TemplateOverride> = {};
