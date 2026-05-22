@@ -11,7 +11,7 @@ The removed DOM side panel is not a source of truth, migration target, or compat
 | `sidepanel.html`, `styles/sidepanel.css` | side panel shell and presentation |
 | `src/ui/main.ts`, `src/ui/App.svelte` | Svelte entry and skeleton/orchestrator |
 | `src/ui/components/*` | screen markup and component composition |
-| `src/ui/side-panel-controller.svelte.ts`, `src/ui/*-workflow.ts`, `src/ui/rooms-settings-actions.ts` | menu switching, room context, action availability, template actions, and user-visible workflow state |
+| `src/ui/side-panel-navigation-controller.svelte.ts` | current branch context and home navigation state |
 | `src/catalog/workflow-catalog.ts`, `src/catalog/template-catalog.ts`, `src/catalog/template-renderer.ts`, `src/catalog/menu-routing.ts`, `src/catalog/template-groups.ts` | catalog-owned templates, metadata, rendering, language validation, menu routing, screen kind, filtering, and grouping |
 | `src/config/app-config.ts`, `src/config/branches.ts`, `src/config/pms-filter-schema.ts`, `src/pms/filter-builder.ts`, `src/pms/client.ts` | PMS origin, endpoint, branch WINGS codes, request defaults, query construction, and fetch client |
 | `src/domain/dates.ts`, `src/domain/rooms.ts`, `src/domain/guests.ts`, `src/domain/room-context.ts`, `src/domain/remarks.ts` | pure formatting, filtering, sorting, room-context status, nationality label, and remark-line behavior |

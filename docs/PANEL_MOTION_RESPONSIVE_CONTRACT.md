@@ -16,7 +16,7 @@ This document defines the reusable motion, responsive, and interaction rules for
 - Product content and menu structure: `src/catalog/*`
 - Screen markup: `src/ui/components/*`
 - Shared visual and motion tokens: `styles/sidepanel.css`
-- Browser, storage, clipboard, tab, and fetch dependencies: `src/ui/side-panel-dependencies.ts`
+- Current navigation storage dependencies: `src/ui/side-panel-navigation-dependencies.ts`
 - Product design contract: `DESIGN.md`
 
 ## Stable Shell Rule

@@ -10,20 +10,12 @@
     "check:sidepanel-scale": "tsx scripts/check-sidepanel-scale.ts",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run build && npm test",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "verify": "npm run typecheck && npm run build && npm test"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^5.1.2",
-    "@storybook/addon-a11y": "^10.3.6",
-    "@storybook/addon-docs": "^10.3.6",
-    "@storybook/addon-svelte-csf": "^5.1.2",
-    "@storybook/svelte-vite": "^10.3.6",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@types/chrome": "^0.1.40",
     "@types/node": "^25.6.0",
-    "storybook": "^10.3.6",
     "svelte": "^5.55.5",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",

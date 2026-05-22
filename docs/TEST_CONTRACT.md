@@ -12,7 +12,7 @@
 - 템플릿 렌더링은 catalog metadata, branchScope, language body, required variable policy를 통과해야 한다.
 - 설정 import/export/reset은 storage schema와 template schema를 통과한 값만 저장한다.
 - 세탁 기록은 extension storage의 실제 record 상태 변화로 검증한다.
-- Rooms & Settings command는 catalog 계약과 현재 WINGS/객실 context 조건을 통해 노출되며, 지원하지 않는 command는 조용히 무시되지 않는다.
+- 화면에 별도 플로팅 런처를 추가하지 않는다. 설정과 업무 실행은 현재 홈/업무 내비게이션 계약 안에서만 노출한다.
 
 ## 테스트로 증명하지 않을 것
 
@@ -28,10 +28,9 @@
 
 - `current-repo-contract.test.ts`: repo-local `agents.md` casing, absent external workflow hardcoding 방지, `.agent-runs` 추적 방지, legacy sidepanel 문서/경로 제거, UI operation 값 소유권.
 - `current-extension-boundary.test.ts`: MV3 manifest, Svelte side panel entry, `App.svelte` skeleton/orchestrator, side panel open policy, tab context.
-- `current-catalog-routing.test.ts`: 홈/고객 안내문 routing, catalog metadata filtering, branchScope attachment exclusion, renderer required-value/language failure, context guard, Rooms & Settings command metadata.
+- `current-catalog-routing.test.ts`: 홈/고객 안내문 routing, catalog metadata filtering, branchScope attachment exclusion, renderer required-value/language failure, context guard.
 - `current-data-flows.test.ts`: PMS request/date/branch body, PMS failure, OTA normalization, WINGS field map, branch mismatch, WINGS remark dependency and write behavior.
 - `current-storage-settings.test.ts`: extension storage schema, recoverable corruption policy, template settings import/export/reset validation.
-- `current-rooms-settings.test.ts`: Rooms & Settings visibility, disabled reasons, unsupported command rejection message.
 
 ## Closeout Rule
 

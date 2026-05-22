@@ -6,8 +6,6 @@
     d: string;
   };
 
-  const fallbackIcon: IconPath[] = [{ d: "M5 5h14v14H5z" }, { d: "M8 12h8" }];
-
   const iconPaths: Readonly<Record<string, IconPath[]>> = {
     add_notes: [{ d: "M5 4h10l4 4v12H5z" }, { d: "M14 4v5h5" }, { d: "M8 13h8" }, { d: "M8 17h6" }],
     airport_shuttle: [
@@ -78,7 +76,7 @@
     vpn_key: [{ d: "M7 14a4 4 0 1 1 3.5-6H22v3h-3v3h-3v-3h-5.5A4 4 0 0 1 7 14Z" }, { d: "M7 10h.01" }],
   };
 
-  $: paths = iconPaths[name] ?? fallbackIcon;
+  $: paths = iconPaths[name] ?? [];
 </script>
 
 <svg
@@ -92,7 +90,9 @@
   stroke-linejoin="round"
   focusable="false"
 >
-  {#each paths as path}
-    <path d={path.d} />
-  {/each}
+  {#if paths.length > 0}
+    {#each paths as path}
+      <path d={path.d} />
+    {/each}
+  {/if}
 </svg>

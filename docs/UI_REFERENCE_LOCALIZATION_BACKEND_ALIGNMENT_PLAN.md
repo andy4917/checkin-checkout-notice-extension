@@ -45,7 +45,7 @@ The workflow mapping below is descriptive only. It explains how the existing men
 
 | Existing workflow area | Current repo surface | Backend/source owner |
 | --- | --- | --- |
-| Home / branch context | branch select, home menu | `src/config/branches.ts`, `src/ui/components/SidePanelView.svelte`, `src/ui/side-panel-controller.svelte.ts` |
+| Home / branch context | branch select, home menu | `src/config/branches.ts`, `src/ui/components/SidePanelView.svelte`, `src/ui/side-panel-navigation-controller.svelte.ts` |
 | Guest communication / Guidance | `CUSTOMER_NOTICE` | template packs, `src/catalog/*`, renderer |
 | Guest communication / Inquiry | `QUICK_REPLY` | quick reply pack, `src/catalog/*`, renderer |
 | Service records / Room info | `ROOM_REMARK_MEMO` | `src/domain/remarks.ts`, WINGS context |
@@ -158,7 +158,7 @@ Expected frontend within current structure:
 
 - visible menu is `객실 정보 메모`
 - the UI reference shows the intended final frontend structure
-- selected-room values come from the backend-owned selected room state and appear only in the centered work-header context row
+- selected-room values come from the backend-owned selected room state and must stay out of the current navigation-only frontend until a work screen is intentionally reintroduced
 - WINGS remark formatting remains centralized
 - if WINGS guest-record context is missing, show a short blocking reason
 
@@ -272,7 +272,7 @@ Reference elements:
 
 Current source:
 
-- `src/ui/App.svelte` owns only entry skeleton and lifecycle wiring. Shell, header, branch select, and menu/back composition live in `src/ui/components/SidePanelView.svelte` with state/actions from `src/ui/side-panel-controller.svelte.ts`.
+- `src/ui/App.svelte` owns only entry skeleton and lifecycle wiring. Shell, header, branch select, and menu/back composition live in `src/ui/components/SidePanelView.svelte` with state/actions from `src/ui/side-panel-navigation-controller.svelte.ts`.
 - `src/config/branches.ts` owns branch IDs and PMS codes.
 
 Design rule:
@@ -582,7 +582,7 @@ Design rule:
 | laundry | laundry application/storage modules | invent machine records without schema |
 | remarks | `createRemarkLine()`, `upsertRemarkLine()` | duplicate remark formatting |
 
-The Svelte UI must receive browser dependencies through `src/ui/side-panel-dependencies.ts`. Do not hide `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` access as default parameters in UI/application workflows.
+The current Svelte UI receives navigation storage dependencies through `src/ui/side-panel-navigation-dependencies.ts`. Do not hide `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` access as default parameters in UI/application workflows.
 
 ## Implementation Slices
 
@@ -646,11 +646,11 @@ The Svelte UI must receive browser dependencies through `src/ui/side-panel-depen
 - Laundry has a record-based frontend/backend path; machine assignment remains deferred until schema-backed.
 - Airport van backend exists through customer 안내/배차 완료 templates and the internal reservation report; it must stay out of WINGS/객실 정보 메모 remark formatting.
 - Settings reference includes broad service menu editing; current storage supports templates and custom templates, not arbitrary service pricing structures.
-- PMS list/sync as a menu panel is not the target UX. The intended direction is one persistent `Rooms & Settings` launcher; selected room context appears in the centered header context row with room number, reserver name, and nationality, and that room context becomes the default for templates and forms. If no room is selected, the UI renders the domain-owned English status message `Room not selected` instead of a component-owned fallback label.
+- PMS list/sync as a menu panel is not the target UX. Do not add a persistent floating launcher; selected room context appears in the centered header context row with room number, reserver name, and nationality, and that room context becomes the default for templates and forms. If no room is selected, the UI renders the domain-owned English status message `Room not selected` instead of a component-owned fallback label.
 - Work-screen branch logos keep the home logo display width and use source assets no taller than about 125% of the base logo source height, so the top header remains aligned with the home baseline.
 - Template grouping must come from catalog metadata (`typeId`) rather than title text. Customer notices and generic template lists separate groups with light dividers for families such as check-in, check-out, room-related, rate-related, and work forms.
 - Menu screens are resolved from catalog-owned `screenKind` and `templateFilter`; Svelte components must not route by raw menu ID strings.
-- Rooms & Settings command labels, confirmation labels, and visibility requirements are catalog-owned. Unknown commands must be observable failures, not silent no-ops.
+- Room remark command labels, confirmation labels, and visibility requirements are catalog-owned. Unknown commands must be observable failures, not silent no-ops.
 - Contract tests must not pin implementation strings as expected source text when the real requirement is an exported catalog or application behavior.
 
 ## Verification Plan

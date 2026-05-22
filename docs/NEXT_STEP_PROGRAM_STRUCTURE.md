@@ -78,37 +78,18 @@ src/
     normalizer.ts
   ui/
     App.svelte
-    side-panel-controller.svelte.ts
-    side-panel-dependencies.ts
-    app-state-helpers.ts
-    app-view-model.ts
-    display-helpers.ts
-    pms-workflow.ts
-    laundry-workflow.ts
-    ota-workflow.ts
-    rooms-settings-actions.ts
-    template-runtime-values.ts
-    template-settings-workflow.ts
-    ui-options.ts
+    side-panel-navigation-controller.svelte.ts
+    side-panel-navigation-dependencies.ts
     components/
       SidePanelView.svelte
       ShellHeader.svelte
       HomeView.svelte
-      WorkHeader.svelte
-      CustomerGuidancePanel.svelte
-      TemplateList.svelte
-      SettingsPanel.svelte
-      RoomsSettingsBar.svelte
-      LaundryPanel.svelte
-      OtaReservationPanel.svelte
-      LanguageSegmentedControl.svelte
-      LoadingImage.svelte
       MaterialIcon.svelte
   wings/
     reservation-draft.ts
 ```
 
-The old `src/sidepanel/*` DOM renderer has been removed. New UI work must stay under `src/ui/*`. `App.svelte` stays an entry skeleton; side-panel composition belongs in `components/SidePanelView.svelte`, state orchestration belongs in `side-panel-controller.svelte.ts`, and feature calculations belong in the workflow/helper modules.
+The old `src/sidepanel/*` DOM renderer has been removed. Current UI work must stay under `src/ui/*` and is limited to navigation. `App.svelte` stays an entry skeleton; side-panel composition belongs in `components/SidePanelView.svelte`, and current navigation state belongs in `side-panel-navigation-controller.svelte.ts`.
 
 ## Storage Contract
 
@@ -186,10 +167,10 @@ The side panel should display these as user-actionable states instead of generic
 - `src/sidepanel/*` DOM renderer has been removed.
 - `src/messages/*` legacy message layer has been removed.
 - `src/ui/App.svelte` is a skeleton entry.
-- Browser globals are injected through `src/ui/side-panel-dependencies.ts`.
+- Current navigation storage access is injected through `src/ui/side-panel-navigation-dependencies.ts`.
 - PMS, OTA, storage, catalog rendering, template grouping, laundry records, WINGS remark upsert, and template settings have owner modules.
 - Menu screens are resolved through catalog-owned `screenKind` and `templateFilter`, not raw Svelte menu-ID branches.
-- Rooms & Settings actions are catalog-owned and resolved through `src/ui/rooms-settings-actions.ts`; unsupported commands surface `지원하지 않는 실행 명령입니다.`
+- Room remark command contracts stay outside the current frontend tree until a work screen is intentionally reintroduced.
 - Tests are organized by product contract in `docs/TEST_CONTRACT.md`.
 
 ## Remaining Implementation Order

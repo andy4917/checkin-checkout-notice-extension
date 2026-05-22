@@ -196,7 +196,7 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "room-operations",
-          title: "매지출 관리",
+          title: "매출 관리",
           description: "매출과 지출 기록",
           icon: "payments",
           order: 40,
@@ -383,12 +383,6 @@ export function usesWorkLanguageSelector(menuId: MenuId | null): boolean {
   return menu.screenKind === "customerGuidance" || menu.id === "QUICK_REPLY";
 }
 
-export function usesAirportVanPanel(menuId: MenuId | null): boolean {
-  if (!menuId) return false;
-  const menu = getMenu(menuId);
-  return menu.templateFilter.kind === "type" && menu.templateFilter.typeId === "airport_van";
-}
-
 export function getHomeMenuSections(): HomeMenuSection[] {
   const menus = menuGroups.flatMap((group) => group.items);
   const sectionIds: readonly HomeMenuSectionId[] = Object.freeze([
@@ -444,7 +438,7 @@ export function getRoomsSettingsCommand(
       action.kind === "command" && action.commandId === commandId,
   );
   if (!command) {
-    throw new MenuRoutingError(`Unknown Rooms & Settings command: ${commandId}`);
+    throw new MenuRoutingError(`Unknown room remark command: ${commandId}`);
   }
   return command;
 }

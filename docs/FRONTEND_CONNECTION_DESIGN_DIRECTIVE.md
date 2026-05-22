@@ -17,7 +17,7 @@ The first screen must be the actual menu/work surface. Do not add a landing page
 
 ## Runtime Surface
 
-The current frontend entrypoint is `src/ui/App.svelte`, mounted by `src/ui/main.ts`. `App.svelte` is a skeleton only: it creates `src/ui/side-panel-controller.svelte.ts`, attaches mount lifecycle, and renders `src/ui/components/SidePanelView.svelte`.
+The current frontend entrypoint is `src/ui/App.svelte`, mounted by `src/ui/main.ts`. `App.svelte` is a skeleton only: it creates `src/ui/side-panel-navigation-controller.svelte.ts`, attaches mount lifecycle, and renders `src/ui/components/SidePanelView.svelte`.
 
 The side panel is a Chrome MV3 extension surface. Assume:
 
@@ -39,21 +39,21 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 | Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, home presentation, and bottom-bar actions from routing/catalog data. Do not add component-owned menu contracts. |
 | Template catalog | `src/catalog/template-catalog.ts` | Use `UNIFIED_TEMPLATE_CATALOG`, `applyStoredUnifiedTemplateState()`, and `scopeUnifiedTemplateForBranch()`. |
 | Template rendering | `src/catalog/template-renderer.ts` | Use renderer output for copy text. Do not interpolate template strings inside components. |
-| PMS sync | `src/application/sync-guests.ts`, `src/ui/pms-workflow.ts`, `src/ui/side-panel-dependencies.ts` | Call PMS through `loadPmsGuestRecords(..., dependencies.pms)`, which delegates to `syncGuests({ date, mode, branchId, searchTerm, fetchImpl })`. |
+| PMS sync | application/domain modules only | Not part of the current frontend render or bundle surface. |
 | Context guard | `src/application/context-guard.ts` | Gate PMS-only or guest-record actions with `guardRequiredContext()`. |
-| OTA preview/fill | `src/application/ota-reservation-input.ts`, `src/ui/ota-workflow.ts`, `src/ui/side-panel-dependencies.ts` | Use `loadOtaPreview(...)` and `fillWingsFromOtaPreview(...)`, which delegate to the application OTA preview/fill functions through injected OTA dependencies. |
+| OTA preview/fill | application/domain modules only | Not part of the current frontend render or bundle surface. |
 | Active tab automation | `src/platform/active-tab-automation.ts` | Treat missing reservation window as a blocking error, not as an empty state. |
-| Storage | `src/platform/chrome-storage.ts`, `src/ui/side-panel-dependencies.ts` | Use injected extension-state dependencies for mount and saves; do not hide `chrome.storage.local` as a default parameter. |
+| Storage | `src/platform/chrome-storage.ts`, `src/ui/side-panel-navigation-dependencies.ts` | Use injected extension-state dependencies for navigation mount and branch saves; do not hide `chrome.storage.local` as a default parameter. |
 
 Any new frontend state should be derived from these contracts or stored explicitly through the existing storage schema. Avoid local shadow constants for branch IDs, menu category membership, OTA field rules, PMS field names, or storage recovery policy.
 
-## Rooms & Settings Backend Design
+## Room Remark Command Backend Design
 
-`Rooms & Settings` is a persistent bottom-sheet launcher. The current frontend exposes the settings menu action and the WINGS remark command when a supported room-remark template is selected. Additional bottom-bar actions still require a real catalog/application contract before UI is added.
+Do not add a persistent bottom-sheet launcher or floating utility pill. The current frontend exposes settings through the fixed home navigation, and room-remark commands may only appear inside the owning work surface after a supported room-remark template is selected.
 
 Backend-owned action source:
 
-- define bottom-bar actions in `src/catalog/menu-routing.ts`, not in Svelte components
+- define command actions in `src/catalog/menu-routing.ts`, not in Svelte components
 - keep `HomeQuickAction.menuId` required for direct menu actions
 - add a separate discriminated action type before supporting non-menu actions
 - keep `detailLabel`, `confirmLabel`, command visibility metadata, and template ownership in the catalog action contract
@@ -63,7 +63,7 @@ Backend-owned action source:
 Current action model:
 
 ```ts
-type RoomsSettingsAction =
+type RoomRemarkAction =
   | {
       kind: "menu";
       id: string;
@@ -91,11 +91,11 @@ type RoomsSettingsAction =
 Command actions must be backed by application functions before appearing in the UI. A command cannot be added as a visual-only stub.
 Unknown command IDs must fail visibly through the controller status surface; silent `return` is not allowed.
 
-Backend responsibilities for bottom-bar commands:
+Backend responsibilities for room remark commands:
 
 - resolve available actions from current state: selected branch, active menu, selected PMS record, storage state, and navigation lock
 - expose each action's enabled/disabled state and concise disabled reason
-- execute commands through `src/ui/side-panel-dependencies.ts` or application modules, not through direct browser/global imports in components
+- execute future commands through a named dependency module or application modules, not through direct browser/global imports in components
 - return operational result messages for the existing status surface
 - keep storage mutations explicit through `src/platform/chrome-storage.ts`
 - keep WINGS/PMS/OTA side effects behind existing application/platform boundaries
@@ -106,10 +106,10 @@ Suggested module split:
 | Concern | Owner | Rule |
 | --- | --- | --- |
 | Action inventory | `src/catalog/menu-routing.ts` | Static labels, icons, menu destinations, command IDs. |
-| State availability | `src/ui/rooms-settings-actions.ts` | Pure resolver from controller state to visible actions. |
+| State availability | Navigation controller state only | Current frontend does not expose room/settings action rows. |
 | Command execution | `src/application/wings-remark.ts` or another focused workflow module | Real behavior only; no fake success and no silent fallback. |
-| Dependency access | `src/ui/side-panel-dependencies.ts` | All Chrome, clipboard, storage, active-tab, and fetch access enters here. |
-| UI rendering | `src/ui/components/RoomsSettingsBar.svelte` | Render provided actions and invoke callbacks only. |
+| Dependency access | `src/ui/side-panel-navigation-dependencies.ts` | Current frontend storage access enters here. Future clipboard, active-tab, and fetch access require a named owner module before UI is added. |
+| UI rendering | Owning work-surface component | Render command actions only where the active workflow requires them. |
 
 Menu screen ownership:
 
@@ -255,7 +255,7 @@ Room information memo supports WINGS remark upsert only through the active WINGS
 
 - use `src/domain/remarks.ts` for remark line formatting and upsert rules
 - use `src/application/wings-remark.ts` for the read/upsert/write workflow
-- use `src/platform/active-tab-automation.ts` through `src/ui/side-panel-dependencies.ts` for active-tab scripting
+- do not add active-tab scripting to the current frontend bundle; future active-tab scripting requires a named dependency owner before UI is added
 - when the active tab is not the WINGS reservation information window, fail with `WINGS 예약정보창을 연 뒤 다시 실행해주세요.`
 - do not call reservation creation fill logic or WINGS save behavior for room remarks
 
@@ -390,8 +390,7 @@ Shared copy rules:
 
 - use operational Korean labels
 - do not add explanatory tutorial copy inside the app
-- `Rooms & Settings` remains the only persistent bottom-bar product label
-- the `Rooms & Settings` trigger hides while the bottom sheet is open and reappears after the sheet closes
+- do not add persistent floating utility labels or bottom-sheet launchers outside the fixed home/work navigation contract
 - WINGS text appears only where the workflow actually touches WINGS/PMS/OTA behavior
 - do not add placeholder guest, room, branch, action, or command labels
 

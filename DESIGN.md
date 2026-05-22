@@ -3,7 +3,7 @@
 ## Source of truth
 - Status: Active
 - Last refreshed: 2026-05-17
-- Primary product surfaces: Chrome extension Svelte side panel home navigation, fixed shell header, fixed bottom work navigation, customer guidance/template list workflows.
+- Primary product surfaces: Chrome extension Svelte side panel home navigation, fixed shell header, fixed bottom navigation, and nested submenu navigation.
 - Evidence reviewed:
   - `PRODUCT.md`
   - `styles/sidepanel.css`
@@ -11,12 +11,9 @@
   - `src/ui/components/HomeView.svelte`
   - `src/ui/components/ShellHeader.svelte`
   - `src/ui/components/SidePanelView.svelte`
-  - `src/ui/components/RouteMotionFrame.svelte`
-  - `src/ui/components/CustomerGuidancePanel.svelte`
-  - `src/ui/components/RoomsSettingsBar.svelte`
   - `src/ui/components/MaterialIcon.svelte`
-  - `src/stories/HomeView.stories.ts`
-  - `src/stories/ShellHeader.stories.ts`
+  - `src/ui/side-panel-navigation-controller.svelte.ts`
+  - `src/ui/side-panel-navigation-dependencies.ts`
   - `assets/fonts/NanumSquareNeo-Variable.woff2`
   - `assets/fonts/NotoSansKR-VariableFont_wght.ttf`
   - `assets/fonts/PlusJakartaSans-VariableFont_wght.ttf`
@@ -35,7 +32,7 @@
 
 ## Product goals
 - Goals:
-  - Let UH Suite staff choose branch-scoped notices, quick replies, room/service work templates, and operational actions from a compact Chrome side panel.
+  - Let UH Suite staff navigate branch-scoped notice, quick-reply, room/service, work-management, and template/editing menu groups from a compact Chrome side panel.
   - Keep the first screen as the actual work menu.
   - Preserve fixed header and bottom work navigation while only the central navigation viewport slides.
   - Keep menu structure data-driven from catalog/schema modules.
@@ -54,7 +51,7 @@
 - User jobs:
   - Find customer notices and quick replies quickly.
   - Navigate to service/work-management flows.
-  - Open template/settings workflows without leaving the side panel.
+  - Reach the intended menu group and submenu without rendering unfinished work screens.
   - Use branch/date context while choosing work actions.
 - Key contexts of use: repetitive front-desk work on Chrome desktop, narrow side panel, frequent copy/send or PMS-assisted workflows.
 
@@ -62,12 +59,10 @@
 - Primary navigation:
   - Fixed shell header: company logo, branch selector, calendar/date.
   - Central nested drill-down navigation viewport.
-  - Fixed bottom work navigation: `체크인 목록`, `체크아웃 목록`, `객실 선택`, `설정`.
+  - Fixed bottom navigation: `체크인 목록`, `체크아웃 목록`, `객실 선택`, `설정`.
 - Core routes/screens:
   - Home navigation.
-  - Customer guidance panel.
-  - Template list workflows.
-  - Laundry, OTA reservation input, settings, rooms/settings command sheet.
+  - Nested submenu navigation only. Work screens remain out of the current frontend until intentionally reintroduced.
 - Content hierarchy:
   - Root work groups first.
   - Drill-down submenu items second.
@@ -127,27 +122,20 @@
   - `HomeView.svelte`
   - `ShellHeader.svelte`
   - `SidePanelView.svelte`
-  - `RoomsSettingsBar.svelte`
   - `MaterialIcon.svelte`
-  - `LanguageSegmentedControl.svelte`
-  - `CustomerGuidancePanel.svelte`
 - New/changed components:
-  - `RouteMotionFrame.svelte` clips and animates the central Home/Work route layer from controller-owned route intent.
   - `HomeView.svelte` renders data-driven root groups, nested submenu panels, and fixed bottom navigation.
   - `ShellHeader.svelte` includes the calendar icon/date and enlarged home-mode logo/branch treatment.
-  - `HomeView.stories.ts` documents and verifies the root and drill-down states in Storybook.
 - Variants and states:
   - Root navigation: default, hover with text underline expansion only, active/pressed, focus-visible.
   - Drill-down detail: explicit forward/backward direction, back button, submenu rows, selected route click, Escape-to-back, and focus restoration.
-  - Route frame: `forward`, `backward`, and `replace`.
-  - Sheet surfaces: hidden, opening/open, selected action, disabled action, and reduced-motion states.
   - Bottom navigation: enabled and real-disabled states only.
-  - Header: home mode and work mode.
+  - Header: home navigation mode.
 - Token/component ownership:
   - Shared visual tokens live in `styles/sidepanel.css`.
   - Shared panel motion and responsive interaction contract lives in `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`.
   - Menu schema and order live in `src/catalog/menu-routing.ts`.
-  - Browser/global dependencies remain routed through `src/ui/side-panel-dependencies.ts`.
+  - Current navigation storage dependencies remain routed through `src/ui/side-panel-navigation-dependencies.ts`.
 
 ## Accessibility
 - Target standard: practical keyboard and screen-reader support for Chrome extension side-panel workflows.
@@ -228,7 +216,6 @@
   - No hidden direct `fetch`, `chrome.storage`, `navigator.clipboard`, or `window` dependencies inside UI components.
 - Test/screenshot expectations:
   - Run `npm run verify` for typecheck, extension build, and tests.
-  - Use Storybook when available for component render checks.
   - Actual `chrome-extension://` visual automation may be blocked by browser policy; record that if it occurs.
 
 ## Open questions

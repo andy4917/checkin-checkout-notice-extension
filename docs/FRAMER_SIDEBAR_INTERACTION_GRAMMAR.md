@@ -30,11 +30,8 @@
 
 | Reference grammar | Local owner | Rule |
 | --- | --- | --- |
-| Desktop open/closed variants | `src/ui/side-panel-controller.svelte.ts` | Expose explicit `navigationDirection` and `routeTransitionKey`. |
-| Main route push | `src/ui/components/RouteMotionFrame.svelte` | Animate only the central route layer with transform; keep shell controls stable. |
+| Navigation entry state | `src/ui/side-panel-navigation-controller.svelte.ts` | Keep the active frontend limited to branch context and home drill-down state. |
 | Home drill-down rows | `src/ui/components/HomeView.svelte`, `styles/sidepanel.css` | Keep rows stable, evenly spaced, and unstaggered while the panel slides. |
-| Work content reveal | `src/ui/components/TemplateList.svelte`, `styles/sidepanel.css` | Template cards may use restrained vertical reveal outside the home drill-down. |
-| Sheet staged hierarchy | `src/ui/components/ShellHeader.svelte`, `src/ui/components/RoomsSettingsBar.svelte`, `styles/sidepanel.css` | Sheet header/options/actions reveal after the surface opens. |
 | Hover and emphasis | `HomeView.svelte`, `styles/sidepanel.css` | Labels use underline expansion; chevrons and icons stay optically stable. |
 
 ## Verification Expectations

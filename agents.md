@@ -20,7 +20,7 @@
 - `src/ui/App.svelte` must stay a skeleton/orchestrator.
 - Screen markup belongs in `src/ui/components/*`.
 - Catalog, PMS, OTA, storage, and domain behavior must stay in their owner modules.
-- Browser/global dependencies for the Svelte side panel must enter through `src/ui/side-panel-dependencies.ts`; do not hide `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` as default parameters in application/UI workflows.
+- Current navigation storage dependencies for the Svelte side panel must enter through `src/ui/side-panel-navigation-dependencies.ts`; do not hide `fetch`, `chrome.storage.local`, `navigator.clipboard`, or `window` as default parameters in application/UI workflows.
 - Do not recreate or depend on legacy DOM side panel code under `src/sidepanel/*`. That path is removed as a product surface.
 
 ## Data And Configuration

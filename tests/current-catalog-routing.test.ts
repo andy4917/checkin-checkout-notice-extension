@@ -11,7 +11,6 @@ import {
   homeBottomNavigationItems,
   homeNavigationGroups,
   homeNavigationLabels,
-  usesAirportVanPanel,
   usesWorkLanguageSelector,
 } from "../src/catalog/menu-routing.js";
 import {
@@ -70,11 +69,9 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
   assert.equal(homeNavigationLabels.openSubmenuLabel("고객 안내문"), "고객 안내문 메뉴 열기");
   assert.equal(usesWorkLanguageSelector("CUSTOMER_NOTICE"), true);
   assert.equal(usesWorkLanguageSelector("WORK_REPORT"), false);
-  assert.equal(usesAirportVanPanel("AIRPORT_VAN_MANAGEMENT"), true);
-  assert.equal(usesAirportVanPanel("CUSTOMER_NOTICE"), false);
 });
 
-test("home navigation styling contract keeps shared typography and divider tokens", () => {
+test("home navigation styling contract keeps reference-like typography and drill-down motion", () => {
   const css = readFileSync("styles/sidepanel.css", "utf8");
 
   assert.match(css, /--font-korean-title:\s*"NAVERNANUM"/);
@@ -85,21 +82,27 @@ test("home navigation styling contract keeps shared typography and divider token
   assert.match(css, /PlusJakartaSans-VariableFont_wght\.ttf/);
   assert.match(css, /--text-tracking-tight:\s*0;/);
   assert.match(css, /--color-home-divider:\s*#ececea;/);
-  assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*1px solid var\(--color-home-divider\);/s);
-  assert.match(css, /\.home-nav-icon\s*\{[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*0;/s);
+  assert.match(css, /\.home-nav-icon\s*\{[^}]*display:\s*none;/s);
   assert.match(css, /\.home-nav-badge\s*\{/);
   assert.match(css, /--home-focus-ring:\s*#aeb5ae;/);
   assert.match(css, /--home-header-block-space:\s*78px;/);
-  assert.match(css, /--home-root-row-height:\s*58px;/);
-  assert.match(css, /--home-submenu-row-height:\s*52px;/);
+  assert.match(css, /--home-root-row-height:\s*78px;/);
+  assert.match(css, /--home-submenu-row-height:\s*66px;/);
   assert.match(css, /--home-root-row-gap:\s*6px;/);
+  assert.match(css, /--home-hover-label-shift:\s*0px;/);
+  assert.match(css, /--home-hover-underline-height:\s*2px;/);
   assert.match(css, /--sidepanel-motion-duration:\s*280ms;/);
   assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\);/);
   assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding-bottom:\s*0;/s);
   assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*min-height:\s*calc\(100dvh - var\(--home-header-block-space\)\);/s);
   assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
+  assert.match(css, /\.home-navigation-viewport\s*\{[^}]*overflow:\s*hidden;[^}]*height:\s*100%;/s);
+  assert.match(css, /\.home-navigation-track\s*\{[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
+  assert.match(css, /\.home-navigation-panel\s*\{[^}]*height:\s*100%;[^}]*overflow-y:\s*auto;/s);
   assert.match(css, /\.home-navigation-track\s*\{[^}]*transition:\s*transform var\(--sidepanel-motion-duration\) var\(--sidepanel-motion-ease\);/s);
   assert.match(css, /\.home-nav-root-item:hover,\s*\.home-submenu-item:hover\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
+  assert.match(css, /\.home-nav-root-item:hover > \.home-nav-label,\s*\.home-submenu-item:hover > \.home-nav-label,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-label-shift\)\);/s);
   assert.match(css, /\.interactive-label::after\s*\{/);
 
   const homeView = readFileSync("src/ui/components/HomeView.svelte", "utf8");
@@ -109,11 +112,6 @@ test("home navigation styling contract keeps shared typography and divider token
   assert.match(homeView, /aria-label=\{labels\.backToRootLabel\}/);
   assert.doesNotMatch(homeView, /--stagger-index/);
   assert.doesNotMatch(readFileSync("src/ui/components/ShellHeader.svelte", "utf8"), /--stagger-index/);
-  assert.doesNotMatch(readFileSync("src/ui/components/RoomsSettingsBar.svelte", "utf8"), /--stagger-index/);
-  assert.doesNotMatch(readFileSync("src/ui/components/TemplateList.svelte", "utf8"), /--stagger-index/);
-  const routeMotionFrame = readFileSync("src/ui/components/RouteMotionFrame.svelte", "utf8");
-  assert.match(routeMotionFrame, /--sidepanel-motion-duration/);
-  assert.doesNotMatch(routeMotionFrame, /ROUTE_START_OPACITY|opacity:/);
   assert.doesNotMatch(css, /\.priority-card\b/);
   assert.doesNotMatch(css, /\.priority-menu\b/);
   assert.doesNotMatch(css, /\.home-list-item\b/);
@@ -121,11 +119,47 @@ test("home navigation styling contract keeps shared typography and divider token
   assert.doesNotMatch(css, /@keyframes home-item-reveal/);
   assert.doesNotMatch(css, /@keyframes home-detail-reveal/);
   assert.doesNotMatch(css, /\.home-submenu-section-label\b/);
+  assert.doesNotMatch(css, /\.home-submenu-section-items\b/);
+  assert.doesNotMatch(homeView, /home-submenu-section/);
   assert.doesNotMatch(css, /--stagger-index|--stagger-base-delay|--stagger-step-delay|--stagger-max-delay/);
   assert.doesNotMatch(css, /\.home-navigation-viewport\s*\{[^}]*486px/s);
   assert.doesNotMatch(css, /@container home-panel[^}]+\.home-navigation-viewport\s*\{[^}]*520px/s);
   assert.equal(existsSync("assets/fonts/NotoSansKR-VariableFont_wght.ttf"), true);
   assert.equal(existsSync("assets/fonts/PlusJakartaSans-VariableFont_wght.ttf"), true);
+});
+
+test("current frontend tree does not keep inactive work-screen components", () => {
+  const removedFrontendSurfaces = [
+    "src/ui/side-panel-controller.svelte.ts",
+    "src/ui/side-panel-dependencies.ts",
+    "src/ui/components/AirportVanPanel.svelte",
+    "src/ui/components/CustomerGuidancePanel.svelte",
+    "src/ui/components/LaundryPanel.svelte",
+    "src/ui/components/OtaReservationPanel.svelte",
+    "src/ui/components/RouteMotionFrame.svelte",
+    "src/ui/components/SettingsPanel.svelte",
+    "src/ui/components/TemplateList.svelte",
+    "src/ui/components/WorkHeader.svelte",
+    "src/ui/components/LanguageSegmentedControl.svelte",
+    "src/ui/components/LoadingImage.svelte",
+    "src/ui/components/RoomsSettingsBar.svelte",
+    "src/ui/app-state-helpers.ts",
+    "src/ui/app-view-model.ts",
+    "src/ui/display-helpers.ts",
+    "src/ui/laundry-workflow.ts",
+    "src/ui/ota-workflow.ts",
+    "src/ui/pms-workflow.ts",
+    "src/ui/rooms-settings-actions.ts",
+    "src/ui/template-runtime-values.ts",
+    "src/ui/template-settings-workflow.ts",
+    "src/ui/ui-options.ts",
+    "src/catalog/airport-van-ui.ts",
+    "src/laundry/presentation.ts",
+  ];
+
+  for (const path of removedFrontendSurfaces) {
+    assert.equal(existsSync(path), false, `${path} should not remain in current frontend`);
+  }
 });
 
 test("template filtering uses catalog metadata, branch scope, and attachment exclusion", () => {
@@ -172,7 +206,7 @@ test("renderer fails required PMS/manual values and unavailable languages instea
   assert.throws(() => renderTemplate(salesReport, "EN"), TemplateLanguageUnavailableError);
 });
 
-test("context and rooms command contracts surface operator-visible failure paths", () => {
+test("context and room remark command contracts surface operator-visible failure paths", () => {
   assert.deepEqual(guardRequiredContext("pmsPage", { isPmsPage: false, isGuestRecord: false }), {
     ok: false,
     message: "로그인된 WINGS 페이지를 열어주십시오",

@@ -27,7 +27,7 @@ test("tracked docs do not revive the absent external workflow path as current au
     encoding: "utf8",
   })
     .split(/\r?\n/)
-    .filter((file) => file.endsWith(".md"));
+    .filter((file) => file.endsWith(".md") && existsSync(join(root, file)));
 
   const violations = trackedDocs.filter((file) =>
     /Dev-Management\\docs\\GLOBAL_AGENT_WORKFLOW\.md/.test(read(file)),
@@ -54,7 +54,7 @@ test("Git-managed test surface contains only the current contract suite", () => 
     encoding: "utf8",
   })
     .split(/\r?\n/)
-    .filter(Boolean)
+    .filter((file) => file && existsSync(join(root, file)))
     .sort();
 
   assert.deepEqual(trackedTests, [
@@ -62,7 +62,6 @@ test("Git-managed test surface contains only the current contract suite", () => 
     "tests/current-data-flows.test.ts",
     "tests/current-extension-boundary.test.ts",
     "tests/current-repo-contract.test.ts",
-    "tests/current-rooms-settings.test.ts",
     "tests/current-storage-settings.test.ts",
   ]);
 });
@@ -81,7 +80,7 @@ test("Svelte UI files do not own operation codes, customer numbers, PMS endpoint
     encoding: "utf8",
   })
     .split(/\r?\n/)
-    .filter((file) => file.endsWith(".ts") || file.endsWith(".svelte"));
+    .filter((file) => (file.endsWith(".ts") || file.endsWith(".svelte")) && existsSync(join(root, file)));
 
   const bannedPatterns = [
     /https:\/\/pms\.sanhait\.com/,

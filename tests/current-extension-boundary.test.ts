@@ -27,14 +27,36 @@ test("manifest remains a Chrome MV3 Svelte side panel extension boundary", () =>
 test("Svelte entry is the only side panel app entry and App stays an orchestrator", () => {
   const main = readFileSync(join(root, "src/ui/main.ts"), "utf8");
   const app = readFileSync(join(root, "src/ui/App.svelte"), "utf8");
+  const navigationController = readFileSync(
+    join(root, "src/ui/side-panel-navigation-controller.svelte.ts"),
+    "utf8",
+  );
+  const navigationDependencies = readFileSync(
+    join(root, "src/ui/side-panel-navigation-dependencies.ts"),
+    "utf8",
+  );
   const sidePanel = readFileSync(join(root, "src/ui/components/SidePanelView.svelte"), "utf8");
 
   assert.match(main, /mount\(App, \{ target \}\)/);
-  assert.match(app, /createSidePanelController\(browserSidePanelDependencies\)/);
+  assert.match(
+    app,
+    /createSidePanelNavigationController\(browserSidePanelNavigationDependencies\)/,
+  );
   assert.match(app, /<SidePanel \{controller\} \/>/);
-  assert.doesNotMatch(app, /{#if|<main|<section|fetch\(|chrome\.storage|navigator\.clipboard|window\./);
-  assert.match(sidePanel, /CustomerGuidancePanel/);
-  assert.match(sidePanel, /RoomsSettingsBar/);
+  assert.doesNotMatch(
+    app,
+    /{#if|<main|<section|fetch\(|chrome\.storage|navigator\.clipboard|window\.|side-panel-controller|side-panel-dependencies/,
+  );
+  assert.match(sidePanel, /<HomeView/);
+  assert.match(sidePanel, /<ShellHeader/);
+  assert.doesNotMatch(
+    sidePanel,
+    /AirportVanPanel|CustomerGuidancePanel|LaundryPanel|OtaReservationPanel|RouteMotionFrame|SettingsPanel|TemplateList|WorkHeader|RoomsSettingsBar|home-bottom-toggle|controller\.openMenu/,
+  );
+  assert.doesNotMatch(
+    navigationController + navigationDependencies,
+    /clipboard|navigator\.clipboard|fetch\(|active-tab-automation|pms-workflow|ota-workflow|laundry-workflow|rooms-settings-actions|side-panel-controller|side-panel-dependencies/,
+  );
 });
 
 test("side panel open policy and tab context are explicit instead of silently inferring a product surface", () => {

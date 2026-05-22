@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import * as SidePanelModule from "./components/SidePanelView.svelte";
-  import { browserSidePanelDependencies } from "./side-panel-dependencies.js";
-  import { createSidePanelController } from "./side-panel-controller.svelte.js";
+  import { browserSidePanelNavigationDependencies } from "./side-panel-navigation-dependencies.js";
+  import { createSidePanelNavigationController } from "./side-panel-navigation-controller.svelte.js";
 
   const SidePanel = SidePanelModule.default;
-  const controller = createSidePanelController(browserSidePanelDependencies);
+  const controller = createSidePanelNavigationController(browserSidePanelNavigationDependencies);
 
   onMount(controller.mount);
 </script>
