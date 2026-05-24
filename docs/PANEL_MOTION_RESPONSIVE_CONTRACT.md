@@ -3,8 +3,8 @@
 ## Status
 
 - Status: Active common UI contract
-- Last refreshed: 2026-05-15
-- Source basis: user-provided `UI_MOTION_META_DESIGN_PLAN_v2.md`, `DESIGN.md`, `PRODUCT.md`, `styles/sidepanel.css`, `src/ui/components/HomeView.svelte`
+- Last refreshed: 2026-05-24
+- Source basis: `DESIGN.md`, `PRODUCT.md`, `styles/sidepanel.css`, `src/ui/components/HomeView.svelte`, `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
 - Reference boundary: Framer Sidebar Navigation is used for motion and responsive interaction quality only, not for product content, mobile navigation, full-screen drawer behavior, backdrop treatment, or typography scale.
 
 ## Purpose
@@ -46,16 +46,18 @@ Do not infer direction from labels, visual order, or catalog text.
 
 Shared panel motion tokens live in `styles/sidepanel.css`:
 
-- `--motion-panel-duration`
-- `--motion-panel-duration-compact`
-- `--motion-fade-duration`
+- `--motion-standard`
 - `--motion-hover-duration`
 - `--motion-reveal-duration`
-- `--motion-press-duration`
-- `--motion-standard`
-- `--motion-layer-current`
-- `--motion-layer-entering`
-- `--motion-layer-overlay`
+- `--sidepanel-motion-duration`
+- `--sidepanel-motion-ease`
+- `--micro-motion-duration`
+- `--home-content-motion-duration`
+- `--home-content-motion-delay`
+- `--home-hover-label-shift`
+- `--home-hover-chevron-shift`
+- `--home-hover-underline-height`
+- `--home-hover-underline-opacity`
 
 Ordinary UI components should reuse these tokens instead of embedding new duration or easing values.
 
@@ -64,8 +66,9 @@ Ordinary UI components should reuse these tokens instead of embedding new durati
 - Use `transform` and `opacity` for primary transitions.
 - Keep panel transitions below 300ms.
 - Keep hover and press feedback local to the row, button, icon, or chevron.
-- Hover may use a 1px accent-line reveal and a 1px transform shift when it improves perceived responsiveness without changing layout.
+- Hover may use a visible underline reveal, subtle text nudge, and chevron emphasis when it improves perceived responsiveness without resizing the row.
 - Nested view entry may use a short content reveal after the panel movement starts, capped by the shared reveal token.
+- Backward navigation must retain outgoing detail content long enough for the panel motion to read as continuous.
 - Do not animate width, height, top, left, margins, or padding for primary navigation.
 - Do not add idle animation, bounce-heavy spring, glow, flashing, or decorative movement.
 - Hidden or offscreen panels must not receive pointer or keyboard interaction.
@@ -159,6 +162,7 @@ Anchored overlays, popovers, and sheets are separate from panel navigation.
 - Focus returns to the opening row after back navigation.
 - Narrow widths preserve the same navigation model.
 - Labels truncate without horizontal scroll.
+- Hover rows show underline, subtle forward label movement, and chevron emphasis without changing row size.
 - Coarse pointer hit targets remain usable.
 - Reduced motion removes slide choreography without breaking state.
 - Primary transition uses transform and opacity, not layout properties.

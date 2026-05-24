@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-05-17
+- Last refreshed: 2026-05-24
 - Primary product surfaces: Chrome extension Svelte side panel home navigation, fixed shell header, fixed bottom navigation, and nested submenu navigation.
 - Evidence reviewed:
   - `PRODUCT.md`
@@ -22,8 +22,6 @@
   - `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`
   - `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
   - `docs/TEST_CONTRACT.md`
-  - User-provided `UI_MOTION_META_DESIGN_PLAN_v2.md`
-  - User-provided Framer sidebar reference application plan
 
 ## Brand
 - Personality: quiet, operational, compact, Korean-first, precise staff-console feel.
@@ -108,11 +106,18 @@
   - Avoid nested cards and heavy shadows.
 - Motion:
   - Use transform-first motion for navigation and keep opacity effects away from the home drill-down route.
-  - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-panel-duration`, `--motion-panel-duration-compact`, `--motion-fade-duration`, `--motion-hover-duration`, `--motion-reveal-duration`, `--motion-press-duration`, `--route-motion-duration`, `--sidepanel-motion-duration`, `--sidepanel-motion-duration-fast`, `--sidepanel-motion-ease`, and `--motion-standard`.
+  - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-standard`, `--motion-reveal-duration`, `--motion-hover-duration`, `--sidepanel-motion-duration`, `--sidepanel-motion-ease`, `--micro-motion-duration`, `--home-content-motion-duration`, and `--home-content-motion-delay`.
+  - Shared hover affordance uses `--home-hover-label-shift`, `--home-hover-chevron-shift`, `--home-hover-underline-height`, and `--home-hover-underline-opacity` so text, underline, and chevron emphasis stay consistent across root and submenu rows.
   - Home drill-down rows do not use stagger variables. The reference motion is carried by the clipped transform slide, retained outgoing detail content on backward navigation, short content enter/exit motion, and visible text underline hover; row labels and chevrons move forward subtly on hover.
   - Navigation viewport slides left/right; header/footer do not transition.
   - `forward`, `backward`, and `replace` are explicit navigation intents, not inferred from menu labels.
   - Framer sidebar is a reference for state, transform motion, hover underline, responsive polish, and emphasis grammar only; do not copy its full drawer, heavy backdrop, large typography expansion, social/legal footer, fixed five-link model, or mobile menu model.
+- Common UI/motion consistency:
+  - Header and bottom navigation are persistent shell surfaces. They do not participate in central route slide motion.
+  - Central navigation changes through a clipped two-panel transform track; content may enter/exit with short transform/opacity support, but route state must not animate layout properties.
+  - Forward, backward, hover, focus-visible, active, disabled, and reduced-motion behavior must be implemented from shared tokens instead of one-off CSS values.
+  - Hover feedback must be visible on pointer devices but nonessential on touch/coarse pointers.
+  - Any future menu-like row should reuse the same underline, subtle forward nudge, chevron emphasis, focus ring, and reduced-motion conventions unless a documented exception is added.
 - Imagery/iconography:
   - Use shared `MaterialIcon.svelte`.
   - Home navigation icon backgrounds are transparent in default and hover states.
