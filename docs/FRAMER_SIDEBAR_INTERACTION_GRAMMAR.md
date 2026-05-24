@@ -12,8 +12,9 @@
 - Named navigation intent: use `forward`, `backward`, and `replace` states instead of inferring direction from labels or DOM order.
 - Stable shell: header, status, and bottom controls stay outside the central route slide area.
 - Route transition: central content moves with clipped transform motion and never creates horizontal page scroll.
+- Transition continuity: backward navigation keeps the outgoing detail content alive long enough to slide out instead of disappearing before the panel motion finishes.
 - Navigation hierarchy: primary home items and submenu rows remain stable during route motion; no per-item stagger is used in the home drill-down.
-- Hover grammar: main navigation uses text underline expansion only. It does not use background fill, scale, color flash, or chevron movement.
+- Hover grammar: main navigation uses visible text underline expansion, a small forward text nudge, and chevron emphasis. It does not use background fill or layout-moving animation; label overflow must not clip the underline.
 - Emphasis grammar: selected state remains calmer than hover, and action emphasis must not depend on fake product data.
 - Responsive grammar: compact widths reduce spacing, icon columns, row height, and transition duration without changing the navigation model.
 - Reduced motion: slide and stagger choreography collapse to near-instant state changes while focus, selected, disabled, and error states remain visible.
@@ -31,8 +32,8 @@
 | Reference grammar | Local owner | Rule |
 | --- | --- | --- |
 | Navigation entry state | `src/ui/side-panel-navigation-controller.svelte.ts` | Keep the active frontend limited to branch context and home drill-down state. |
-| Home drill-down rows | `src/ui/components/HomeView.svelte`, `styles/sidepanel.css` | Keep rows stable, evenly spaced, and unstaggered while the panel slides. |
-| Hover and emphasis | `HomeView.svelte`, `styles/sidepanel.css` | Labels use underline expansion; chevrons and icons stay optically stable. |
+| Home drill-down rows | `src/ui/components/HomeView.svelte`, `styles/sidepanel.css` | Keep rows stable, evenly spaced, and unstaggered while the panel slides; retain outgoing detail content during backward motion. |
+| Hover and emphasis | `HomeView.svelte`, `styles/sidepanel.css` | Labels use visible underline expansion with a small forward nudge; chevrons darken and move forward without resizing the row. |
 
 ## Verification Expectations
 

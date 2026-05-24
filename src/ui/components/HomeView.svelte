@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onDestroy, tick } from "svelte";
   import type {
     HomeBottomNavigationItem,
     HomeNavigationLabels,
@@ -16,19 +16,29 @@
   export let onOpenMenu: (menuId: MenuId) => void;
 
   let activeGroupId = "";
+  let renderedDetailGroupId = "";
   let lastOpenedGroupButton: HTMLButtonElement | null = null;
   let motionDirection: "forward" | "backward" | "replace" = "replace";
   let detailBackButton: HTMLButtonElement | null = null;
+  let releaseDetailTimer: ReturnType<typeof setTimeout> | null = null;
 
   $: activeGroup = groups.find((group) => group.id === activeGroupId) || null;
-  $: activeSubmenuId = activeGroup ? getSubmenuPanelId(activeGroup.id) : undefined;
+  $: renderedDetailGroup =
+    groups.find((group) => group.id === (activeGroupId || renderedDetailGroupId)) || null;
+  $: activeSubmenuId = renderedDetailGroup ? getSubmenuPanelId(renderedDetailGroup.id) : undefined;
+
+  onDestroy(() => {
+    clearReleaseDetailTimer();
+  });
 
   async function openGroup(groupId: string, triggerButton: HTMLButtonElement) {
     if (activeGroupId === groupId) {
       return;
     }
 
+    clearReleaseDetailTimer();
     lastOpenedGroupButton = triggerButton;
+    renderedDetailGroupId = groupId;
     activeGroupId = groupId;
     motionDirection = "forward";
     await tick();
@@ -36,8 +46,14 @@
   }
 
   async function goRoot() {
+    clearReleaseDetailTimer();
+    renderedDetailGroupId = activeGroupId;
     activeGroupId = "";
     motionDirection = "backward";
+    releaseDetailTimer = setTimeout(() => {
+      renderedDetailGroupId = "";
+      releaseDetailTimer = null;
+    }, 300);
     await tick();
     lastOpenedGroupButton?.focus({ preventScroll: true });
   }
@@ -54,6 +70,15 @@
     return `home-submenu-title-${groupId}`;
   }
 
+  function clearReleaseDetailTimer() {
+    if (!releaseDetailTimer) {
+      return;
+    }
+
+    clearTimeout(releaseDetailTimer);
+    releaseDetailTimer = null;
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key !== "Escape" || !activeGroup) {
       return;
@@ -68,6 +93,7 @@
 <section class="home-surface" aria-label={labels.rootLabel}>
   <div
     class:backward={motionDirection === "backward"}
+    class:detail-retained={!activeGroup && renderedDetailGroup}
     class:replace={motionDirection === "replace"}
     class:submenu-active={activeGroup}
     class="home-navigation-viewport"
@@ -109,10 +135,10 @@
         class="home-navigation-panel detail-panel"
         id={activeSubmenuId}
         aria-hidden={!activeGroup}
-        aria-label={activeGroup?.title || labels.defaultSubmenuLabel}
-        aria-labelledby={activeGroup ? getSubmenuTitleId(activeGroup.id) : undefined}
+        aria-label={renderedDetailGroup?.title || labels.defaultSubmenuLabel}
+        aria-labelledby={renderedDetailGroup ? getSubmenuTitleId(renderedDetailGroup.id) : undefined}
       >
-        {#if activeGroup}
+        {#if renderedDetailGroup}
           <button
             bind:this={detailBackButton}
             class="home-nav-back"
@@ -122,10 +148,10 @@
             onclick={goRoot}
           >
             <MaterialIcon name="arrow_back" size={18} />
-            <span id={getSubmenuTitleId(activeGroup.id)}>{activeGroup.title}</span>
+            <span id={getSubmenuTitleId(renderedDetailGroup.id)}>{renderedDetailGroup.title}</span>
           </button>
           <div class="home-submenu-list">
-            {#each activeGroup.items as item}
+            {#each renderedDetailGroup.items as item}
               <button
                 class="home-submenu-item"
                 type="button"

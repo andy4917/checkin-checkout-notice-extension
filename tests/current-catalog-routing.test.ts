@@ -53,6 +53,16 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
     homeNavigationGroups[0]?.items.map((item) => item.title),
     ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
   );
+  assert.deepEqual(
+    homeNavigationGroups.map((group) => group.items.map((item) => item.title)),
+    [
+      ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
+      ["물품 대여 문의", "분실물 문의", "객실 방문 예정"],
+      ["세탁물 관리", "매출 관리", "공항밴 관리"],
+      ["객실 정보 리마크", "NAVER / STATION 예약입력", "업무보고 양식"],
+      ["고객 템플릿 / 빠른답변", "업무 내용 변경"],
+    ],
+  );
   assert.equal(
     homeNavigationGroups[3]?.items.find((item) => item.id === "work-ota")?.badgeLabel,
     "WINGS",
@@ -81,20 +91,33 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /NotoSansKR-VariableFont_wght\.ttf/);
   assert.match(css, /PlusJakartaSans-VariableFont_wght\.ttf/);
   assert.match(css, /--text-tracking-tight:\s*0;/);
-  assert.match(css, /--color-home-divider:\s*#ececea;/);
+  assert.match(css, /--color-canvas:\s*#fdfdfc;/);
+  assert.match(css, /--color-surface:\s*#fdfdfc;/);
+  assert.match(css, /--color-line:\s*#eeeeec;/);
+  assert.match(css, /--color-home-divider:\s*#eeeeec;/);
   assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*0;/s);
   assert.match(css, /\.home-nav-icon\s*\{[^}]*display:\s*none;/s);
   assert.match(css, /\.home-nav-badge\s*\{/);
   assert.match(css, /--home-focus-ring:\s*#aeb5ae;/);
-  assert.match(css, /--home-header-block-space:\s*78px;/);
-  assert.match(css, /--home-root-row-height:\s*78px;/);
-  assert.match(css, /--home-submenu-row-height:\s*66px;/);
-  assert.match(css, /--home-root-row-gap:\s*6px;/);
-  assert.match(css, /--home-hover-label-shift:\s*0px;/);
+  assert.match(css, /--home-header-block-space:\s*68px;/);
+  assert.match(css, /--font-display:\s*var\(--font-korean-body\);/);
+  assert.match(css, /--home-root-font-size:\s*23px;/);
+  assert.match(css, /--home-root-font-weight:\s*760;/);
+  assert.match(css, /--home-submenu-font-size:\s*18px;/);
+  assert.match(css, /--home-submenu-font-weight:\s*720;/);
+  assert.match(css, /--home-root-row-height:\s*68px;/);
+  assert.match(css, /--home-submenu-row-height:\s*58px;/);
+  assert.match(css, /--home-root-row-gap:\s*3px;/);
+  assert.match(css, /--home-hover-label-shift:\s*4px;/);
+  assert.match(css, /--home-hover-chevron-shift:\s*4px;/);
+  assert.match(css, /--home-content-motion-duration:\s*240ms;/);
+  assert.match(css, /--home-content-motion-delay:\s*70ms;/);
   assert.match(css, /--home-hover-underline-height:\s*2px;/);
   assert.match(css, /--sidepanel-motion-duration:\s*280ms;/);
   assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\);/);
   assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding-bottom:\s*0;/s);
+  assert.match(css, /\.app-header\s*\{[^}]*margin:\s*0 0 12px;[^}]*border-bottom:\s*0;[^}]*padding:\s*0;/s);
+  assert.match(css, /\.app-header::after\s*\{[^}]*left:\s*0;[^}]*background:\s*var\(--color-line\);/s);
   assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*min-height:\s*calc\(100dvh - var\(--home-header-block-space\)\);/s);
   assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
   assert.match(css, /\.home-navigation-viewport\s*\{[^}]*overflow:\s*hidden;[^}]*height:\s*100%;/s);
@@ -103,9 +126,24 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-navigation-track\s*\{[^}]*transition:\s*transform var\(--sidepanel-motion-duration\) var\(--sidepanel-motion-ease\);/s);
   assert.match(css, /\.home-nav-root-item:hover,\s*\.home-submenu-item:hover\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(css, /\.home-nav-root-item:hover > \.home-nav-label,\s*\.home-submenu-item:hover > \.home-nav-label,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-label-shift\)\);/s);
-  assert.match(css, /\.interactive-label::after\s*\{/);
+  assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.interactive-label\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.interactive-label::after\s*\{[^}]*will-change:\s*opacity,\s*transform;/s);
+  assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-chevron-shift\)\);/s);
+  assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*color:\s*var\(--color-primary\);[^}]*opacity:\s*1;/s);
+  assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-enter/s);
+  assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-exit/s);
+  assert.match(css, /\.home-navigation-viewport\[data-motion-direction="backward"\] \.root-panel \.home-nav-root-item\s*\{[^}]*animation:\s*home-root-content-return/s);
+  assert.match(css, /@keyframes home-detail-content-enter\s*\{/);
+  assert.match(css, /@keyframes home-detail-content-exit\s*\{/);
+  assert.match(css, /@keyframes home-root-content-return\s*\{/);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)\s*\{/);
 
   const homeView = readFileSync("src/ui/components/HomeView.svelte", "utf8");
+  assert.match(homeView, /renderedDetailGroupId/);
+  assert.match(homeView, /class:detail-retained=\{!activeGroup && renderedDetailGroup\}/);
+  assert.match(homeView, /releaseDetailTimer = setTimeout/);
   assert.match(homeView, /aria-haspopup="true"/);
   assert.match(homeView, /aria-expanded=\{activeGroup\?\.id === group\.id\}/);
   assert.match(homeView, /aria-controls=\{getSubmenuPanelId\(group\.id\)\}/);

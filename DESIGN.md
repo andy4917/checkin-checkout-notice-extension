@@ -79,19 +79,20 @@
 
 ## Visual language
 - Color:
-  - `--color-canvas: #FBFBFA`
-  - `--color-surface: #FEFEFD`
-  - `--color-surface-raised: #FEFEFD`
+  - `--color-canvas: #FDFDFC`
+  - `--color-surface: #FDFDFC`
+  - `--color-surface-raised: #FDFDFC`
   - `--color-hover: #F5F5F3`
-  - `--color-line: #E8E9E7`
-  - `--color-home-divider: #ECECEA`
+  - `--color-line: #EEEEEC`
+  - `--color-home-divider: #EEEEEC`
   - `--color-primary: #1F252B`
   - `--color-primary-soft: #3D444C`
   - `--color-text: #171B20`
   - `--color-muted: #767D84`
   - `--color-icon: #8E949A`
 - Typography:
-  - Card-title Korean: bundled local `NAVERNANUM` alias, then `NanumSquareNeo`.
+  - Home navigation Korean: bundled local `Noto Sans KR`, then installed `Malgun Gothic`, with restrained weight so the list reads like a precise work menu instead of poster display type.
+  - Bundled `NAVERNANUM` / `NanumSquareNeo` remains available for surfaces that need a heavier brand-style Korean title, but it is not the home navigation default.
   - Body Korean: bundled local `Noto Sans KR`, then installed `Malgun Gothic`.
   - Latin/English: bundled local `Plus Jakarta Sans`, then installed `Jakarta Sans` / `Segoe UI`.
   - No remote font imports.
@@ -108,7 +109,7 @@
 - Motion:
   - Use transform-first motion for navigation and keep opacity effects away from the home drill-down route.
   - Standard timing uses shared tokens in `styles/sidepanel.css`: `--motion-panel-duration`, `--motion-panel-duration-compact`, `--motion-fade-duration`, `--motion-hover-duration`, `--motion-reveal-duration`, `--motion-press-duration`, `--route-motion-duration`, `--sidepanel-motion-duration`, `--sidepanel-motion-duration-fast`, `--sidepanel-motion-ease`, and `--motion-standard`.
-  - Home drill-down rows do not use stagger variables or chevron movement; the reference motion is carried by the clipped transform slide and text underline hover.
+  - Home drill-down rows do not use stagger variables. The reference motion is carried by the clipped transform slide, retained outgoing detail content on backward navigation, short content enter/exit motion, and visible text underline hover; row labels and chevrons move forward subtly on hover.
   - Navigation viewport slides left/right; header/footer do not transition.
   - `forward`, `backward`, and `replace` are explicit navigation intents, not inferred from menu labels.
   - Framer sidebar is a reference for state, transform motion, hover underline, responsive polish, and emphasis grammar only; do not copy its full drawer, heavy backdrop, large typography expansion, social/legal footer, fixed five-link model, or mobile menu model.
@@ -127,8 +128,8 @@
   - `HomeView.svelte` renders data-driven root groups, nested submenu panels, and fixed bottom navigation.
   - `ShellHeader.svelte` includes the calendar icon/date and enlarged home-mode logo/branch treatment.
 - Variants and states:
-  - Root navigation: default, hover with text underline expansion only, active/pressed, focus-visible.
-  - Drill-down detail: explicit forward/backward direction, back button, submenu rows, selected route click, Escape-to-back, and focus restoration.
+  - Root navigation: default, hover with unclipped text underline expansion, subtle label nudge, and chevron emphasis, active/pressed, focus-visible.
+  - Drill-down detail: explicit forward/backward direction, retained outgoing detail panel during back motion, back button, submenu rows, selected route click, Escape-to-back, and focus restoration.
   - Bottom navigation: enabled and real-disabled states only.
   - Header: home navigation mode.
 - Token/component ownership:
