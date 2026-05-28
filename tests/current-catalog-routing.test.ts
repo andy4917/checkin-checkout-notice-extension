@@ -196,7 +196,7 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="backward"\] \.root-panel \.home-nav-root-item\s*\{[^}]*animation:\s*home-root-content-return/s);
   assert.match(css, /\.home-template-accordion\s*\{/);
   assert.match(css, /\.home-template-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) 36px;[^}]*min-height:\s*42px;/s);
-  assert.match(css, /\.home-template-row-direct\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 36px;[^}]*border-top:\s*0;/s);
+  assert.match(css, /\.home-template-row-direct\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 36px;[^}]*cursor:\s*default;/s);
   assert.match(css, /\.home-template-copy\s*\{[^}]*display:\s*inline-grid;[^}]*width:\s*34px;[^}]*height:\s*34px;[^}]*place-items:\s*center;/s);
   assert.match(css, /\.home-language-strip\s*\{[^}]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);[^}]*height:\s*30px;/s);
   assert.match(css, /\.home-language-strip::before\s*\{[^}]*transform:\s*translateX\(calc\(var\(--active-index\) \* 100%\)\);[^}]*transition:\s*transform 180ms/s);
@@ -229,7 +229,8 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(homeView, /getInlineTemplates\(item\)/);
   assert.match(homeView, /shouldGroupInlineTemplates\(item\)/);
   assert.match(homeView, /getDirectInlineTemplate\(item\)/);
-  assert.match(homeView, /\.\.\.templateItems\.filter\(\(item\) => getInlineTemplates\(item\)\.length === 1\)/);
+  assert.match(homeView, /\.\.\.templateItems\.filter\(\(item\) => getInlineTemplates\(item\)\.length > 1\),\s*\.\.\.templateItems\.filter\(\(item\) => getInlineTemplates\(item\)\.length === 1\)/s);
+  assert.match(homeView, /class="home-submenu-item home-template-row-direct"/);
   assert.match(homeView, /use:copyTemplateEvents=\{\{ item, templateId: template\.id \}\}/);
   assert.doesNotMatch(homeView, /disabled=\{loading \|\| Boolean\(requirement\)\}/);
   assert.doesNotMatch(homeView, /template\.variables\.some\(\(variable\) => variable\.kind === "pmsRequired"\)/);

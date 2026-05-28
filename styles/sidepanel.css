@@ -1722,10 +1722,8 @@ button:disabled {
 
 .home-template-row-direct {
   grid-template-columns: var(--home-row-icon-size) minmax(0, 1fr) 36px;
-  gap: 14px;
   min-height: var(--home-submenu-row-height);
-  border-top: 0;
-  padding: 8px 0;
+  cursor: default;
 }
 
 .home-template-row > div {

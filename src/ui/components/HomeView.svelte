@@ -151,8 +151,8 @@
     if (!isAccordionGroup(group)) return group.items;
     const templateItems = group.items.filter((item) => getInlineTemplates(item).length > 0);
     return [
-      ...templateItems.filter((item) => getInlineTemplates(item).length === 1),
       ...templateItems.filter((item) => getInlineTemplates(item).length > 1),
+      ...templateItems.filter((item) => getInlineTemplates(item).length === 1),
     ];
   }
 
@@ -304,23 +304,27 @@
               {:else if isAccordionGroup(renderedDetailGroup) && getDirectInlineTemplate(item)}
                 {@const template = getDirectInlineTemplate(item)}
                 {#if template}
-                  <article class="home-template-row home-template-row-direct" role="listitem">
-                    <span class="home-nav-icon" aria-hidden="true">
-                      <MaterialIcon name={item.icon} size={20} />
-                    </span>
-                    <div>
-                      <strong>{template.title}</strong>
+                  <article class="home-submenu-entry" role="listitem">
+                    <div class="home-submenu-item home-template-row-direct">
+                      <span class="home-nav-icon" aria-hidden="true">
+                        <MaterialIcon name={item.icon} size={20} />
+                      </span>
+                      <span class="home-nav-label">
+                        <span class="home-nav-title-row">
+                          <span class="interactive-label">{template.title}</span>
+                        </span>
+                      </span>
+                      <button
+                        class="home-template-copy"
+                        type="button"
+                        aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
+                        title={copiedTemplateId === template.id ? "복사됨" : "복사"}
+                        disabled={loading}
+                        use:copyTemplateEvents={{ item, templateId: template.id }}
+                      >
+                        <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />
+                      </button>
                     </div>
-                    <button
-                      class="home-template-copy"
-                      type="button"
-                      aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
-                      title={copiedTemplateId === template.id ? "복사됨" : "복사"}
-                      disabled={loading}
-                      use:copyTemplateEvents={{ item, templateId: template.id }}
-                    >
-                      <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />
-                    </button>
                   </article>
                 {/if}
               {:else}
