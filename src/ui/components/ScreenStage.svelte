@@ -121,7 +121,6 @@
       bottomItems={homeBottomNavigation}
       copiedTemplateId={copiedTemplateId}
       groups={homeNavigation}
-      hasSelectedPmsRecord={hasSelectedPmsRecord}
       inlineTemplatesByItemId={homeInlineTemplatesByItemId}
       labels={homeLabels}
       initialGroupId={homeReturnGroupId}
@@ -129,8 +128,6 @@
       languageChanging={languageChanging}
       selectedBranchReady={selectedBranchReady}
       selectedLanguage={selectedLanguage}
-      templateValues={templateValues}
-      templateVariableValues={templateVariableValues}
       onCopyTemplate={onCopyHomeTemplate}
       onSelectLanguage={onSelectLanguage}
       onOpenMenu={onOpenMenu}

@@ -9,7 +9,6 @@
   } from "../../catalog/menu-routing.js";
   import type { UnifiedTemplateDefinition } from "../../catalog/template-types.js";
   import type { Language } from "../../types.js";
-  import { getTemplateRequirement } from "../template-list-state.js";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
   const MaterialIcon = MaterialIconModule.default;
@@ -18,7 +17,6 @@
   export let bottomItems: readonly HomeBottomNavigationItem[];
   export let copiedTemplateId: string | null;
   export let groups: readonly HomeNavigationGroup[];
-  export let hasSelectedPmsRecord: boolean;
   export let inlineTemplatesByItemId: Readonly<Record<string, readonly UnifiedTemplateDefinition[]>>;
   export let labels: HomeNavigationLabels;
   export let initialGroupId = "";
@@ -26,8 +24,6 @@
   export let languageChanging: boolean;
   export let selectedLanguage: Language;
   export let selectedBranchReady: boolean;
-  export let templateValues: Record<string, string>;
-  export let templateVariableValues: Record<string, string>;
   export let onCopyTemplate: (target: HomeNavigationItem, templateId: string) => void;
   export let onSelectLanguage: (language: Language) => void;
   export let onOpenMenu: (target: MenuId | HomeNavigationItem) => void;
@@ -153,19 +149,20 @@
 
   function getRenderedDetailItems(group: HomeNavigationGroup): readonly HomeNavigationItem[] {
     if (!isAccordionGroup(group)) return group.items;
-    return group.items.filter((item) => getInlineTemplates(item).length > 0);
+    const templateItems = group.items.filter((item) => getInlineTemplates(item).length > 0);
+    return [
+      ...templateItems.filter((item) => getInlineTemplates(item).length === 1),
+      ...templateItems.filter((item) => getInlineTemplates(item).length > 1),
+    ];
   }
 
-  function resolveHomeTemplateRequirement(template: UnifiedTemplateDefinition): string {
-    if (template.variables.some((variable) => variable.kind === "pmsRequired")) {
-      return "";
-    }
+  function shouldGroupInlineTemplates(item: HomeNavigationItem): boolean {
+    return getInlineTemplates(item).length > 1;
+  }
 
-    return getTemplateRequirement(template, {
-      hasSelectedPmsRecord,
-      templateValues,
-      templateVariableValues,
-    });
+  function getDirectInlineTemplate(item: HomeNavigationItem): UnifiedTemplateDefinition | null {
+    const templates = getInlineTemplates(item);
+    return templates.length === 1 ? templates[0] : null;
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -262,7 +259,7 @@
           {/if}
           <div class="home-submenu-list">
             {#each getRenderedDetailItems(renderedDetailGroup) as item}
-              {#if isAccordionGroup(renderedDetailGroup)}
+              {#if isAccordionGroup(renderedDetailGroup) && shouldGroupInlineTemplates(item)}
                 <details class="home-submenu-entry">
                   <summary class="home-submenu-item accordion-trigger" tabindex={activeGroup ? 0 : -1} onkeydown={handleKeydown}>
                     <span class="home-nav-icon" aria-hidden="true">
@@ -283,7 +280,6 @@
                   <div class="home-template-accordion" role="list">
                     {#if getInlineTemplates(item).length > 0}
                       {#each getInlineTemplates(item) as template}
-                        {@const requirement = resolveHomeTemplateRequirement(template)}
                         <article class="home-template-row" role="listitem">
                           <div>
                             <strong>{template.title}</strong>
@@ -293,7 +289,7 @@
                             type="button"
                             aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
                             title={copiedTemplateId === template.id ? "복사됨" : "복사"}
-                            disabled={loading || Boolean(requirement)}
+                            disabled={loading}
                             use:copyTemplateEvents={{ item, templateId: template.id }}
                           >
                             <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />
@@ -305,6 +301,28 @@
                     {/if}
                   </div>
                 </details>
+              {:else if isAccordionGroup(renderedDetailGroup) && getDirectInlineTemplate(item)}
+                {@const template = getDirectInlineTemplate(item)}
+                {#if template}
+                  <article class="home-template-row home-template-row-direct" role="listitem">
+                    <span class="home-nav-icon" aria-hidden="true">
+                      <MaterialIcon name={item.icon} size={20} />
+                    </span>
+                    <div>
+                      <strong>{template.title}</strong>
+                    </div>
+                    <button
+                      class="home-template-copy"
+                      type="button"
+                      aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
+                      title={copiedTemplateId === template.id ? "복사됨" : "복사"}
+                      disabled={loading}
+                      use:copyTemplateEvents={{ item, templateId: template.id }}
+                    >
+                      <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />
+                    </button>
+                  </article>
+                {/if}
               {:else}
                 <article class="home-submenu-entry">
                   <button

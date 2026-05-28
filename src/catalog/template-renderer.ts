@@ -3,6 +3,12 @@ import type { TemplateDefinition } from "./template-types.js";
 
 const TEMPLATE_LANGUAGE_ORDER: readonly Language[] = Object.freeze(["KO", "EN", "JP", "CN"]);
 
+type MissingRequiredValueMode = "throw" | "blank";
+
+type RenderTemplateOptions = {
+  missingRequiredValueMode?: MissingRequiredValueMode;
+};
+
 export class UnsupportedLanguageError extends Error {
   constructor(lang: string) {
     super(`지원하지 않는 언어입니다: ${lang}`);
@@ -35,6 +41,7 @@ export function renderTemplate(
   template: TemplateDefinition,
   lang: string,
   values: Record<string, string | number | null | undefined> = {},
+  options: RenderTemplateOptions = {},
 ): string {
   const language = requireTemplateLanguage(lang);
   const body = getTemplateLanguageBody(template, language);
@@ -43,9 +50,11 @@ export function renderTemplate(
     throw new TemplateLanguageUnavailableError(template.id, language);
   }
 
-  return replaceTemplateVariables(body, /\{([a-zA-Z0-9_]+)\}/g, template, values).replace(
+  const missingRequiredValueMode = options.missingRequiredValueMode || "throw";
+
+  return replaceTemplateVariables(body, /\{([a-zA-Z0-9_]+)\}/g, template, values, missingRequiredValueMode).replace(
     /\[([^\]]+)\]/g,
-    (match, variableName: string) => replaceOneVariable(match, variableName, template, values),
+    (match, variableName: string) => replaceOneVariable(match, variableName, template, values, missingRequiredValueMode),
   );
 }
 
@@ -54,9 +63,10 @@ function replaceTemplateVariables(
   pattern: RegExp,
   template: TemplateDefinition,
   values: Record<string, string | number | null | undefined>,
+  missingRequiredValueMode: MissingRequiredValueMode,
 ): string {
   return body.replace(pattern, (match, variableName: string) =>
-    replaceOneVariable(match, variableName, template, values),
+    replaceOneVariable(match, variableName, template, values, missingRequiredValueMode),
   );
 }
 
@@ -65,6 +75,7 @@ function replaceOneVariable(
   variableName: string,
   template: TemplateDefinition,
   values: Record<string, string | number | null | undefined>,
+  missingRequiredValueMode: MissingRequiredValueMode,
 ): string {
   const variable = template.variables.find(
     (item) => item.name === variableName || item.label === variableName,
@@ -72,10 +83,10 @@ function replaceOneVariable(
   if (!variable) return match;
   const value = values[variable.name] ?? values[variable.label];
 
-  if (variable?.kind === "pmsRequired" && isBlank(value)) {
+  if (variable?.kind === "pmsRequired" && isBlank(value) && missingRequiredValueMode === "throw") {
     throw new PmsRequiredValueMissingError(variableName);
   }
-  if (variable?.kind === "manualRequired" && isBlank(value)) {
+  if (variable?.kind === "manualRequired" && isBlank(value) && missingRequiredValueMode === "throw") {
     throw new ManualRequiredValueMissingError(variableName);
   }
 
