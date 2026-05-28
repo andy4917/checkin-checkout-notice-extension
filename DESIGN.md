@@ -197,8 +197,8 @@
 
 ## Interaction states
 - Loading:
-  - Use existing loading image or exact-dimension skeletons.
-  - Do not introduce circular spinner spectacle.
+  - Keep loading state scoped to the active control or workflow surface.
+  - Do not introduce global loading banners, decorative loading images, or circular spinner spectacle.
 - Empty:
   - Do not fake business data. Empty states must reflect real absence.
   - PMS, laundry, OTA, and template surfaces use concise absence labels tied to the real missing context.
@@ -206,7 +206,8 @@
   - Errors state the next required operational condition, such as WINGS page or customer record requirements.
   - Storage recovery, repeated setup failures, branch mismatch, missing WINGS page, and invalid workflow steps remain operator-visible.
 - Success:
-  - Success indicators appear only after real successful actions, such as copy completion.
+  - Success indicators appear only after real successful actions.
+  - Copy completion is shown on the button/action that was used; it must not become a persistent shell banner.
 - Disabled:
   - Disabled actions must map to real route/context absence or guard conditions.
 - Offline/slow network, if applicable:
@@ -221,6 +222,7 @@
   - No visible tutorial or feature-explanation copy in the primary app surface.
   - No marketing words or invented productivity claims.
   - No fake names, rooms, branches, guest values, or demo summaries.
+  - The shared top header does not render active menu titles or stale workflow badges.
 
 ## Implementation constraints
 - Framework/styling system:

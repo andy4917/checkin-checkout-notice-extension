@@ -17,9 +17,10 @@ The product helps staff choose branch-scoped customer notices, quick replies, ro
 - The first screen is the actual work menu, not a landing page.
 - Staff should see the branch, date, task groups, and fixed bottom work shortcuts immediately.
 - Menu structure is catalog-owned and data-driven; Svelte components render the schema but do not own business labels, route IDs, PMS codes, endpoint paths, or fake data.
-- Navigation from the home screen uses nested drill-down panels, not accordions.
+- Navigation from the home screen uses nested drill-down panels; catalog-marked customer notice and quick-reply groups expand template lists inline as accordions.
 - Header and footer controls remain stable while only the central navigation viewport transitions.
 - Customer-facing template and copy workflows must fail visibly when required data or browser context is missing.
+- Copy success is local to the action that was used and must not persist as a shell-wide message across screens.
 
 ## Tone
 

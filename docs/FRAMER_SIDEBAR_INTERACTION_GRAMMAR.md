@@ -3,18 +3,18 @@
 ## Status
 
 - Status: Active reference mapping
-- Last refreshed: 2026-05-17
+- Last refreshed: 2026-05-28
 - Source: user-provided Framer sidebar reference application plan
 - Boundary: This document preserves the Framer sidebar's felt interaction quality for the local Svelte side panel: 400px reference scale, 64px top control rhythm, 48px link rows, clipped 200% submenu motion, compact icon+label footer treatment, and underline hover behavior. It is not permission to import Framer runtime code, add marketing content, or replace catalog-owned product data.
 
 ## What To Carry Forward
 
 - Named navigation intent: use `forward`, `backward`, and `replace` states instead of inferring direction from labels or DOM order.
-- Stable shell: header, compact in-flow status, and bottom controls stay outside the central route slide area.
+- Stable shell: header, blocking-error/workflow status, and bottom controls stay outside the central route slide area; copy success stays on the action button.
 - Route transition: central content moves with clipped transform motion and never creates horizontal page scroll.
 - Transition continuity: backward navigation keeps the outgoing detail content alive long enough to slide out instead of disappearing before the panel motion finishes.
 - Navigation hierarchy: primary home items and submenu rows remain stable during route motion; no per-item stagger is used in the home drill-down.
-- Product-specific submenu behavior: `고객 안내문` and `빠른 문의 답변` expand catalog templates inline as accordions after the submenu slide; `고객 서비스 관리`, `업무 관리`, and `템플릿 / 양식 편집` continue from submenu item to the owning work/menu screen.
+- Product-specific submenu behavior: `고객 안내문` and `빠른 문의 답변` expand catalog templates inline as accordions after the submenu slide, and each group remains open until the user closes it; `고객 서비스 관리`, `업무 관리`, and `템플릿 / 양식 편집` continue from submenu item to the owning work/menu screen.
 - Hover grammar: main navigation uses visible text underline expansion, a small forward text nudge, and chevron emphasis. It does not use background fill or layout-moving animation; label overflow must not clip the underline.
 - Emphasis grammar: selected state remains calmer than hover, and action emphasis must not depend on fake product data.
 - Responsive grammar: compact widths reduce spacing, icon columns, row height, and transition duration without changing the navigation model.

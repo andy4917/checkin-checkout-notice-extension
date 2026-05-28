@@ -231,11 +231,9 @@ Each PMS record row should prioritize:
 - status if present
 - departure date if present
 
-For PMS-backed menu screens, the work header may show a compact `WINGS` status dot:
-
-- green when the current active tab is a WINGS PMS or reservation record context
-- red when the current active tab is not a WINGS PMS context
-- no card, pill surface, debug text, logs, or explanatory status panel
+Do not add a WINGS status dot, pill, debug label, or menu-title badge to the
+shared shell header. WINGS/PMS state belongs to the specific workflow control or
+blocking error that needs it.
 
 When a PMS record is selected, the default language should follow guest nationality. Supported nationalities map to runtime language IDs `KO`, `EN`, `JP`, or `CN`; the visible segmented labels are `KR`, `EN`, `JP`, and `CH`. Unsupported or missing nationalities default to `EN`, with existing template-language availability fallback still applied.
 
@@ -261,25 +259,23 @@ Room information memo supports WINGS remark upsert only through the active WINGS
 
 ## Template And Copy UX
 
-Template cards are action rows, not content articles.
+Template entries are action rows, not content articles.
 
-Customer guidance is a distinct copy workflow, not a generic template editor view. It should use the `customer_guidance_refined_style` reference structure:
+Customer guidance and quick replies are distinct copy workflows, not generic
+template editor views. They use the current catalog-owned accordion/list
+structure:
 
-- fixed work topbar from the shared shell
-- compact pill-style language segmented control with fully rounded ends
-- guidance cards using actual catalog templates and summaries, not reference dummy labels
-- neutral card surfaces by default; selected card gets the only color emphasis
-- copy action remains connected to `copyTemplate()`
-- no inline variable inputs inside the guidance card list unless a backend-owned workflow explicitly provides that form
-- no broad metadata rows, body previews, or tutorial text inside each guidance card
+- fixed shell with logo/date/back affordance
+- compact pill-style language segmented control only where `usesWorkLanguageSelector(menu.id)` allows it
+- home accordion template rows for customer 안내문 and 빠른 문의 답변
+- icon-only copy action in home accordion rows
+- no copy-success shell banner; copied state stays on the action button
+- no inline variable inputs inside the guidance list unless a backend-owned workflow explicitly provides that form
+- no broad metadata rows, body previews, summaries, or tutorial text inside each row
 
-Each template card should show:
+Each template row should show:
 
-- type label
-- branch scope
-- available languages
 - template title
-- short actual summary derived from the selected language
 - copy button
 
 Disable copy when:
@@ -345,9 +341,10 @@ Use the current home screen as the visual baseline for all menus.
 
 Shared interaction rules:
 
-- card default state is neutral; selection state receives the color emphasis
-- hover may darken the surface slightly, but must not add or emphasize a border
-- card hover must not change layout size
+- framed work cards default to a neutral state; selection state receives the color emphasis
+- home and submenu actions are link-like rows, not cards
+- hover may darken a framed work surface slightly, but must not add or emphasize a border
+- row/card hover must not change layout size
 - hover and press states must be visible enough for day-to-day use, through surface shade, shadow, transform, or icon motion
 - press feedback uses subtle `scale(0.96)` for buttons and compact controls
 - screen changes use a short opacity/translate transition
@@ -355,7 +352,7 @@ Shared interaction rules:
 - pull-up and popup surfaces use short, interruptible transitions
 - do not use `transition: all`
 - use `will-change` only for `transform` and `opacity`
-- loading states use the shared loading image component instead of text-only ad hoc loading labels
+- loading states stay scoped to the active control or active workflow surface
 - text surfaces do not opt into drag/text selection; template/content input areas are the only text-selection exceptions
 
 Shared surface rules:
@@ -373,15 +370,15 @@ Shared navigation rules:
 
 - menu screens use the same compact topbar with a small back icon button
 - do not render a home icon button on a menu screen when one back action returns directly to the home screen
-- top header keeps center breathing room; the active menu title appears once in the top header center with its catalog icon beside it
+- top header keeps center breathing room and does not render the active menu title; stale title/header badges are contamination
 - home uses the base UH SUITE logo; work screens use the selected branch logo asset after a branch is selected
 - work-screen branch logos must keep the same displayed width as the home UH SUITE logo; branch-logo source assets may extend the original logo height by about 25% at most
 - the lower navigation row always owns the back action
-- the room-context grid with PMS room/status text is rendered only when the active catalog templates require `guestRecord`
-- WINGS status is rendered only when the active catalog templates require a WINGS/PMS context
-- selected PMS room identity is not rendered in a separate bottom bar; show room number, reserver name, and nationality only in the centered context row
-- when no PMS room is selected, render the backend/domain room-context status message `Room not selected` in a muted gray tone, not a component-owned Korean fallback label
-- the room-context row and the language selector must keep a visible compact gap, with the language selector, separator, and template list separated enough that the controls do not visually merge
+- PMS room/status context is rendered only inside the workflow surface that needs that context
+- WINGS/PMS/OTA state must not appear as a shared shell dot, badge, or menu-list suffix
+- selected PMS room identity is shown only in the owning workflow context, never as a separate bottom bar or top-header badge
+- missing PMS room context is a domain/workflow message, not a component-owned fallback label
+- language controls stay scoped to the active template/work surface and must not visually merge with the list below
 - branch selection opens a selection sheet/popup, not a dropdown
 - language selection is a segmented bar, not a dropdown; its container and active segment must be pill-shaped with rounded ends
 - settings may keep data-management selects for template/category/audience/context, but language must remain segmented
@@ -398,9 +395,9 @@ Shared copy rules:
 
 Side panel shell:
 
-- sticky or persistent top header with logo, branch trigger, and back/menu control when inside a menu
+- sticky or persistent top header with logo, branch/date context, and back control when inside a menu
 - main content with 12px to 16px side padding
-- status text appears only for real operation results or blocking errors, and must not be rendered as a card
+- status text appears only for blocking errors or real workflow state; copy success stays on the action button and must not become a shell banner
 - one active work panel at a time
 - avoid nested cards
 
@@ -414,10 +411,10 @@ Home:
 
 Work menu:
 
-- top header: branch logo, active menu icon/title, date
-- work navigation row: return action; add selected room/status text only for `guestRecord` workflows
+- top header: branch logo, back action, date
+- work navigation row: return action; add selected room/status text only inside workflows that actually require it
 - compact context row only; do not add a large menu-introduction card or generic explanation copy
-- secondary controls: language selector when applicable
+- secondary controls: language selector only when the active menu passes the current language-selector gate
 - work-specific panel: PMS list or OTA preview
 - template list below for template menus, grouped by catalog type family such as 체크인 안내문, 체크아웃 안내문, 객실 관련 안내문, 요금 관련 안내문, and 업무 양식
 

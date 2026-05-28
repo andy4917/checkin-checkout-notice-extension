@@ -1,54 +1,50 @@
-# Next Step Program Structure
+# Current Program Structure
 
-## Goal
+This document records the current product structure. It is not a migration plan
+and must not revive removed DOM side-panel code, sample dashboards, or stale
+reference UI concepts.
 
-Prepare the extension for the next implementation stage after TypeScript compilation:
+## Current Goal
 
 - keep the employee workflow fast in the Chrome side panel
-- persist the last selected branch because each workstation usually serves one branch
-- make templates, assets, branch scope, and settings editable through one catalog shape
-- keep PMS/WINGS request logic, message generation, Chrome storage, and UI rendering in separate owners
-- keep unsupported language, missing branch, missing template, PMS failure, and storage corruption as explicit errors
+- persist the last valid branch because each workstation usually serves one branch
+- keep templates, menu routing, branch scope, and settings catalog/schema-owned
+- keep PMS/WINGS/OTA request logic, message generation, Chrome storage, and UI rendering in separate owners
+- keep unsupported language, missing branch, missing template, PMS failure, WINGS context failure, and storage corruption as explicit errors
+- avoid global success banners for copy operations; copied state belongs on the button/action that was used
 
 ## Primary User Flow
 
-1. Staff opens a PMS page and clicks the extension.
-2. Chrome opens `sidepanel.html` from the built `dist` folder.
+1. Staff opens the Chrome extension side panel.
+2. Chrome loads the built `dist` package and the Svelte side panel entry.
 3. The app loads the last valid branch from `chrome.storage.local`.
-4. If no saved branch exists, the side panel stays in a branch-required state and does not query PMS.
-5. Staff selects `coex`, `gangnam`, or `seolleung`.
-6. The selected branch is saved as `lastBranchId`.
-7. Staff opens a workflow menu from the catalog-owned home menu.
-8. PMS guest records are fetched only for workflows that need selected-room context or explicit PMS sync.
-9. Staff clicks a language/template action or a workflow action.
-10. The app validates branch, language, template, variables, context, command availability, and asset scope.
-11. The app copies the generated message, updates local workflow state, or performs a guarded active-tab action.
-12. Staff can open settings to edit template copy, branch scope, language variants, and attachments.
-
-## Runtime Surfaces
-
-| Surface | Role | Must not own |
-| --- | --- | --- |
-| `src/background/index.ts` | Enable side panel on allowed PMS origins | message generation, catalog rules |
-| `src/platform/*` | Chrome APIs, storage, runtime adapters | PMS filter details, UI state |
-| `src/pms/*` | PMS endpoint and request body construction | selected branch persistence, UI rendering |
-| `src/domain/*` | pure date, room, guest behavior | Chrome APIs, DOM, Svelte state |
-| `src/catalog/*` + `src/assets/*` | template and asset definitions, validators | DOM events, PMS fetch |
-| `src/application/*` | use cases that join storage, PMS, catalog, and domain | HTML string rendering |
-| `src/ui/*` | Svelte components and local interaction | branch code authority, PMS filters |
-| `scripts/*` | build/package helpers | runtime business behavior |
+4. If no saved branch exists, branch-required workflows fail visibly and do not query PMS.
+5. Staff selects `coex`, `gangnam`, or `seolleung`; the selection is saved as `lastBranchId`.
+6. Staff opens a catalog-owned home group.
+7. Customer 안내문 and 빠른 문의 답변 groups open inline accordion template lists; service/work/template management groups open menu screens.
+8. PMS guest records are fetched only through explicit bottom PMS list actions or workflows that require selected-room context.
+9. Staff copies a template, updates a local workflow state, or performs a guarded active-tab action.
+10. The app validates branch, language, template, variables, context, command availability, and asset scope before the action.
 
 ## Current Folder Shape
 
 ```text
 src/
   application/
+    airport-van-form.ts
     context-guard.ts
     laundry-records.ts
+    operator-error-messages.ts
     ota-reservation-input.ts
     sync-guests.ts
     template-settings.ts
     wings-remark.ts
+  assets/
+    asset-catalog.ts
+    logo*.png
+  background/
+    index.ts
+    side-panel-policy.ts
   catalog/
     menu-routing.ts
     template-catalog.ts
@@ -58,8 +54,11 @@ src/
     template-types.ts
     template-variable-mapping.ts
     workflow-catalog.ts
-  assets/
-    asset-catalog.ts
+  config/
+    app-config.ts
+    branches.ts
+    ota-wings-contract.ts
+    pms-filter-schema.ts
   domain/
     dates.ts
     guests.ts
@@ -67,6 +66,14 @@ src/
     remarks.ts
     room-context.ts
     rooms.ts
+  laundry/
+    storage.ts
+    types.ts
+  ota/
+    normalizer.ts
+    request-guard.ts
+    source-detection.ts
+    types.ts
   platform/
     active-tab-automation.ts
     chrome-storage.ts
@@ -78,18 +85,26 @@ src/
     normalizer.ts
   ui/
     App.svelte
+    main.ts
     side-panel-navigation-controller.svelte.ts
     side-panel-navigation-dependencies.ts
+    template-list-state.ts
     components/
-      SidePanelView.svelte
-      ShellHeader.svelte
       HomeView.svelte
       MaterialIcon.svelte
+      PmsGuestPanel.svelte
+      ScreenStage.svelte
+      ShellHeader.svelte
+      SidePanelView.svelte
+      WorkSurface.svelte
   wings/
     reservation-draft.ts
 ```
 
-The old `src/sidepanel/*` DOM renderer has been removed. Current UI work must stay under `src/ui/*` and is limited to navigation. `App.svelte` stays an entry skeleton; side-panel composition belongs in `components/SidePanelView.svelte`, and current navigation state belongs in `side-panel-navigation-controller.svelte.ts`.
+Removed `src/sidepanel/*` DOM code is not a compatibility target. Current UI work
+stays under `src/ui/*`, with `App.svelte` as the skeleton entry,
+`SidePanelView.svelte` as composition, `ScreenStage.svelte` as screen switch,
+and `side-panel-navigation-controller.svelte.ts` as the state/use-case boundary.
 
 ## Storage Contract
 
@@ -104,6 +119,8 @@ type StoredExtensionState = {
   ui: {
     lastTab?: TabMode;
     compactMode?: boolean;
+    templateVariableValues?: Record<string, string>;
+    airportVanFormValues?: AirportVanFormValues;
   };
 };
 ```
@@ -115,100 +132,51 @@ Rules:
 - template overrides never mutate the built-in catalog directly
 - reset removes only override keys, not built-in catalog entries
 - import/export must validate schema before applying
+- UI form values stored in `ui` are workflow inputs, not fake PMS/customer data
+
+## UI State Contract
+
+- Home root rows and submenu rows are link-like rows, not card grids.
+- The footer/bottom bar uses fixed icon+label actions and must not resize around text animations.
+- Hover underline belongs to the visible row label text, not the full grid cell.
+- Customer 안내문 and 빠른 문의 답변 use inline accordion lists; multiple sections may stay open until closed by the user.
+- Language selectors appear only where a multilingual template workflow is active:
+  - home accordion template groups
+  - work surfaces allowed by `usesWorkLanguageSelector(menu.id)`
+- Copy actions show success through the copied button state only. They do not set persistent shell success messages.
+- Blocking errors remain visible through the status surface; stale success/status text must be cleared on navigation boundaries.
+- Work headers use branch logo/date/back controls and must not show stale menu titles.
 
 ## Template Contract
 
-The current editable template shape is:
+Runtime menu/source metadata is layered through
+`UnifiedTemplateDefinition` in `src/catalog/template-catalog.ts`, not duplicated
+in Svelte components. Template rendering and requirement checks stay in
+catalog/UI helper modules:
 
-```ts
-type TemplateDefinition = {
-  id: string;
-  title: string;
-  category: TemplateCategory;
-  branchScope: BranchId[];
-  languages: Partial<Record<Language, string>>;
-  variables: TemplateVariable[];
-  attachments: string[];
-  requiresContext: TemplateContextRequirement;
-  editable: boolean;
-  defaultValue: string;
-};
-```
+- `src/catalog/template-renderer.ts`
+- `src/catalog/template-catalog.ts`
+- `src/ui/template-list-state.ts`
 
-Runtime menu/source metadata is layered through `UnifiedTemplateDefinition` in `src/catalog/template-catalog.ts`, not duplicated in Svelte components.
+Template packs may only be imported as real catalog entries with source evidence.
+No UI component may introduce business placeholder copy, fake guest values,
+fake branch data, or fallback success text.
 
-Future catalog work may add structured `TemplateBody` conditional segments:
+## Current Verification Authority
 
-```ts
-type TemplateSegment =
-  | { kind: "text"; value: string }
-  | { kind: "variable"; name: TemplateVariable }
-  | { kind: "conditional"; policy: "coexDoorPasswordGuide"; segments: TemplateSegment[] };
-```
+- `npm run typecheck`
+- `npm run build`
+- `npm test`
+- `npm run verify`
 
-That would make COEX-only password text a catalog policy decision. Until then, no UI component may reimplement password-text branching; rendering and attachment filtering must stay in catalog/asset owners.
+Frontend closeout requires the Svelte entry to build/load and at least one real
+failure path to remain observable. Passing tests are evidence, not permission to
+leave stale UI or documentation residue.
 
-## Error Surfaces
+## Next Safe Work Slices
 
-Current explicit failure surfaces include:
-
-- `UnsupportedLanguageError`
-- `TemplateLanguageUnavailableError`
-- `PmsRequiredValueMissingError`
-- `ManualRequiredValueMissingError`
-- `PmsRequestError`
-- `StorageSchemaError`
-- `OtaReservationDependencyError`
-
-The side panel should display these as user-actionable states instead of generic `Error: ...`.
-
-## Completed Structure Work
-
-- `src/sidepanel/*` DOM renderer has been removed.
-- `src/messages/*` legacy message layer has been removed.
-- `src/ui/App.svelte` is a skeleton entry.
-- Current navigation storage access is injected through `src/ui/side-panel-navigation-dependencies.ts`.
-- PMS, OTA, storage, catalog rendering, template grouping, laundry records, WINGS remark upsert, and template settings have owner modules.
-- Menu screens are resolved through catalog-owned `screenKind` and `templateFilter`, not raw Svelte menu-ID branches.
-- Room remark command contracts stay outside the current frontend tree until a work screen is intentionally reintroduced.
-- Tests are organized by product contract in `docs/TEST_CONTRACT.md`.
-
-## Remaining Implementation Order
-
-1. Catalog completion and source evidence
-   - keep `template-catalog.ts` as the runtime catalog entry point
-   - continue importing only real template-pack content with source evidence
-   - keep unsupported language, missing PMS value, and missing manual required value observable
-
-2. Settings panel refinement
-   - keep the current schema-validated editor
-   - improve grouping and repeated form rows only when backed by existing template/storage schema
-   - avoid broad JSON/system configuration surfaces
-
-3. Frontend reference normalization
-   - keep `App.svelte` as skeleton
-   - normalize repeated row/list/form controls under `src/ui/components/*`
-   - exercise the built Svelte entry and at least one real failure path
-
-4. Packaging
-   - add zip packaging script only after `dist` is stable
-   - preserve fixed extension ID
-   - Chrome should load `dist`
-
-## Next Concrete Batch
-
-The next coding batch should be:
-
-1. import the next real template-pack slice into `src/catalog/workflow-catalog.ts`
-2. update `src/catalog/template-catalog.ts` metadata and duplicate evidence
-3. normalize the affected `src/ui/components/*` rows without adding new workflow sections
-4. add or adjust contract tests under the relevant test file from `docs/TEST_CONTRACT.md`
-5. run `npm run verify` plus an app-path check for the touched side-panel workflow
-
-Done when:
-
-- new template copy renders through `renderTemplate()`
-- branch scope and language availability are enforced
-- no fake customer, room, reservation, machine, or source data is introduced
-- the Svelte entry still builds
-- a real failure path remains observable
+1. Import additional real template-pack slices through `workflow-catalog.ts` and `template-catalog.ts`.
+2. Add or adjust focused contract tests under the relevant `current-*` test file.
+3. Normalize repeated row/list/form controls only inside `src/ui/components/*`.
+4. Keep PMS, OTA, WINGS, storage, laundry, and catalog behavior in their owner modules.
+5. Run `npm run verify` and inspect the touched side-panel path.

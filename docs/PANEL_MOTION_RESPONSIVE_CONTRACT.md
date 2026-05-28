@@ -3,7 +3,7 @@
 ## Status
 
 - Status: Active common UI contract
-- Last refreshed: 2026-05-24
+- Last refreshed: 2026-05-28
 - Source basis: `DESIGN.md`, `PRODUCT.md`, `styles/sidepanel.css`, `src/ui/components/HomeView.svelte`, `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
 - Reference boundary: Framer Sidebar Navigation is used for motion, responsive interaction quality, 400px/64px/48px sidebar rhythm, hover polish, and compact icon+label footer treatment. It is not used for product content, mobile navigation, full-screen drawer behavior, or remote runtime dependencies.
 
@@ -25,12 +25,13 @@ The shell stays stable. Only the central motion viewport changes during nested n
 
 Stable regions include:
 
-- top header and branch/date context
+- top header and branch/date context, without active menu-title badges
 - icon+label footer work shortcuts backed by catalog actions
 - persistent room/settings launcher
-- compact in-flow status surfaces outside the changing viewport
+- blocking-error or workflow status surfaces outside the changing viewport
 
 The motion viewport must clip panel transitions and must not move header or footer controls.
+Copy completion is local button state, not a stable shell status surface.
 
 ## Direction Contract
 
@@ -69,7 +70,7 @@ Ordinary UI components should reuse these tokens instead of embedding new durati
 - Hover may use a visible underline reveal, subtle text nudge, and chevron emphasis when it improves perceived responsiveness without resizing the row.
 - Nested view entry may use a short content reveal after the panel movement starts, capped by the shared reveal token.
 - Backward navigation must retain outgoing detail content long enough for the panel motion to read as continuous.
-- Catalog-marked accordion groups may expand inline template rows after the submenu slide; other submenu groups continue to their owning menu screen.
+- Catalog-marked accordion groups may expand inline template rows after the submenu slide; multiple groups can remain open until the user closes them. Other submenu groups continue to their owning menu screen.
 - Do not animate width, height, top, left, margins, or padding for primary navigation.
 - Do not add idle animation, bounce-heavy spring, glow, flashing, or decorative movement.
 - Hidden or offscreen panels must not receive pointer or keyboard interaction.
