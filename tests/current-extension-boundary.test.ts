@@ -66,17 +66,22 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.match(readFileSync(join(root, "src/ui/components/HomeView.svelte"), "utf8"), /export let initialGroupId = ""/);
   assert.match(sidePanel, /function syncViewFromController\(\)/);
   assert.match(sidePanel, /renderedBottomPanel = controller\.activeBottomPanel/);
-  assert.match(sidePanel, /renderedMenu = controller\.activeMenuId \? getMenu\(controller\.activeMenuId\) : null/);
+  assert.match(sidePanel, /renderedMenu = typeof target === "string" \? baseMenu : \{ \.\.\.baseMenu, title: target\.title, icon: target\.icon \}/);
   assert.match(sidePanel, /let renderedMenu = \$state<MenuItem \| null>\(null\)/);
+  assert.match(sidePanel, /let renderedViewKey = \$state\(""\)/);
   assert.match(
     sidePanel,
-    /#key controller\.activeMenu\?\.title \|\| renderedMenu\?\.title \|\| controller\.activeBottomPanel\?\.title \|\| renderedBottomPanel\?\.title \|\| "navigation"/,
+    /#key renderedViewKey \|\| controller\.activeBottomPanel\?\.id \|\| renderedBottomPanel\?\.id \|\| "navigation"/,
   );
-  assert.doesNotMatch(sidePanel, /renderedMenuId|renderedRouteKey/);
+  assert.match(sidePanel, /activeMenu=\{renderedMenu \|\| controller\.activeMenu\}/);
+  assert.match(sidePanel, /activeMenuTitle=\{renderedMenu\?\.title \|\| controller\.activeMenu\?\.title \|\| null\}/);
+  assert.doesNotMatch(sidePanel, /renderedMenuId|renderedRouteKey|controller\.activeMenu\?\.title \|\| renderedMenu\?\.title/);
   assert.doesNotMatch(sidePanel, /#key renderedMenuId \|\| renderedBottomPanel\?\.id \|\| "navigation"/);
   assert.match(sidePanel, /await controller\.openMenu\(target\)/);
   assert.match(sidePanel, /await controller\.openBottomNavigation\(item\)/);
+  assert.match(sidePanel, /controller\.statusTone === "error"/);
   assert.match(sidePanel, /class="work-status shell-status"/);
+  assert.match(workSurface, /usesWorkLanguageSelector\(menu\.id\) && availableLanguages\.length > 0/);
   assert.doesNotMatch(sidePanel, /selectedMenuId|selectedBottomItem/);
   assert.doesNotMatch(screenStage, /stageMenu|stageBottomPanel/);
   assert.doesNotMatch(screenStage, /revision|stageViewKey/);

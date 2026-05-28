@@ -1526,6 +1526,8 @@ button:disabled {
 .interactive-label {
   position: relative;
   display: inline-block;
+  width: max-content;
+  justify-self: start;
   overflow: visible;
   padding-bottom: 4px;
   margin-bottom: -4px;

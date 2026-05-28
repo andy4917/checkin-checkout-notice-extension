@@ -16,6 +16,7 @@
 
   let renderedMenu = $state<MenuItem | null>(null);
   let renderedBottomPanel = $state<BottomPanelState | null>(null);
+  let renderedViewKey = $state("");
   let lastHomeGroupId = $state("");
   let homeReturnGroupId = $state("");
 
@@ -31,7 +32,9 @@
   async function openMenu(target: MenuId | HomeNavigationItem) {
     lastHomeGroupId = typeof target === "string" ? "" : findHomeGroupId(target);
     homeReturnGroupId = "";
-    renderedMenu = getMenu(typeof target === "string" ? target : target.menuId);
+    const baseMenu = getMenu(typeof target === "string" ? target : target.menuId);
+    renderedMenu = typeof target === "string" ? baseMenu : { ...baseMenu, title: target.title, icon: target.icon };
+    renderedViewKey = typeof target === "string" ? target : `${target.menuId}:${target.id}`;
     renderedBottomPanel = null;
     await controller.openMenu(target);
     syncViewFromController();
@@ -40,6 +43,7 @@
   async function openBottomItem(item: HomeBottomNavigationItem) {
     homeReturnGroupId = "";
     lastHomeGroupId = "";
+    renderedViewKey = "";
     if (item.menuId) {
       await openMenu(item.menuId);
       return;
@@ -50,6 +54,7 @@
 
   function goBack() {
     homeReturnGroupId = lastHomeGroupId;
+    renderedViewKey = "";
     controller.goHome();
     syncViewFromController();
   }
@@ -59,14 +64,22 @@
   }
 
   function syncViewFromController() {
-    renderedMenu = controller.activeMenuId ? getMenu(controller.activeMenuId) : null;
+    if (controller.activeMenuId) {
+      if (!renderedMenu || renderedMenu.id !== controller.activeMenuId) {
+        renderedMenu = getMenu(controller.activeMenuId);
+        renderedViewKey = controller.activeMenuId;
+      }
+    } else {
+      renderedMenu = null;
+      renderedViewKey = "";
+    }
     renderedBottomPanel = controller.activeBottomPanel;
   }
 </script>
 
 <main class:home-mode={!controller.activeMenu && !controller.activeBottomPanel} class="app-shell">
   <ShellHeader
-    activeMenuTitle={controller.activeMenu?.title || renderedMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || null}
+    activeMenuTitle={renderedMenu?.title || controller.activeMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || null}
     branchOptions={controller.branchOptions}
     navigationLocked={controller.navigationLocked}
     selectedBranchId={controller.selectedBranchId}
@@ -74,7 +87,7 @@
     onBack={goBack}
   />
 
-  {#if controller.statusMessage && !controller.activeMenu && !controller.activeBottomPanel}
+  {#if controller.statusMessage && controller.statusTone === "error" && !controller.activeMenu && !controller.activeBottomPanel}
     <p
       aria-live="polite"
       class:error={controller.statusTone === "error"}
@@ -86,10 +99,10 @@
     </p>
   {/if}
 
-  {#key controller.activeMenu?.title || renderedMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || "navigation"}
+  {#key renderedViewKey || controller.activeBottomPanel?.id || renderedBottomPanel?.id || "navigation"}
     <ScreenStage
-      activeMenu={controller.activeMenu || renderedMenu}
-      activeMenuTitle={controller.activeMenu?.title || renderedMenu?.title || null}
+      activeMenu={renderedMenu || controller.activeMenu}
+      activeMenuTitle={renderedMenu?.title || controller.activeMenu?.title || null}
       activeBottomPanel={controller.activeBottomPanel || renderedBottomPanel}
       activeTemplates={controller.activeTemplates}
       homeInlineTemplatesByItemId={controller.homeInlineTemplatesByItemId}

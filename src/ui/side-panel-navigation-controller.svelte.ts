@@ -181,7 +181,7 @@ export function createSidePanelNavigationController(
       const output = renderTemplate(template, selectedLanguage, templateValues());
       await dependencies.clipboard.writeText(output);
       copiedTemplateId = template.id;
-      setStatus("복사되었습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -202,7 +202,7 @@ export function createSidePanelNavigationController(
       const output = renderTemplate(template, selectedLanguage, templateValues());
       await dependencies.clipboard.writeText(output);
       copiedTemplateId = template.id;
-      setStatus("복사되었습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -333,6 +333,10 @@ export function createSidePanelNavigationController(
 
     activeMenuId = null;
     activeTemplateFilter = null;
+    copiedTemplateId = null;
+    statusMessage = "";
+    statusTone = "neutral";
+    otaPreview = null;
     activeBottomPanel = {
       id: item.id,
       title: item.title,
@@ -341,8 +345,6 @@ export function createSidePanelNavigationController(
     };
     pmsSearchTerm = "";
     clearSelectedPmsRecord();
-    copiedTemplateId = null;
-    otaPreview = null;
     await refreshPmsGuests();
   }
 
@@ -507,7 +509,7 @@ export function createSidePanelNavigationController(
       const output = renderAirportVanCopy(target, airportVanFormValues(), dependencies.dateSource.today());
       await dependencies.clipboard.writeText(output);
       copiedTemplateId = `airport-van-${target}`;
-      setStatus(target === "workLog" ? "업무 기록용 문구를 복사했습니다." : "고객 전달용 문구를 복사했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     }

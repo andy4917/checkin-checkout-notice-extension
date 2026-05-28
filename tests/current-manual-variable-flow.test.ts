@@ -108,7 +108,8 @@ test("quick reply manual values are saved in settings state and used for copy ou
 
   await controller.copyTemplate("quick-rental-item-inquiry");
 
-  assert.equal(controller.statusTone, "success");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
   assert.match(writes.at(-1) || "", /충전기/);
   assert.doesNotMatch(writes.at(-1) || "", /\{rentalItemName\}|\[대여 물품명\]/);
 });
@@ -152,7 +153,8 @@ test("home accordion templates copy without opening a work menu", async () => {
   await controller.copyHomeTemplate(quickRental, "quick-rental-item-inquiry");
 
   assert.equal(controller.activeMenuId, null);
-  assert.equal(controller.statusTone, "success");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
   assert.match(writes.at(-1) || "", /가습기/);
 });
 
@@ -291,9 +293,15 @@ test("bottom PMS navigation loads branch-scoped records and selected room values
   assert.ok(checkinItem);
 
   await controller.mount();
+  await controller.openMenu("QUICK_REPLY");
+  await controller.copyTemplate("quick-rental-item-inquiry");
+  assert.equal(controller.statusTone, "error");
+
   await controller.openBottomNavigation(checkinItem);
 
   assert.equal(controller.activeBottomPanel?.title, "체크인 목록");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
   assert.equal(pmsCalls[0]?.body.get("filter[filters][0][value]"), "13");
   assert.equal(pmsCalls[0]?.body.get("filter[filters][6][value]"), "20260525");
   assert.equal(controller.pmsVisibleRecords.length, 1);
@@ -307,7 +315,8 @@ test("bottom PMS navigation loads branch-scoped records and selected room values
 
   await controller.openMenu("CUSTOMER_NOTICE");
   await controller.copyTemplate("guest-arrival-notice");
-  assert.equal(controller.statusTone, "success");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
   assert.match(writes.at(-1) || "", /Kim/);
   assert.match(writes.at(-1) || "", /1302/);
 
@@ -315,7 +324,8 @@ test("bottom PMS navigation loads branch-scoped records and selected room values
   assert.equal(controller.workRoomContext.selected, true);
   await controller.copyTemplate("remark-card-keys");
 
-  assert.equal(controller.statusTone, "success");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
   assert.match(writes.at(-1) || "", /제공 카드키/);
 });
 
@@ -551,13 +561,13 @@ test("airport van form values persist and copy separate work and guest outputs",
   assert.equal(getState().ui.airportVanFormValues?.paymentMethod, "CARD");
 
   await controller.copyAirportVanText("workLog");
-  assert.equal(controller.statusMessage, "업무 기록용 문구를 복사했습니다.");
+  assert.equal(controller.statusMessage, "");
   assert.match(writes.at(-1) || "", /\* 공항밴 예약보고/);
   assert.match(writes.at(-1) || "", /\* 예약 받은 날짜 : 2026\. 05\. 25/);
   assert.match(writes.at(-1) || "", /객실번호 : A302/);
 
   await controller.copyAirportVanText("guestMessage");
-  assert.equal(controller.statusMessage, "고객 전달용 문구를 복사했습니다.");
+  assert.equal(controller.statusMessage, "");
   assert.match(writes.at(-1) || "", /공항밴 예약 요청 정보 확인 부탁드립니다/);
   assert.match(writes.at(-1) || "", /항공편: 인천공항 T1 KE001/);
 });

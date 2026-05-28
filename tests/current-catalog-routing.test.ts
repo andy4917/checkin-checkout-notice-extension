@@ -185,7 +185,7 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 22px;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-title-row\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) max-content;/s);
-  assert.match(css, /\.interactive-label\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.interactive-label\s*\{[^}]*width:\s*max-content;[^}]*justify-self:\s*start;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-title-row:has\(\.home-nav-badge\) \.interactive-label\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;/s);
   assert.match(css, /\.home-nav-badge\s*\{[^}]*max-width:\s*56px;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;/s);
   assert.match(css, /\.interactive-label::after\s*\{[^}]*will-change:\s*opacity,\s*transform;/s);

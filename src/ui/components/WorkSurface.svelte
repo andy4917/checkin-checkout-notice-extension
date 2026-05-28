@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getAvailableTemplateLanguages } from "../../catalog/template-renderer.js";
   import { resolveTemplateGroups } from "../../catalog/template-groups.js";
+  import { usesWorkLanguageSelector } from "../../catalog/menu-routing.js";
   import type { MenuItem } from "../../catalog/menu-routing.js";
   import type { TemplateVariable, UnifiedTemplateDefinition } from "../../catalog/template-types.js";
   import type { OtaReservationInputPreview } from "../../application/ota-reservation-input.js";
@@ -98,6 +99,7 @@
   $: availableLanguages = Array.from(
     new Set(templates.flatMap((template) => getAvailableTemplateLanguages(template))),
   ) as Language[];
+  $: showLanguageSelector = usesWorkLanguageSelector(menu.id) && availableLanguages.length > 0;
   $: airportRoutePointLabels = getRoutePointLabels(airportVanFormValues.rideDirection);
 
   function laundryBlockTitle(record: LaundryRecord): string {
@@ -572,7 +574,7 @@
       </button>
     </section>
   {:else}
-    {#if availableLanguages.length > 0}
+    {#if showLanguageSelector}
       <div class="language-strip" aria-label="템플릿 언어">
         {#each availableLanguages as language}
           <button
