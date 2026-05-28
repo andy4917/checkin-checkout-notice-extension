@@ -193,6 +193,8 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*color:\s*var\(--color-primary\);[^}]*opacity:\s*1;/s);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-enter/s);
   assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-exit/s);
+  assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-language-strip,/);
+  assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-language-strip,/);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="backward"\] \.root-panel \.home-nav-root-item\s*\{[^}]*animation:\s*home-root-content-return/s);
   assert.match(css, /\.home-template-accordion\s*\{/);
   assert.match(css, /\.home-template-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) 36px;[^}]*min-height:\s*42px;/s);

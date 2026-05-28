@@ -1359,6 +1359,7 @@ button:disabled {
 }
 
 .home-navigation-viewport[data-motion-direction="forward"].submenu-active .detail-panel .home-nav-back,
+.home-navigation-viewport[data-motion-direction="forward"].submenu-active .detail-panel .home-language-strip,
 .home-navigation-viewport[data-motion-direction="forward"].submenu-active .detail-panel .home-submenu-item {
   animation: home-detail-content-enter var(--home-content-motion-duration) var(--sidepanel-motion-ease) both;
   animation-delay: var(--home-content-motion-delay);
@@ -1370,6 +1371,7 @@ button:disabled {
 }
 
 .home-navigation-viewport.detail-retained .detail-panel .home-nav-back,
+.home-navigation-viewport.detail-retained .detail-panel .home-language-strip,
 .home-navigation-viewport.detail-retained .detail-panel .home-submenu-item {
   animation: home-detail-content-exit 180ms var(--motion-standard) both;
 }
@@ -1989,6 +1991,7 @@ button:disabled {
   .home-navigation-track,
   .home-nav-root-item,
   .home-submenu-item,
+  .home-language-strip,
   .home-submenu-entry::details-content,
   .home-template-accordion,
   .home-template-copy,
