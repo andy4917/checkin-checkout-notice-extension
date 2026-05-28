@@ -1,4 +1,5 @@
 import { isBranchId } from "../config/branches.js";
+import { normalizeAirportVanFormValues } from "../application/airport-van-form.js";
 import type { StoredExtensionState } from "../catalog/template-types.js";
 import {
   TemplateCatalogSchemaError,
@@ -102,7 +103,28 @@ function normalizeUiState(input: unknown): StoredExtensionState["ui"] {
   if (!isRecord(input)) {
     throw new StorageSchemaError("ui must be an object.");
   }
-  return input;
+  return {
+    lastTab: input.lastTab === "ARRIVAL" || input.lastTab === "DEPARTURE" ? input.lastTab : undefined,
+    compactMode: typeof input.compactMode === "boolean" ? input.compactMode : undefined,
+    templateVariableValues: normalizeTemplateVariableValues(input.templateVariableValues),
+    airportVanFormValues: normalizeAirportVanFormValues(input.airportVanFormValues),
+  };
+}
+
+function normalizeTemplateVariableValues(input: unknown): Record<string, string> | undefined {
+  if (input === undefined) return undefined;
+  if (!isRecord(input)) {
+    throw new StorageSchemaError("ui.templateVariableValues must be an object.");
+  }
+
+  const values: Record<string, string> = {};
+  for (const [name, value] of Object.entries(input)) {
+    if (typeof value !== "string") {
+      throw new StorageSchemaError(`ui.templateVariableValues.${name} must be text.`);
+    }
+    values[name] = value;
+  }
+  return values;
 }
 
 function wrapCatalogSchemaError<T>(callback: () => T, prefix: string): T {

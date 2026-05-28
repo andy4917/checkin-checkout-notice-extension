@@ -1,4 +1,5 @@
 import type { BranchId, Language, TabMode } from "../types.js";
+import type { AirportVanFormValues } from "../application/airport-van-form.js";
 
 export type TemplateCategory =
   | "CUSTOMER_RECORDS"
@@ -57,6 +58,13 @@ export type TemplateTypeId =
   | "rental_item"
   | "lost_item"
   | "room_visit"
+  | "breakfast_inquiry"
+  | "invoice_inquiry"
+  | "cancellation_inquiry"
+  | "laundry_service_inquiry"
+  | "kakao_channel_connect"
+  | "kakao_channel_closing"
+  | "nearby_restaurant"
   | "airport_van"
   | "partner_service"
   | "day_night_report"
@@ -97,5 +105,7 @@ export type StoredExtensionState = {
   ui: {
     lastTab?: TabMode;
     compactMode?: boolean;
+    templateVariableValues?: Record<string, string>;
+    airportVanFormValues?: AirportVanFormValues;
   };
 };

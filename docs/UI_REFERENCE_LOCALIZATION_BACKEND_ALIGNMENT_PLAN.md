@@ -292,13 +292,13 @@ Reference elements:
 Current source:
 
 - `src/catalog/menu-routing.ts` owns menu groups and menu items.
-- `src/ui/components/HomeView.svelte` renders menu cards and settings entry from `src/catalog/menu-routing.ts`.
+- `src/ui/components/HomeView.svelte` renders catalog-owned sidebar link rows, submenu accordions, and footer shortcuts from `src/catalog/menu-routing.ts`.
 
 Design rule:
 
-- Keep top-level groups from `menuGroups` and `settingsMenu`.
-- Do not convert the current home structure in this phase.
-- Only normalize repeated menu card spacing, labels, action affordance, and color tokens if needed.
+- Keep top-level groups from `homeNavigationGroups` and footer actions from `homeBottomNavigationItems`.
+- Do not reintroduce legacy card-grid home navigation.
+- Normalize repeated row spacing, labels, action affordance, icon alignment, and color tokens when needed.
 - Remove count badges unless a count is necessary for decision-making.
 - Keep no fake recent inquiry, occupancy, or customer cards.
 

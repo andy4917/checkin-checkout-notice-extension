@@ -2,6 +2,7 @@ import { normalizeOtaReservation, requireOtaDraftMinimum } from "../ota/normaliz
 import type {
   OtaReservationDraft,
   OtaReservationLocator,
+  OtaSource,
   WingsReservationFieldMap,
 } from "../ota/types.js";
 import { buildWingsReservationFieldMap } from "../wings/reservation-draft.js";
@@ -11,6 +12,20 @@ export type OtaReservationInputPreview = {
   draft: OtaReservationDraft;
   fields: WingsReservationFieldMap;
 };
+
+export type OtaSourcePresentation = Readonly<{
+  source: OtaSource;
+  label: string;
+}>;
+
+export const OTA_SOURCE_PRESENTATIONS = Object.freeze([
+  { source: "naver", label: "NAVER" },
+  { source: "station", label: "STATION" },
+] satisfies readonly OtaSourcePresentation[]);
+
+export function getOtaSourceLabel(source: OtaSource): string {
+  return OTA_SOURCE_PRESENTATIONS.find((item) => item.source === source)?.label || source.toUpperCase();
+}
 
 export type OtaPayloadFetcher = () => Promise<{
   locator: OtaReservationLocator;

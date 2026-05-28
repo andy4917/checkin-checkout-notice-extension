@@ -5,7 +5,7 @@
 - Status: Active common UI contract
 - Last refreshed: 2026-05-24
 - Source basis: `DESIGN.md`, `PRODUCT.md`, `styles/sidepanel.css`, `src/ui/components/HomeView.svelte`, `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
-- Reference boundary: Framer Sidebar Navigation is used for motion and responsive interaction quality only, not for product content, mobile navigation, full-screen drawer behavior, backdrop treatment, or typography scale.
+- Reference boundary: Framer Sidebar Navigation is used for motion, responsive interaction quality, 400px/64px/48px sidebar rhythm, hover polish, and compact icon+label footer treatment. It is not used for product content, mobile navigation, full-screen drawer behavior, or remote runtime dependencies.
 
 ## Purpose
 
@@ -26,9 +26,9 @@ The shell stays stable. Only the central motion viewport changes during nested n
 Stable regions include:
 
 - top header and branch/date context
-- bottom work navigation
+- icon+label footer work shortcuts backed by catalog actions
 - persistent room/settings launcher
-- status surfaces outside the changing viewport
+- compact in-flow status surfaces outside the changing viewport
 
 The motion viewport must clip panel transitions and must not move header or footer controls.
 
@@ -64,11 +64,12 @@ Ordinary UI components should reuse these tokens instead of embedding new durati
 ## Motion Rules
 
 - Use `transform` and `opacity` for primary transitions.
-- Keep panel transitions below 300ms.
+- Keep work-surface micro transitions below 300ms; home submenu slide may use the Framer reference 600ms easing when it is the primary navigation gesture.
 - Keep hover and press feedback local to the row, button, icon, or chevron.
 - Hover may use a visible underline reveal, subtle text nudge, and chevron emphasis when it improves perceived responsiveness without resizing the row.
 - Nested view entry may use a short content reveal after the panel movement starts, capped by the shared reveal token.
 - Backward navigation must retain outgoing detail content long enough for the panel motion to read as continuous.
+- Catalog-marked accordion groups may expand inline template rows after the submenu slide; other submenu groups continue to their owning menu screen.
 - Do not animate width, height, top, left, margins, or padding for primary navigation.
 - Do not add idle animation, bounce-heavy spring, glow, flashing, or decorative movement.
 - Hidden or offscreen panels must not receive pointer or keyboard interaction.
@@ -99,7 +100,8 @@ Mobile navigation is not a target for this product surface. The side panel must 
 ## Height And Scroll Rules
 
 - Header and footer remain fixed or persistent.
-- The central panel region owns its own scroll when content is long.
+- Work screens use the central stage as the vertical scroll owner.
+- Home screens keep the central stage clipped and let the active navigation panel own wheel scroll.
 - Scrollbars must not create horizontal layout shift.
 - Long content must not push the bottom action area off screen.
 - Primary navigation must not animate scroll height.

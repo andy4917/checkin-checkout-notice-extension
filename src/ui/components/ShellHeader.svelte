@@ -9,12 +9,11 @@
     headerLabel?: string;
     locationLabel?: string;
   }>;
-  export let activeMenuIcon: string | null = null;
   export let activeMenuTitle: string | null = null;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
   export let onBranchChange: (event: Event) => void;
-  export let onGoHome: () => void;
+  export let onBack: () => void;
 
   const MaterialIcon = MaterialIconModule.default;
   let branchPanelOpen = false;
@@ -24,6 +23,9 @@
   $: workMode = Boolean(activeMenuTitle);
   $: activeLogoUrl = getHeaderLogoUrl(selectedBranchId);
   $: headerDate = formatHeaderDate(new Date());
+  $: if (workMode && branchPanelOpen) {
+    branchPanelOpen = false;
+  }
 
   function toggleBranchPanel() {
     if (navigationLocked) return;
@@ -54,70 +56,49 @@
         type="button"
         aria-label="뒤로가기"
         disabled={navigationLocked}
-        onclick={onGoHome}
+        onclick={onBack}
       >
         <MaterialIcon name="arrow_back" size={20} />
       </button>
+      {#if selectedBranch}
+        <img class="work-branch-logo" src={activeLogoUrl} alt={selectedBranchHeaderLabel} />
+      {/if}
     {:else}
-      <img class="brand-logo" src={activeLogoUrl} alt="UH Suite" />
-
       <div class="branch-selector">
         <button
           class:unselected={!selectedBranch}
-          class="branch-trigger"
+          class="branch-logo-trigger"
           type="button"
+          aria-label={selectedBranch ? "지점 변경" : "지점 선택"}
           aria-haspopup="dialog"
           aria-expanded={branchPanelOpen}
           disabled={navigationLocked}
           onclick={toggleBranchPanel}
         >
-          <span>{selectedBranchHeaderLabel}</span>
-          <span class="branch-chevron" aria-hidden="true">
-            <MaterialIcon name="expand_more" size={18} />
-          </span>
+          <img class="brand-logo" src={activeLogoUrl} alt={selectedBranch ? selectedBranchHeaderLabel : "UH Suite"} />
+          {#if !selectedBranch}
+            <span class="branch-chevron" aria-hidden="true">
+              <MaterialIcon name="expand_more" size={18} />
+            </span>
+          {/if}
         </button>
       </div>
     {/if}
   </div>
 
-  <div class="header-room-slot">
-    {#if activeMenuTitle}
-      <h1 class="app-header-title">
-        {#if activeMenuIcon}
-          <MaterialIcon name={activeMenuIcon} size={16} />
-        {/if}
-        <span>{activeMenuTitle}</span>
-      </h1>
-    {/if}
-  </div>
+  <div class="header-room-slot" aria-hidden="true"></div>
 
   <div class="header-date" aria-label="오늘 날짜">
     <MaterialIcon name="calendar_today" size={15} />
     <span>{headerDate}</span>
   </div>
-</header>
 
-{#if branchPanelOpen}
-  <div
-    class="ui-scrim"
-    role="presentation"
-    onclick={() => (branchPanelOpen = false)}
-  ></div>
-  <div
-    class="branch-picker-sheet"
-    role="dialog"
-    aria-modal="true"
-    aria-label="지점 선택"
-  >
-    <div class="sheet-handle" aria-hidden="true"></div>
-    <header class="sheet-header">
-      <div>
-        <strong>지점 선택</strong>
-        <span>UH Suite 지점</span>
-      </div>
-      <button type="button" aria-label="닫기" onclick={() => (branchPanelOpen = false)}>×</button>
-    </header>
-    <div class="branch-sheet-list" role="listbox" aria-label="지점 목록">
+  {#if !workMode && branchPanelOpen}
+    <div
+      class="branch-picker-strip"
+      role="listbox"
+      aria-label="지점 선택"
+    >
       {#each branchOptions as branch}
         <button
           class:selected={selectedBranchId === branch.id}
@@ -126,15 +107,12 @@
           aria-selected={selectedBranchId === branch.id}
           onclick={() => chooseBranch(branch.id)}
         >
-          <span>
-            <strong>{branch.headerLabel || branch.label}</strong>
-            {#if branch.locationLabel}
-              <small>{branch.locationLabel}</small>
-            {/if}
-          </span>
-          <b aria-hidden="true"><MaterialIcon name="check" size={22} /></b>
+          <span>{branch.headerLabel || branch.label}</span>
+          {#if selectedBranchId === branch.id}
+            <MaterialIcon name="check" size={16} />
+          {/if}
         </button>
       {/each}
     </div>
-  </div>
-{/if}
+  {/if}
+</header>

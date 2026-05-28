@@ -1,6 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import {
+  createOperatorErrorMessageTracker,
+  OTA_ACTIVE_TAB_REFRESH_MESSAGE,
+  OTA_BRANCH_MISMATCH_MESSAGE,
+  OPERATION_REPEATED_ERROR_MESSAGE,
+  WINGS_RESERVATION_WINDOW_MESSAGE,
+} from "../src/application/operator-error-messages.js";
+import {
+  AIRPORT_VAN_PAYMENT_OPTIONS,
+  AIRPORT_VAN_RIDE_DIRECTION_OPTIONS,
+  renderAirportVanCopy,
+} from "../src/application/airport-van-form.js";
+import {
+  addLaundryRecord,
+  getAllowedLaundryMoveTargets,
+  hideLaundryProgressEntry,
+  moveLaundryRecord,
+  removeLaundryProgressEntry,
+  removeLaundryRecord,
+  visibleLaundryProgressLog,
+} from "../src/application/laundry-records.js";
+import { readLaundryRecords } from "../src/laundry/storage.js";
 import { upsertWingsRemarkLine } from "../src/application/wings-remark.js";
 import { fetchPmsGuests, PmsRequestError } from "../src/pms/client.js";
 import { buildPmsSearchParams } from "../src/pms/filter-builder.js";
@@ -112,4 +134,172 @@ test("OTA branch mismatch and WINGS remark dependency gaps fail before hidden si
   );
   assert.equal(result.line, "- 제공 카드키 : 2장");
   assert.equal(writtenRemark, "기존 메모\n\n- 제공 카드키 : 2장");
+});
+
+test("operator OTA errors use confirmed copy and collapse repeated setup failures", () => {
+  const tracker = createOperatorErrorMessageTracker();
+
+  assert.equal(
+    tracker.format(new Error("네이버 또는 스테이션 예약 상세 페이지에서 실행해주세요.")),
+    OTA_ACTIVE_TAB_REFRESH_MESSAGE,
+  );
+  assert.equal(
+    tracker.format(new Error("네이버 또는 스테이션 예약 상세 페이지에서 실행해주세요.")),
+    OPERATION_REPEATED_ERROR_MESSAGE,
+  );
+
+  tracker.reset();
+  assert.equal(
+    tracker.format(new Error("WINGS 예약생성창을 생성한 뒤 다시 실행해주세요.")),
+    WINGS_RESERVATION_WINDOW_MESSAGE,
+  );
+  assert.equal(
+    tracker.format(new Error("WINGS 예약생성창을 생성한 뒤 다시 실행해주세요.")),
+    OPERATION_REPEATED_ERROR_MESSAGE,
+  );
+
+  tracker.reset();
+  assert.equal(tracker.format(new Error("올바른 지점이 아닙니다.")), OTA_BRANCH_MISMATCH_MESSAGE);
+  assert.equal(
+    tracker.format(new Error("internal token parser failed: secret-ish implementation detail")),
+    OPERATION_REPEATED_ERROR_MESSAGE,
+  );
+});
+
+test("airport van form renders separate work-log and guest-message copy", () => {
+  const values = {
+    rideDirection: AIRPORT_VAN_RIDE_DIRECTION_OPTIONS[0].value,
+    rideDate: "2026. 05. 25",
+    rideTime: "06:35",
+    guestName: "Kim",
+    guestContact: "010-1111-2222",
+    roomNo: "A302",
+    airportName: "인천공항",
+    terminal: "T1",
+    flightNo: "KE001",
+    flightTime: "09:10",
+    passengerCount: "4",
+    largeLuggageCount: "2",
+    smallLuggageCount: "1",
+    paymentMethod: AIRPORT_VAN_PAYMENT_OPTIONS[1].value,
+    requestNote: "카시트 요청",
+  };
+
+  const receivedAt = new Date("2026-05-25T09:00:00+09:00");
+  const workLog = renderAirportVanCopy("workLog", values, receivedAt);
+  const guestMessage = renderAirportVanCopy("guestMessage", values, receivedAt);
+
+  assert.doesNotMatch(workLog, /N\/A/);
+  assert.doesNotMatch(guestMessage, /N\/A/);
+  assert.match(workLog, /\* 공항밴 예약보고/);
+  assert.match(workLog, /\* 예약 받은 날짜 : 2026\. 05\. 25/);
+  assert.match(workLog, /\* 구분 : 픽업/);
+  assert.match(workLog, /\* 객실번호 : A302/);
+  assert.match(workLog, /\* 결제수단 : 카드/);
+  assert.match(guestMessage, /공항밴 예약 요청 정보 확인 부탁드립니다\./);
+  assert.match(guestMessage, /- 항공편: 인천공항 T1 KE001/);
+  assert.match(guestMessage, /- 결제수단: 카드/);
+  assert.notEqual(workLog, guestMessage);
+});
+
+test("airport van form fails missing required values instead of rendering fallback copy", () => {
+  assert.throws(
+    () => renderAirportVanCopy("workLog", {}, new Date("2026-05-25T09:00:00+09:00")),
+    /필수 입력값/,
+  );
+});
+
+test("laundry workflow restricts movement and records 24-hour progress", async () => {
+  const storage: Record<string, unknown> = {};
+  const storageArea = {
+    async get(keys: string[]) {
+      return Object.fromEntries(keys.map((key) => [key, storage[key]]));
+    },
+    async set(values: Record<string, unknown>) {
+      Object.assign(storage, values);
+    },
+  };
+
+  const record = await addLaundryRecord(
+    {
+      branchId: "coex",
+      guestName: "",
+      roomNo: "",
+      displayRoom: "",
+      itemSummary: "직접 입력 세탁물",
+    },
+    storageArea,
+    new Date("2026-05-25T09:00:00+09:00"),
+  );
+
+  assert.deepEqual(getAllowedLaundryMoveTargets(record), ["WASHER", "DRYER"]);
+  await assert.rejects(
+    () => moveLaundryRecord(record.id, "READY", storageArea, new Date("2026-05-25T09:01:00+09:00")),
+    /잘못된 절차입니다/,
+  );
+
+  const washer = await moveLaundryRecord(record.id, "WASHER", storageArea, new Date("2026-05-25T09:05:00+09:00"));
+  assert.equal(washer.status, "IN_PROGRESS");
+  assert.equal(washer.machineType, "WASHER");
+  assert.deepEqual(getAllowedLaundryMoveTargets(washer), ["WASHER", "DRYER"]);
+
+  const dryer = await moveLaundryRecord(record.id, "DRYER", storageArea, new Date("2026-05-25T09:40:00+09:00"));
+  assert.equal(dryer.machineType, "DRYER");
+
+  const ready = await moveLaundryRecord(record.id, "READY", storageArea, new Date("2026-05-25T10:20:00+09:00"));
+  assert.equal(ready.status, "READY");
+  assert.deepEqual(getAllowedLaundryMoveTargets(ready), []);
+
+  const records = await readLaundryRecords(storageArea);
+  const progress = visibleLaundryProgressLog(records, new Date("2026-05-25T10:30:00+09:00")).map(
+    (entry) => entry.message,
+  );
+  assert.deepEqual(progress, [
+    "직접 입력 세탁물 예정",
+    "직접 입력 세탁물 09:05 세탁중",
+    "직접 입력 세탁물 09:40 세탁 완료. 건조중",
+    "직접 입력 세탁물 완료",
+  ]);
+
+  assert.equal(visibleLaundryProgressLog(records, new Date("2026-05-27T10:30:00+09:00")).length, 0);
+});
+
+test("laundry right-click actions hide progress entries and remove blocks without fake success", async () => {
+  const storage: Record<string, unknown> = {};
+  const storageArea = {
+    async get(keys: string[]) {
+      return Object.fromEntries(keys.map((key) => [key, storage[key]]));
+    },
+    async set(values: Record<string, unknown>) {
+      Object.assign(storage, values);
+    },
+  };
+
+  const record = await addLaundryRecord(
+    {
+      branchId: "coex",
+      guestName: "",
+      roomNo: "",
+      displayRoom: "",
+      itemSummary: "수건 2장",
+    },
+    storageArea,
+    new Date("2026-05-25T09:00:00+09:00"),
+  );
+  const washer = await moveLaundryRecord(record.id, "WASHER", storageArea, new Date("2026-05-25T09:10:00+09:00"));
+  const progressId = washer.progressLog[1]?.id || "";
+
+  await hideLaundryProgressEntry(progressId, storageArea);
+  let records = await readLaundryRecords(storageArea);
+  assert.equal(visibleLaundryProgressLog(records, new Date("2026-05-25T09:20:00+09:00")).some((entry) => entry.id === progressId), false);
+
+  await removeLaundryProgressEntry(progressId, storageArea);
+  records = await readLaundryRecords(storageArea);
+  assert.equal(records[0]?.progressLog.some((entry) => entry.id === progressId), false);
+
+  await removeLaundryRecord(record.id, storageArea);
+  assert.deepEqual(await readLaundryRecords(storageArea), []);
+
+  await assert.rejects(() => removeLaundryRecord(record.id, storageArea), /세탁 기록을 찾을 수 없습니다/);
+  await assert.rejects(() => hideLaundryProgressEntry(progressId, storageArea), /진행 기록을 찾을 수 없습니다/);
 });

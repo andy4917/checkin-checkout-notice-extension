@@ -1,5 +1,6 @@
 import type { BranchId } from "../types.js";
 import type { StoredExtensionState } from "../catalog/template-types.js";
+import { STORAGE_CORRUPTION_MESSAGE } from "../application/operator-error-messages.js";
 import {
   DEFAULT_EXTENSION_STATE,
   STORAGE_KEY,
@@ -13,7 +14,7 @@ export type ChromeStorageArea = {
 };
 
 export const STORAGE_CORRUPTION_RECOVERY_MESSAGE =
-  "저장소 데이터 손상으로 설정을 초기화했습니다. 다시 설정해주세요.";
+  STORAGE_CORRUPTION_MESSAGE;
 
 export type ExtensionStateReadResult = {
   state: StoredExtensionState;

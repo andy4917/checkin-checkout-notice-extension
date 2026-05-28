@@ -11,6 +11,7 @@ export type HomeMenuSectionId = "primary" | "room-operations" | "work-forms";
 
 export type MenuScreenKind =
   | "customerGuidance"
+  | "airportVan"
   | "laundry"
   | "templateList"
   | "otaReservationInput"
@@ -19,6 +20,7 @@ export type MenuScreenKind =
 export type MenuTemplateFilter =
   | { kind: "menu" }
   | { kind: "type"; typeId: TemplateTypeId }
+  | { kind: "types"; typeIds: readonly TemplateTypeId[] }
   | { kind: "none" };
 
 export type HomeMenuPresentation = {
@@ -56,6 +58,7 @@ export type HomeNavigationItem = {
   title: string;
   icon: string;
   menuId: MenuId;
+  templateFilter?: MenuTemplateFilter;
   badgeLabel?: string;
 };
 
@@ -63,6 +66,7 @@ export type HomeNavigationGroup = {
   id: string;
   title: string;
   icon: string;
+  selectionMode: "accordion" | "menuScreen";
   items: readonly HomeNavigationItem[];
 };
 
@@ -71,7 +75,11 @@ export type HomeBottomNavigationItem = {
   title: string;
   icon: string;
   menuId?: MenuId;
+  action?: HomeBottomNavigationAction;
 };
+
+export type HomeBottomNavigationAction =
+  | { kind: "pmsGuestList"; mode: "ARRIVAL" | "DEPARTURE" };
 
 export type HomeNavigationLabels = {
   rootLabel: string;
@@ -177,7 +185,7 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "공항밴 관리",
         description: "공항밴 안내와 배차 확인",
         icon: "airport_shuttle",
-        screenKind: "templateList",
+        screenKind: "airportVan",
         templateFilter: Object.freeze({ kind: "type", typeId: "airport_van" }),
         home: Object.freeze({
           sectionId: "room-operations",
@@ -189,29 +197,29 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
       }),
       Object.freeze({
         id: "SALES_MANAGEMENT",
-        title: "매출 관리",
-        description: "매출과 지출 기록",
+        title: "매지출 관리",
+        description: "매지출 보고",
         icon: "payments",
         screenKind: "templateList",
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "room-operations",
-          title: "매출 관리",
-          description: "매출과 지출 기록",
+          title: "매지출 관리",
+          description: "매지출 보고",
           icon: "payments",
           order: 40,
         }),
       }),
       Object.freeze({
         id: "ROOM_REMARK_MEMO",
-        title: "객실 정보 리마크",
+        title: "객실 정보 메모",
         description: "객실 물품과 메모 작성",
         icon: "bedroom_parent",
         screenKind: "templateList",
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "work-forms",
-          title: "객실 정보 리마크",
+          title: "객실 정보 메모",
           description: "객실 물품과 특이사항 메모",
           icon: "bedroom_parent",
           order: 10,
@@ -308,35 +316,149 @@ export const roomsSettingsActions: readonly RoomsSettingsAction[] = Object.freez
   }),
 ]);
 
+function typeFilter(typeId: TemplateTypeId): MenuTemplateFilter {
+  return Object.freeze({ kind: "type", typeId });
+}
+
+function typesFilter(typeIds: readonly TemplateTypeId[]): MenuTemplateFilter {
+  return Object.freeze({ kind: "types", typeIds: Object.freeze([...typeIds]) });
+}
+
 export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freeze([
   Object.freeze({
     id: "customer-guidance",
     title: "고객 안내문",
     icon: "info",
+    selectionMode: "accordion",
     items: Object.freeze([
-      Object.freeze({ id: "customer-checkin", title: "체크인 안내문", icon: "login", menuId: "CUSTOMER_NOTICE" }),
-      Object.freeze({ id: "customer-checkout", title: "체크아웃 안내문", icon: "keyboard_return", menuId: "CUSTOMER_NOTICE" }),
-      Object.freeze({ id: "customer-room", title: "객실 관련 안내문", icon: "bedroom_parent", menuId: "CUSTOMER_NOTICE" }),
-      Object.freeze({ id: "customer-fee", title: "각종 요금 관련 안내문", icon: "payments", menuId: "CUSTOMER_NOTICE" }),
+      Object.freeze({
+        id: "customer-checkin",
+        title: "체크인 안내문",
+        icon: "login",
+        menuId: "CUSTOMER_NOTICE",
+        templateFilter: typesFilter([
+          "arrival_notice",
+          "prearrival_csm",
+          "prestay_notice",
+          "self_checkin",
+          "early_checkin",
+        ]),
+      }),
+      Object.freeze({
+        id: "customer-checkout",
+        title: "체크아웃 안내문",
+        icon: "keyboard_return",
+        menuId: "CUSTOMER_NOTICE",
+        templateFilter: typeFilter("cleaning_notice"),
+      }),
+      Object.freeze({
+        id: "customer-room",
+        title: "객실 관련 안내문",
+        icon: "bedroom_parent",
+        menuId: "CUSTOMER_NOTICE",
+        templateFilter: typesFilter([
+          "room_upgrade",
+          "room_upgrade_closed",
+          "card_key",
+          "laundry_complete",
+          "partner_service",
+        ]),
+      }),
+      Object.freeze({
+        id: "customer-fee",
+        title: "각종 요금 관련 안내문",
+        icon: "payments",
+        menuId: "CUSTOMER_NOTICE",
+        templateFilter: typesFilter(["parking", "airport_van", "room_sales", "dodine_sales"]),
+      }),
     ]),
   }),
   Object.freeze({
     id: "quick-replies",
     title: "빠른 문의 답변",
     icon: "chat_bubble",
+    selectionMode: "accordion",
     items: Object.freeze([
-      Object.freeze({ id: "quick-rental", title: "물품 대여 문의", icon: "inventory_2", menuId: "QUICK_REPLY" }),
-      Object.freeze({ id: "quick-lost-item", title: "분실물 문의", icon: "manage_search", menuId: "QUICK_REPLY" }),
-      Object.freeze({ id: "quick-room-visit", title: "객실 방문 예정", icon: "meeting_room", menuId: "QUICK_REPLY" }),
+      Object.freeze({
+        id: "quick-rental",
+        title: "물품 대여 문의",
+        icon: "inventory_2",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("rental_item"),
+      }),
+      Object.freeze({
+        id: "quick-lost-item",
+        title: "분실물 문의",
+        icon: "manage_search",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("lost_item"),
+      }),
+      Object.freeze({
+        id: "quick-room-visit",
+        title: "객실 방문 예정",
+        icon: "meeting_room",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("room_visit"),
+      }),
+      Object.freeze({
+        id: "quick-breakfast",
+        title: "조식 문의",
+        icon: "restaurant",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("breakfast_inquiry"),
+      }),
+      Object.freeze({
+        id: "quick-invoice",
+        title: "인보이스 문의",
+        icon: "receipt_long",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("invoice_inquiry"),
+      }),
+      Object.freeze({
+        id: "quick-cancellation",
+        title: "체크인 1주이내 취소 문의",
+        icon: "event_busy",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("cancellation_inquiry"),
+      }),
+      Object.freeze({
+        id: "quick-laundry-service",
+        title: "세탁 서비스 문의",
+        icon: "local_laundry_service",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("laundry_service_inquiry"),
+      }),
+      Object.freeze({
+        id: "quick-kakao-connect",
+        title: "카톡 채널 문의 연결",
+        icon: "forum",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("kakao_channel_connect"),
+      }),
+      Object.freeze({
+        id: "quick-kakao-closing",
+        title: "카톡 채널 문의 마무리",
+        icon: "done_all",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("kakao_channel_closing"),
+      }),
+      Object.freeze({
+        id: "quick-nearby-restaurant",
+        title: "근처 식당 문의",
+        icon: "restaurant_menu",
+        menuId: "QUICK_REPLY",
+        templateFilter: typeFilter("nearby_restaurant"),
+      }),
     ]),
   }),
   Object.freeze({
     id: "service-management",
     title: "고객 서비스 관리",
     icon: "room_service",
+    selectionMode: "menuScreen",
     items: Object.freeze([
       Object.freeze({ id: "service-laundry", title: "세탁물 관리", icon: "local_laundry_service", menuId: "LAUNDRY_MANAGEMENT" }),
-      Object.freeze({ id: "service-sales", title: "매출 관리", icon: "payments", menuId: "SALES_MANAGEMENT" }),
+      Object.freeze({ id: "service-sales", title: "매지출 관리", icon: "payments", menuId: "SALES_MANAGEMENT" }),
       Object.freeze({ id: "service-airport-van", title: "공항밴 관리", icon: "airport_shuttle", menuId: "AIRPORT_VAN_MANAGEMENT" }),
     ]),
   }),
@@ -344,8 +466,9 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     id: "work-management",
     title: "업무 관리",
     icon: "assignment",
+    selectionMode: "menuScreen",
     items: Object.freeze([
-      Object.freeze({ id: "work-room-remark", title: "객실 정보 리마크", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
+      Object.freeze({ id: "work-room-remark", title: "객실 정보 메모", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
       Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT", badgeLabel: "WINGS" }),
       Object.freeze({ id: "work-report", title: "업무보고 양식", icon: "summarize", menuId: "WORK_REPORT" }),
     ]),
@@ -354,6 +477,7 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     id: "template-editor",
     title: "템플릿 / 양식 편집",
     icon: "design_services",
+    selectionMode: "menuScreen",
     items: Object.freeze([
       Object.freeze({ id: "template-customer", title: "고객 템플릿 / 빠른답변", icon: "description", menuId: "SETTINGS" }),
       Object.freeze({ id: "template-work", title: "업무 내용 변경", icon: "edit_note", menuId: "SETTINGS" }),
@@ -362,9 +486,9 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
 ]);
 
 export const homeBottomNavigationItems: readonly HomeBottomNavigationItem[] = Object.freeze([
-  Object.freeze({ id: "checkin-list", title: "체크인 목록", icon: "login" }),
-  Object.freeze({ id: "checkout-list", title: "체크아웃 목록", icon: "keyboard_return" }),
-  Object.freeze({ id: "room-select", title: "객실 선택", icon: "meeting_room" }),
+  Object.freeze({ id: "checkin-list", title: "체크인 목록", icon: "login", action: Object.freeze({ kind: "pmsGuestList" as const, mode: "ARRIVAL" as const }) }),
+  Object.freeze({ id: "checkout-list", title: "체크아웃 목록", icon: "keyboard_return", action: Object.freeze({ kind: "pmsGuestList" as const, mode: "DEPARTURE" as const }) }),
+  Object.freeze({ id: "room-select", title: "객실 선택", icon: "meeting_room", action: Object.freeze({ kind: "pmsGuestList" as const, mode: "ARRIVAL" as const }) }),
   Object.freeze({ id: "settings", title: "설정", icon: "settings", menuId: "SETTINGS" }),
 ]);
 
@@ -420,6 +544,10 @@ export function filterTemplatesForMenu(
   if (menu.templateFilter.kind === "type") {
     const { typeId } = menu.templateFilter;
     return templates.filter((template) => template.typeId === typeId);
+  }
+  if (menu.templateFilter.kind === "types") {
+    const typeIds = new Set(menu.templateFilter.typeIds);
+    return templates.filter((template) => typeIds.has(template.typeId));
   }
   return templates.filter((template) => template.menuId === menuId);
 }

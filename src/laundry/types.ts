@@ -1,6 +1,7 @@
 import type { BranchId } from "../types.js";
 
 export type LaundryMachineType = "WASHER" | "DRYER";
+export type LaundryMoveTarget = "RECEIVED" | "WASHER" | "DRYER" | "READY";
 
 export type LaundryStatus =
   | "RECEIVED"
@@ -24,6 +25,14 @@ export type LaundryRecord = {
   completedAt?: string;
   pickedUpAt?: string;
   sourcePmsGuestId?: string;
+  progressLog: LaundryProgressEntry[];
+};
+
+export type LaundryProgressEntry = {
+  id: string;
+  at: string;
+  message: string;
+  hidden?: boolean;
 };
 
 export type LaundryRecordDraft = {

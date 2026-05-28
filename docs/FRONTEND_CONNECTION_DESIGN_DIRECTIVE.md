@@ -39,9 +39,9 @@ Use these modules as the source of truth. Do not duplicate their logic in the fr
 | Menu inventory | `src/catalog/menu-routing.ts` | Render menu groups, menu items, home presentation, and bottom-bar actions from routing/catalog data. Do not add component-owned menu contracts. |
 | Template catalog | `src/catalog/template-catalog.ts` | Use `UNIFIED_TEMPLATE_CATALOG`, `applyStoredUnifiedTemplateState()`, and `scopeUnifiedTemplateForBranch()`. |
 | Template rendering | `src/catalog/template-renderer.ts` | Use renderer output for copy text. Do not interpolate template strings inside components. |
-| PMS sync | application/domain modules only | Not part of the current frontend render or bundle surface. |
+| PMS sync | `src/pms/*`, application/domain modules, `PmsGuestPanel.svelte` | Frontend may render branch-scoped PMS selection panels through injected dependencies; request construction and field contracts remain outside components. |
 | Context guard | `src/application/context-guard.ts` | Gate PMS-only or guest-record actions with `guardRequiredContext()`. |
-| OTA preview/fill | application/domain modules only | Not part of the current frontend render or bundle surface. |
+| OTA preview/fill | `src/application/ota-reservation-input.ts`, active-tab automation, `WorkSurface.svelte` | Frontend may render the OTA work surface; preview/fill behavior and failure contracts remain in application/platform owners. |
 | Active tab automation | `src/platform/active-tab-automation.ts` | Treat missing reservation window as a blocking error, not as an empty state. |
 | Storage | `src/platform/chrome-storage.ts`, `src/ui/side-panel-navigation-dependencies.ts` | Use injected extension-state dependencies for navigation mount and branch saves; do not hide `chrome.storage.local` as a default parameter. |
 
@@ -361,7 +361,7 @@ Shared interaction rules:
 Shared surface rules:
 
 - cards and popup surfaces use consistent radius and spacing
-- menu cards are separate cards with compact gaps; do not merge several menu actions into one parent card
+- root/sidebar menu actions are link rows with compact catalog icons; work cards are used only for real framed task surfaces
 - template rows are grouped by catalog-owned `typeId` families and separated with a light divider; do not infer groups from template title text
 - icon buttons are at least 40px by 40px and center icons with grid/place-items
 - icons must be rendered through the shared local SVG icon component
@@ -406,10 +406,11 @@ Side panel shell:
 
 Home:
 
-- compact title block
-- grouped menu grid
-- settings entry separated at the bottom
-- menu cards should keep stable height and not resize on hover
+- persistent branch/date header
+- catalog-owned root links with compact icons, underline hover, and stable 48px rhythm
+- customer/quick-reply submenu accordions for template lists
+- icon+label footer shortcuts backed by real catalog actions
+- no menu cards, no generic explanation copy, and no hidden rendered controls
 
 Work menu:
 
@@ -439,6 +440,7 @@ Buttons:
 Status:
 
 - one short line or compact block
+- in flow with the active work surface, not fixed over the header/content
 - no persistent debug logs
 - no trace details unless the user explicitly asks for diagnostics
 - no details of what this menu or options do.

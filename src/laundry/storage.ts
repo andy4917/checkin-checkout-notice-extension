@@ -1,5 +1,5 @@
 import { isBranchId } from "../config/branches.js";
-import type { LaundryMachineType, LaundryRecord, LaundryStatus } from "./types.js";
+import type { LaundryMachineType, LaundryProgressEntry, LaundryRecord, LaundryStatus } from "./types.js";
 
 export const LAUNDRY_STORAGE_KEY = "laundryRecords:v1";
 
@@ -67,6 +67,27 @@ function normalizeLaundryRecord(input: unknown, fieldName: string): LaundryRecor
     completedAt: optionalText(input.completedAt),
     pickedUpAt: optionalText(input.pickedUpAt),
     sourcePmsGuestId: optionalText(input.sourcePmsGuestId),
+    progressLog: normalizeProgressLog(input.progressLog, `${fieldName}.progressLog`),
+  };
+}
+
+function normalizeProgressLog(input: unknown, fieldName: string): LaundryProgressEntry[] {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input)) {
+    throw new LaundryStorageError(`${fieldName} must be an array.`);
+  }
+  return input.map((entry, index) => normalizeProgressEntry(entry, `${fieldName}[${index}]`));
+}
+
+function normalizeProgressEntry(input: unknown, fieldName: string): LaundryProgressEntry {
+  if (!isRecord(input)) {
+    throw new LaundryStorageError(`${fieldName} must be an object.`);
+  }
+  return {
+    id: requiredText(input.id, `${fieldName}.id`),
+    at: requiredText(input.at, `${fieldName}.at`),
+    message: requiredText(input.message, `${fieldName}.message`),
+    hidden: typeof input.hidden === "boolean" ? input.hidden : undefined,
   };
 }
 

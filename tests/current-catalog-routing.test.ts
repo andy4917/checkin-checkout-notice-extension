@@ -37,7 +37,7 @@ test("home and customer guidance routing are catalog-owned current contracts", (
   assert.deepEqual(customerNotice.templateFilter, { kind: "menu" });
 });
 
-test("home navigation is a five-group drill-down schema with fixed bottom items", () => {
+test("home navigation is a five-group drill-down schema with accordion and menu-screen modes", () => {
   assert.deepEqual(
     homeNavigationGroups.map((group) => group.title),
     [
@@ -54,12 +54,47 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
     ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
   );
   assert.deepEqual(
+    homeNavigationGroups.map((group) => group.selectionMode),
+    ["accordion", "accordion", "menuScreen", "menuScreen", "menuScreen"],
+  );
+  assert.deepEqual(homeNavigationGroups[0]?.items[0]?.templateFilter, {
+    kind: "types",
+    typeIds: ["arrival_notice", "prearrival_csm", "prestay_notice", "self_checkin", "early_checkin"],
+  });
+  assert.deepEqual(homeNavigationGroups[0]?.items[1]?.templateFilter, {
+    kind: "type",
+    typeId: "cleaning_notice",
+  });
+  assert.deepEqual(homeNavigationGroups[1]?.items.map((item) => item.templateFilter), [
+    { kind: "type", typeId: "rental_item" },
+    { kind: "type", typeId: "lost_item" },
+    { kind: "type", typeId: "room_visit" },
+    { kind: "type", typeId: "breakfast_inquiry" },
+    { kind: "type", typeId: "invoice_inquiry" },
+    { kind: "type", typeId: "cancellation_inquiry" },
+    { kind: "type", typeId: "laundry_service_inquiry" },
+    { kind: "type", typeId: "kakao_channel_connect" },
+    { kind: "type", typeId: "kakao_channel_closing" },
+    { kind: "type", typeId: "nearby_restaurant" },
+  ]);
+  assert.deepEqual(
     homeNavigationGroups.map((group) => group.items.map((item) => item.title)),
     [
       ["체크인 안내문", "체크아웃 안내문", "객실 관련 안내문", "각종 요금 관련 안내문"],
-      ["물품 대여 문의", "분실물 문의", "객실 방문 예정"],
-      ["세탁물 관리", "매출 관리", "공항밴 관리"],
-      ["객실 정보 리마크", "NAVER / STATION 예약입력", "업무보고 양식"],
+      [
+        "물품 대여 문의",
+        "분실물 문의",
+        "객실 방문 예정",
+        "조식 문의",
+        "인보이스 문의",
+        "체크인 1주이내 취소 문의",
+        "세탁 서비스 문의",
+        "카톡 채널 문의 연결",
+        "카톡 채널 문의 마무리",
+        "근처 식당 문의",
+      ],
+      ["세탁물 관리", "매지출 관리", "공항밴 관리"],
+      ["객실 정보 메모", "NAVER / STATION 예약입력", "업무보고 양식"],
       ["고객 템플릿 / 빠른답변", "업무 내용 변경"],
     ],
   );
@@ -69,16 +104,26 @@ test("home navigation is a five-group drill-down schema with fixed bottom items"
   );
   assert.deepEqual(
     homeNavigationGroups[2]?.items.map((item) => item.title),
-    ["세탁물 관리", "매출 관리", "공항밴 관리"],
+    ["세탁물 관리", "매지출 관리", "공항밴 관리"],
   );
   assert.deepEqual(
     homeBottomNavigationItems.map((item) => item.title),
     ["체크인 목록", "체크아웃 목록", "객실 선택", "설정"],
   );
+  assert.deepEqual(
+    homeBottomNavigationItems.map((item) => item.action?.kind || item.menuId),
+    ["pmsGuestList", "pmsGuestList", "pmsGuestList", "SETTINGS"],
+  );
+  assert.deepEqual(
+    homeBottomNavigationItems.map((item) => item.action?.mode || null),
+    ["ARRIVAL", "DEPARTURE", "ARRIVAL", null],
+  );
   assert.equal(homeNavigationLabels.backToRootLabel, "홈 메뉴로 돌아가기");
   assert.equal(homeNavigationLabels.openSubmenuLabel("고객 안내문"), "고객 안내문 메뉴 열기");
   assert.equal(usesWorkLanguageSelector("CUSTOMER_NOTICE"), true);
   assert.equal(usesWorkLanguageSelector("WORK_REPORT"), false);
+  assert.equal(getMenu("SALES_MANAGEMENT").title, "매지출 관리");
+  assert.equal(getMenu("ROOM_REMARK_MEMO").title, "객실 정보 메모");
 });
 
 test("home navigation styling contract keeps reference-like typography and drill-down motion", () => {
@@ -96,45 +141,70 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /--color-line:\s*#eeeeec;/);
   assert.match(css, /--color-home-divider:\s*#eeeeec;/);
   assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*0;/s);
-  assert.match(css, /\.home-nav-icon\s*\{[^}]*display:\s*none;/s);
+  assert.match(css, /--home-row-icon-size:\s*20px;/);
+  assert.match(css, /\.home-nav-icon\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;/s);
   assert.match(css, /\.home-nav-badge\s*\{/);
   assert.match(css, /--home-focus-ring:\s*#aeb5ae;/);
-  assert.match(css, /--home-header-block-space:\s*68px;/);
+  assert.match(css, /--home-header-block-space:\s*64px;/);
   assert.match(css, /--font-display:\s*var\(--font-korean-body\);/);
-  assert.match(css, /--home-root-font-size:\s*23px;/);
-  assert.match(css, /--home-root-font-weight:\s*760;/);
-  assert.match(css, /--home-submenu-font-size:\s*18px;/);
-  assert.match(css, /--home-submenu-font-weight:\s*720;/);
-  assert.match(css, /--home-root-row-height:\s*68px;/);
-  assert.match(css, /--home-submenu-row-height:\s*58px;/);
-  assert.match(css, /--home-root-row-gap:\s*3px;/);
-  assert.match(css, /--home-hover-label-shift:\s*4px;/);
-  assert.match(css, /--home-hover-chevron-shift:\s*4px;/);
-  assert.match(css, /--home-content-motion-duration:\s*240ms;/);
-  assert.match(css, /--home-content-motion-delay:\s*70ms;/);
+  assert.match(css, /--home-root-font-size:\s*21px;/);
+  assert.match(css, /--home-root-font-weight:\s*700;/);
+  assert.match(css, /--home-submenu-font-size:\s*17px;/);
+  assert.match(css, /--home-submenu-font-weight:\s*680;/);
+  assert.match(css, /--home-root-row-height:\s*48px;/);
+  assert.match(css, /--home-submenu-row-height:\s*48px;/);
+  assert.match(css, /--home-root-row-gap:\s*16px;/);
+  assert.match(css, /--home-hover-label-shift:\s*6px;/);
+  assert.match(css, /--home-hover-chevron-shift:\s*6px;/);
+  assert.match(css, /--home-content-motion-duration:\s*400ms;/);
+  assert.match(css, /--home-content-motion-delay:\s*100ms;/);
   assert.match(css, /--home-hover-underline-height:\s*2px;/);
-  assert.match(css, /--sidepanel-motion-duration:\s*280ms;/);
-  assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\);/);
-  assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding-bottom:\s*0;/s);
+  assert.match(css, /--sidepanel-motion-duration:\s*600ms;/);
+  assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.54,\s*0\.01,\s*0\.19,\s*0\.93\);/);
+  assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding:\s*0;[^}]*padding-bottom:\s*0;/s);
   assert.match(css, /\.app-header\s*\{[^}]*margin:\s*0 0 12px;[^}]*border-bottom:\s*0;[^}]*padding:\s*0;/s);
   assert.match(css, /\.app-header::after\s*\{[^}]*left:\s*0;[^}]*background:\s*var\(--color-line\);/s);
-  assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*min-height:\s*calc\(100dvh - var\(--home-header-block-space\)\);/s);
+  assert.match(css, /body\s*\{[^}]*height:\s*100dvh;[^}]*overflow-y:\s*hidden;/s);
+  assert.match(css, /\.app-shell\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*auto auto minmax\(0,\s*1fr\);[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden;/s);
+  assert.match(css, /\.screen-stage\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/s);
+  assert.match(css, /\.shell-status \+ \.screen-stage\s*\{[^}]*grid-row:\s*3;/s);
+  assert.match(css, /\.app-shell\.home-mode \.screen-stage\s*\{[^}]*overflow:\s*hidden;/s);
+  assert.match(css, /\.branch-picker-strip\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
   assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
+  assert.match(css, /\.home-fixed-bottom-bar \.material-icon\s*\{[^}]*display:\s*inline-grid;/s);
+  assert.match(css, /\.work-status\s*\{[^}]*position:\s*relative;[^}]*border-left:\s*3px solid var\(--color-icon\);/s);
+  assert.doesNotMatch(css, /\.work-status\s*\{[^}]*position:\s*fixed;/s);
   assert.match(css, /\.home-navigation-viewport\s*\{[^}]*overflow:\s*hidden;[^}]*height:\s*100%;/s);
+  assert.match(css, /\.home-navigation-viewport\s*\{[^}]*mask:\s*linear-gradient/s);
   assert.match(css, /\.home-navigation-track\s*\{[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
   assert.match(css, /\.home-navigation-panel\s*\{[^}]*height:\s*100%;[^}]*overflow-y:\s*auto;/s);
   assert.match(css, /\.home-navigation-track\s*\{[^}]*transition:\s*transform var\(--sidepanel-motion-duration\) var\(--sidepanel-motion-ease\);/s);
   assert.match(css, /\.home-nav-root-item:hover,\s*\.home-submenu-item:hover\s*\{[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s);
   assert.match(css, /\.home-nav-root-item:hover > \.home-nav-label,\s*\.home-submenu-item:hover > \.home-nav-label,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-label-shift\)\);/s);
-  assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 22px;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.home-nav-title-row\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) max-content;/s);
   assert.match(css, /\.interactive-label\s*\{[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.home-nav-title-row:has\(\.home-nav-badge\) \.interactive-label\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;/s);
+  assert.match(css, /\.home-nav-badge\s*\{[^}]*max-width:\s*56px;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;/s);
   assert.match(css, /\.interactive-label::after\s*\{[^}]*will-change:\s*opacity,\s*transform;/s);
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-chevron-shift\)\);/s);
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*color:\s*var\(--color-primary\);[^}]*opacity:\s*1;/s);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-enter/s);
   assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-exit/s);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="backward"\] \.root-panel \.home-nav-root-item\s*\{[^}]*animation:\s*home-root-content-return/s);
+  assert.match(css, /\.home-template-accordion\s*\{/);
+  assert.match(css, /\.home-template-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) 36px;[^}]*min-height:\s*42px;/s);
+  assert.match(css, /\.home-template-copy\s*\{[^}]*display:\s*inline-grid;[^}]*width:\s*34px;[^}]*height:\s*34px;[^}]*place-items:\s*center;/s);
+  assert.match(css, /\.home-language-strip\s*\{[^}]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);[^}]*height:\s*30px;/s);
+  assert.match(css, /\.home-language-strip::before\s*\{[^}]*transform:\s*translateX\(calc\(var\(--active-index\) \* 100%\)\);[^}]*transition:\s*transform 180ms/s);
+  assert.match(css, /\.home-language-strip\.loading::after\s*\{[^}]*animation:\s*home-language-loading 180ms/s);
+  assert.match(css, /\.home-submenu-entry::details-content\s*\{[^}]*block-size:\s*0;[^}]*transition:/s);
+  assert.match(css, /\.home-submenu-entry\[open\]::details-content\s*\{[^}]*block-size:\s*auto;[^}]*opacity:\s*1;/s);
+  assert.match(css, /@keyframes home-accordion-enter\s*\{/);
+  assert.match(css, /\.home-submenu-entry > summary\.home-submenu-item\s*\{[^}]*list-style:\s*none;/s);
+  assert.match(css, /\.home-submenu-entry\[open\] \.home-submenu-item b\s*\{[^}]*transform:\s*rotate\(180deg\);/s);
   assert.match(css, /@keyframes home-detail-content-enter\s*\{/);
   assert.match(css, /@keyframes home-detail-content-exit\s*\{/);
   assert.match(css, /@keyframes home-root-content-return\s*\{/);
@@ -148,6 +218,19 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(homeView, /aria-expanded=\{activeGroup\?\.id === group\.id\}/);
   assert.match(homeView, /aria-controls=\{getSubmenuPanelId\(group\.id\)\}/);
   assert.match(homeView, /aria-label=\{labels\.backToRootLabel\}/);
+  assert.match(homeView, /<details class="home-submenu-entry">/);
+  assert.doesNotMatch(homeView, /<details class="home-submenu-entry" name=/);
+  assert.match(homeView, /<summary class="home-submenu-item accordion-trigger"/);
+  assert.match(homeView, /const languageOptions: readonly Language\[\] = Object\.freeze\(\["KO", "EN", "JP", "CN"\]\)/);
+  assert.match(homeView, /\{#if isAccordionGroup\(renderedDetailGroup\)\}\s*<div[^>]+class="home-language-strip"/s);
+  assert.match(homeView, /class="home-language-strip"/);
+  assert.match(homeView, /style=\{`--active-index: \$\{languageOptions\.indexOf\(selectedLanguage\)\}`\}/);
+  assert.match(homeView, /getInlineTemplates\(item\)/);
+  assert.match(homeView, /use:copyTemplateEvents=\{\{ item, templateId: template\.id \}\}/);
+  assert.match(homeView, /template\.variables\.some\(\(variable\) => variable\.kind === "pmsRequired"\)/);
+  assert.doesNotMatch(homeView, /template\.summary/);
+  assert.doesNotMatch(homeView, /resolveHomeManualVariables/);
+  assert.doesNotMatch(homeView, /<span>\{requirement \|\|/);
   assert.doesNotMatch(homeView, /--stagger-index/);
   assert.doesNotMatch(readFileSync("src/ui/components/ShellHeader.svelte", "utf8"), /--stagger-index/);
   assert.doesNotMatch(css, /\.priority-card\b/);
@@ -156,9 +239,6 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.doesNotMatch(css, /\.home-menu-section\b/);
   assert.doesNotMatch(css, /@keyframes home-item-reveal/);
   assert.doesNotMatch(css, /@keyframes home-detail-reveal/);
-  assert.doesNotMatch(css, /\.home-submenu-section-label\b/);
-  assert.doesNotMatch(css, /\.home-submenu-section-items\b/);
-  assert.doesNotMatch(homeView, /home-submenu-section/);
   assert.doesNotMatch(css, /--stagger-index|--stagger-base-delay|--stagger-step-delay|--stagger-max-delay/);
   assert.doesNotMatch(css, /\.home-navigation-viewport\s*\{[^}]*486px/s);
   assert.doesNotMatch(css, /@container home-panel[^}]+\.home-navigation-viewport\s*\{[^}]*520px/s);
@@ -204,10 +284,41 @@ test("template filtering uses catalog metadata, branch scope, and attachment exc
   const airportMenu = getMenu("AIRPORT_VAN_MANAGEMENT");
   const airportTemplates = filterTemplatesForMenu("AIRPORT_VAN_MANAGEMENT", UNIFIED_TEMPLATE_CATALOG);
   const customerTemplates = filterTemplatesForMenu("CUSTOMER_NOTICE", UNIFIED_TEMPLATE_CATALOG);
+  const checkoutTemplates = filterTemplatesForMenu("CUSTOMER_NOTICE", UNIFIED_TEMPLATE_CATALOG)
+    .filter((template) => template.typeId === "cleaning_notice");
+  const quickTemplates = filterTemplatesForMenu("QUICK_REPLY", UNIFIED_TEMPLATE_CATALOG);
 
+  assert.equal(airportMenu.screenKind, "airportVan");
+  assert.equal(getMenu("QUICK_REPLY").screenKind, "templateList");
   assert.deepEqual(airportMenu.templateFilter, { kind: "type", typeId: "airport_van" });
   assert.equal(airportTemplates.every((template) => template.typeId === "airport_van"), true);
   assert.equal(customerTemplates.every((template) => template.menuId === "CUSTOMER_NOTICE"), true);
+  assert.equal(checkoutTemplates.some((template) => template.id === "full-cleaning-notice"), true);
+  assert.deepEqual(
+    quickTemplates
+      .filter((template) =>
+        [
+          "breakfast_inquiry",
+          "invoice_inquiry",
+          "cancellation_inquiry",
+          "laundry_service_inquiry",
+          "kakao_channel_connect",
+          "kakao_channel_closing",
+          "nearby_restaurant",
+        ].includes(template.typeId),
+      )
+      .map((template) => template.id)
+      .sort(),
+    [
+      "quick-breakfast-inquiry",
+      "quick-cancellation-within-week",
+      "quick-invoice-inquiry",
+      "quick-kakao-channel-closing",
+      "quick-kakao-channel-connect",
+      "quick-laundry-service-inquiry",
+      "quick-nearby-restaurant-inquiry",
+    ],
+  );
   for (const branchId of allBranches) {
     assert.equal(
       getUnifiedTemplatesForBranch(branchId).some((template) =>
@@ -244,10 +355,51 @@ test("renderer fails required PMS/manual values and unavailable languages instea
   assert.throws(() => renderTemplate(salesReport, "EN"), TemplateLanguageUnavailableError);
 });
 
+test("provided zip template assets render through the current catalog mappings", () => {
+  const breakfast = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "quick-breakfast-inquiry");
+  const invoice = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "quick-invoice-inquiry");
+  const cancellation = UNIFIED_TEMPLATE_CATALOG.find(
+    (template) => template.id === "quick-cancellation-within-week",
+  );
+  const laundry = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "quick-laundry-service-inquiry");
+  const kakaoConnect = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "quick-kakao-channel-connect");
+  const kakaoClosing = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "quick-kakao-channel-closing");
+  const nearbyRestaurant = UNIFIED_TEMPLATE_CATALOG.find(
+    (template) => template.id === "quick-nearby-restaurant-inquiry",
+  );
+  const cleaning = UNIFIED_TEMPLATE_CATALOG.find((template) => template.id === "full-cleaning-notice");
+
+  assert.ok(breakfast);
+  assert.ok(invoice);
+  assert.ok(cancellation);
+  assert.ok(laundry);
+  assert.ok(kakaoConnect);
+  assert.ok(kakaoClosing);
+  assert.ok(nearbyRestaurant);
+  assert.ok(cleaning);
+  assert.match(renderTemplate(breakfast, "KO", { branchName: "코엑스점" }), /UH SUITE 코엑스점/);
+  assert.match(renderTemplate(invoice, "EN"), /does not issue separate invoices directly/);
+  assert.match(renderTemplate(cancellation, "JP"), /チェックイン1週間以内/);
+  assert.match(renderTemplate(laundry, "CN"), /洗衣服务/);
+  assert.match(renderTemplate(kakaoConnect, "EN"), /branch you would like to inquire about/);
+  assert.match(renderTemplate(kakaoClosing, "KO"), /계속 상담이 가능/);
+  assert.match(renderTemplate(nearbyRestaurant, "KO"), /청기와타운 선릉점/);
+  assert.match(
+    renderTemplate(cleaning, "KO", {
+      cleaningDate: "5월 26일",
+      cleaningRoom: "A302",
+      cleaningTimeSlot: "13:00-15:00",
+      replyDeadline: "오늘 18:00",
+      hotelName: "UH SUITE",
+    }),
+    /5월 26일에 고객님의 A302 전체 청소가 예정되어 있습니다\./,
+  );
+});
+
 test("context and room remark command contracts surface operator-visible failure paths", () => {
   assert.deepEqual(guardRequiredContext("pmsPage", { isPmsPage: false, isGuestRecord: false }), {
     ok: false,
-    message: "로그인된 WINGS 페이지를 열어주십시오",
+    message: "WINGS 브라우저 탭에서 진행하여주십시오.",
   });
   assert.deepEqual(guardRequiredContext("guestRecord", { isPmsPage: true, isGuestRecord: false }), {
     ok: false,

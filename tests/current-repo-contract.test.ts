@@ -48,8 +48,8 @@ test("generated agent run receipts are neither tracked nor allowed back into the
   assert.match(read(".gitignore"), /^\.agent-runs\/$/m);
 });
 
-test("Git-managed test surface contains only the current contract suite", () => {
-  const trackedTests = execFileSync("git", ["ls-files", "tests"], {
+test("current test surface contains only the current contract suite", () => {
+  const currentTests = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "tests"], {
     cwd: root,
     encoding: "utf8",
   })
@@ -57,10 +57,11 @@ test("Git-managed test surface contains only the current contract suite", () => 
     .filter((file) => file && existsSync(join(root, file)))
     .sort();
 
-  assert.deepEqual(trackedTests, [
+  assert.deepEqual(currentTests, [
     "tests/current-catalog-routing.test.ts",
     "tests/current-data-flows.test.ts",
     "tests/current-extension-boundary.test.ts",
+    "tests/current-manual-variable-flow.test.ts",
     "tests/current-repo-contract.test.ts",
     "tests/current-storage-settings.test.ts",
   ]);
@@ -75,7 +76,7 @@ test("legacy sidepanel product surface is absent and current structure docs do n
 });
 
 test("Svelte UI files do not own operation codes, customer numbers, PMS endpoints, or fake placeholder business data", () => {
-  const files = execFileSync("git", ["ls-files", "src/ui"], {
+  const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "src/ui"], {
     cwd: root,
     encoding: "utf8",
   })
@@ -88,6 +89,8 @@ test("Svelte UI files do not own operation codes, customer numbers, PMS endpoint
     /IR04_0100X_V03/,
     /\b(?:00064633|00048147)\b/,
     /\b(?:BSNS_CODE|PROPERTY_NO|PP_BSNS_CODE)\b/,
+    /\b(?:AIRPORT_VAN_MANAGEMENT|OTA_RESERVATION_INPUT|LAUNDRY_MANAGEMENT|SETTINGS)\b/,
+    /\b(?:PICKUP|SENDING|CASH|CARD|ROOM_CHARGE|RECEIVED|WASHER|DRYER|READY|IN_PROGRESS)\b/,
     /fake|demo|sample customer|placeholder business data/i,
   ];
 

@@ -31,6 +31,13 @@ const branchName: TemplateVariable = {
   kind: "manualOptional",
 };
 
+const branchDisplayNameVariables: TemplateVariable[] = [
+  { name: "branchName", label: "지점이름", kind: "manualOptional" },
+  { name: "branchName", label: "Branch Name", kind: "manualOptional" },
+  { name: "branchName", label: "支店名", kind: "manualOptional" },
+  { name: "branchName", label: "分店名称", kind: "manualOptional" },
+];
+
 const hotelName: TemplateVariable = {
   name: "hotelName",
   label: "호텔명",
@@ -79,22 +86,30 @@ const roomType: TemplateVariable = {
   kind: "manualOptional",
 };
 
+const cleaningNoticeVariables: TemplateVariable[] = [
+  { name: "cleaningDate", label: "청소 예정일", kind: "manualOptional" },
+  { name: "cleaningRoom", label: "객실명/객실번호", kind: "manualOptional" },
+  { name: "cleaningTimeSlot", label: "청소 가능 시간대", kind: "manualOptional" },
+  { name: "replyDeadline", label: "회신 마감일시", kind: "manualOptional" },
+  hotelName,
+];
+
 const rentalItemName: TemplateVariable = {
   name: "rentalItemName",
   label: "대여 물품명",
-  kind: "manualOptional",
+  kind: "manualRequired",
 };
 
 const lostItemName: TemplateVariable = {
   name: "lostItemName",
   label: "분실 물품명",
-  kind: "manualOptional",
+  kind: "manualRequired",
 };
 
 const visitTime: TemplateVariable = {
   name: "visitTime",
   label: "방문 예정 시간",
-  kind: "manualOptional",
+  kind: "manualRequired",
 };
 
 const expectedArrivalTime: TemplateVariable = {
@@ -347,6 +362,385 @@ Thank you.`,
     requiresContext: "none",
     editable: true,
     defaultValue: "요청하신 건과 관련하여 직원이 {visitTime} 이내로 객실에 방문할 예정입니다.",
+  }),
+  defineTemplate({
+    id: "quick-breakfast-inquiry",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "조식 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하십니까, UH SUITE [지점이름]입니다.
+
+부득이하게도 저희 호텔은 조식을 제공하는 지점이 아닙니다.
+
+문의주신 조식 서비스는 제공이 불가한 점 양해 부탁드립니다.
+
+감사합니다.`,
+      EN: `Dear Guest,
+
+This is UH SUITE [Branch Name].
+
+Unfortunately, our hotel is not a branch that provides breakfast service.
+
+We kindly ask for your understanding that the breakfast service you inquired about is not available.
+
+Thank you.`,
+      JP: `お客様
+
+UH SUITE [支店名]でございます。
+
+誠に恐れ入りますが、当ホテルは朝食を提供している支店ではございません。
+
+お問い合わせいただいた朝食サービスの提供ができない点、何卒ご了承くださいませ。
+
+ありがとうございます。`,
+      CN: `尊敬的客人，您好。
+
+这里是 UH SUITE [分店名称]。
+
+很抱歉，本酒店并非提供早餐的分店。
+
+您咨询的早餐服务无法提供，敬请谅解。
+
+谢谢。`,
+    },
+    variables: branchDisplayNameVariables,
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "문의주신 조식 서비스는 제공이 불가한 점 양해 부탁드립니다.",
+  }),
+  defineTemplate({
+    id: "quick-invoice-inquiry",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "인보이스 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `저희 호텔은 자체적인 인보이스를 발급하지 않고 있습니다.
+
+인보이스 요청 또는 관련 문의사항은 예약을 진행하신 플랫폼 고객센터로 문의해 주시기 바랍니다.
+
+감사합니다.`,
+      EN: `Please note that our hotel does not issue separate invoices directly.
+
+For invoice requests or related inquiries, please contact the customer service center of the platform through which you made your reservation.
+
+Thank you.`,
+      JP: `誠に恐れ入りますが、当ホテルでは独自のインボイス発行は行っておりません。
+
+インボイスのご依頼または関連するお問い合わせにつきましては、ご予約いただいたプラットフォームのカスタマーセンターへお問い合わせくださいませ。
+
+ありがとうございます。`,
+      CN: `很抱歉，本酒店不单独开具自有发票/账单。
+
+如需申请发票/账单或有相关咨询，请联系您进行预订的平台客服中心。
+
+谢谢。`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "인보이스 요청 또는 관련 문의사항은 예약을 진행하신 플랫폼 고객센터로 문의해 주시기 바랍니다.",
+  }),
+  defineTemplate({
+    id: "quick-cancellation-within-week",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "체크인 1주이내 취소 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `호텔 정책상 체크인 1주 이내 예약 건에 대한 취소 수수료 면제 및 환불 요청은 어떠한 사유로도 불가합니다.
+
+이는 지점 자체의 결정이 아닌 모회사와의 계약 사항으로 인해 불가한 점 양해 부탁드립니다.
+
+이의 제기가 필요하신 경우, 예약을 진행하신 플랫폼으로 문의해 주시기 바랍니다.`,
+      EN: `According to hotel policy, requests for cancellation-fee waivers or refunds for reservations within one week of check-in cannot be accepted for any reason.
+
+Please understand that this is not a decision made independently by the branch, but is due to contractual terms with the parent company.
+
+If you wish to raise an objection, please contact the platform through which you made your reservation.`,
+      JP: `ホテル規定により、チェックイン1週間以内のご予約につきましては、いかなる理由であってもキャンセル料の免除および返金のご要望はお受けできません。
+
+こちらは支店独自の判断ではなく、親会社との契約事項に基づく対応でございますので、何卒ご了承くださいませ。
+
+異議申し立てをご希望の場合は、ご予約いただいたプラットフォームへお問い合わせくださいませ。`,
+      CN: `根据酒店政策规定，入住前 1 周内的预订，无论任何理由，均无法受理取消手续费减免及退款申请。
+
+敬请谅解，此事项并非分店自行决定，而是基于与母公司的合同条款所规定。
+
+如需提出异议，请联系您进行预订的平台。`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "체크인 1주 이내 예약 건에 대한 취소 수수료 면제 및 환불 요청은 불가합니다.",
+  }),
+  defineTemplate({
+    id: "quick-laundry-service-inquiry",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "세탁 서비스 문의",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `세탁의 경우, 세탁물을 프론트에 맡겨주시면 세탁 후 건조까지 도와드리는 세탁 서비스를 운영하고 있습니다.
+
+추가 비용 없이 무료로 이용하실 수 있으며, 건조가 완료된 후 안내 문자를 드리고 있습니다.
+
+다음은 서비스 이용 시 유의하셔야 할 사항입니다.
+
+- 세탁 서비스를 이용하시기 위해서는 세탁 서비스 이용 동의서를 작성하신 후 이용 가능합니다.
+- 하루에 한 번 이용 제한이 있으며, 과도하게 많은 세탁물(5kg 초과)은 이용이 불가합니다.
+- 세탁 서비스 이용이 많은 날에는 완료까지 시간이 오래 걸릴 수 있습니다.
+
+사전 문의가 없더라도 프론트에 세탁물을 맡겨주시면 바로 도와드리겠습니다.
+
+감사합니다 :)`,
+      EN: `For laundry, we provide a laundry service where you may leave your laundry at the front desk, and we will wash and dry it for you.
+
+This service is available free of charge. We will send you a text message once drying has been completed.
+
+Please note the following before using the service.
+
+- To use the laundry service, you must complete the laundry service consent form in advance.
+- The service is limited to once per day, and excessive amounts of laundry (over 5 kg) cannot be accepted.
+- On days with high laundry service demand, completion may take longer than usual.
+
+You do not need to make an advance inquiry. Please leave your laundry at the front desk, and we will assist you right away.
+
+Thank you :)`,
+      JP: `ランドリーにつきましては、フロントにお洗濯物をお預けいただければ、洗濯後に乾燥まで行うランドリーサービスを実施しております。
+
+追加料金はなく、無料でご利用いただけます。乾燥が完了しましたら、案内メッセージをお送りしております。
+
+サービスご利用の際は、以下の点にご注意ください。
+
+- ランドリーサービスをご利用いただくには、ランドリーサービス利用同意書のご記入が必要です。
+- ご利用は1日1回までとなっており、過度に多いお洗濯物（5kg超）はお受けできません。
+- ランドリーサービスのご利用が多い日は、完了までにお時間がかかる場合がございます。
+
+事前のお問い合わせがなくても、フロントにお洗濯物をお預けいただければすぐに対応いたします。
+
+ありがとうございます :)`,
+      CN: `关于洗衣服务，您可将衣物交至前台，我们将为您提供洗涤及烘干服务。
+
+该服务无需额外费用，可免费使用。烘干完成后，我们会通过短信通知您。
+
+使用服务前，请留意以下事项。
+
+- 使用洗衣服务前，需填写洗衣服务使用同意书。
+- 每天限使用一次，衣物量过多（超过 5kg）时无法受理。
+- 洗衣服务使用人数较多时，完成时间可能会较长。
+
+无需提前咨询，您可直接将衣物交至前台，我们将立即为您处理。
+
+谢谢 :)`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "세탁물을 프론트에 맡겨주시면 세탁 후 건조까지 도와드리는 세탁 서비스를 운영하고 있습니다.",
+  }),
+  defineTemplate({
+    id: "quick-kakao-channel-connect",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "카톡 채널 문의 연결",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하십니까 고객님,
+
+UH Suite에 문의주셔서 감사합니다.
+
+문의하고자 하시는 지점명을 말씀해주시면 해당 지점으로 연결을 도와드리겠습니다 :)`,
+      EN: `Dear Guest,
+
+Thank you for contacting UH Suite.
+
+Please let us know the branch you would like to inquire about, and we will assist you in connecting with the relevant branch :)`,
+      JP: `お客様
+
+UH Suiteへお問い合わせいただきありがとうございます。
+
+お問い合わせをご希望の支店名をお知らせいただけましたら、該当支店へおつなぎいたします :)`,
+      CN: `尊敬的客人，您好。
+
+感谢您咨询 UH Suite。
+
+请告知您想咨询的分店名称，我们将协助为您转接至相应分店 :)`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "문의하고자 하시는 지점명을 말씀해주시면 해당 지점으로 연결을 도와드리겠습니다 :)",
+  }),
+  defineTemplate({
+    id: "quick-kakao-channel-closing",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "카톡 채널 문의 마무리",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `문의 사항이나 궁금하신 점이 더 있으시다면 계속 상담이 가능하오니,
+
+언제든 연락 부탁드립니다.
+
+감사합니다 :)`,
+      EN: `If you have any further inquiries or questions, we are available to continue assisting you.
+
+Please feel free to contact us anytime.
+
+Thank you :)`,
+      JP: `お問い合わせ事項やご不明な点がございましたら、引き続きご案内が可能でございます。
+
+いつでもお気軽にご連絡くださいませ。
+
+ありがとうございます :)`,
+      CN: `如您还有其他咨询事项或疑问，我们可以继续为您提供协助。
+
+请随时联系我们。
+
+谢谢 :)`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "문의 사항이나 궁금하신 점이 더 있으시다면 계속 상담이 가능하오니, 언제든 연락 부탁드립니다.",
+  }),
+  defineTemplate({
+    id: "quick-nearby-restaurant-inquiry",
+    category: "QUICK_REPLY",
+    audience: "guest",
+    title: "근처 식당 문의",
+    branchScope: ["seolleung"],
+    languages: {
+      KO: `- Korean BBQ -
+
+https://maps.app.goo.gl/SH41Ac6F4ntta6Be6
+- 청기와타운 선릉점 ㅣChungkiwa town Seolleung
+지하1층 24 KR 서울특별시 강남구 서울특별시 강남구 테헤란로64길
+
+https://maps.app.goo.gl/T4AazVjbtuoTvKTr5
+- 안녕, 제주 (Korean Pork BBQ & Sea food)
+서울특별시 강남구 역삼동 699 16번지 1층
+
+https://maps.app.goo.gl/8h7EkGKJiVa3Qgjh9
+- 육성급 (Korean Pork BBQ main restaurant)
+서울특별시 강남구 테헤란로79길 25 1층
+
+https://maps.app.goo.gl/kSQW9qoXLS3ZQNDy9
+- 이치류 선릉점 (Lamb Rib main restaurant)
+서울특별시 강남구 선릉로76길 30
+
+https://maps.app.goo.gl/NHxDC8YJQtrGdCVP9
+- 고담식당 (Aged Korean pork)
+서울특별시 강남구 선릉로 530 고담식당 2층
+
+https://maps.app.goo.gl/et1WUF6GmA1yRVkLA
+- 수묵 (Yukhoe / Jjigae)
+서울특별시 강남구 테헤란로70길 13
+
+- Bone Soup (24hrs) -
+
+https://maps.app.goo.gl/ziXbnuwCaJ9HCmne9
+- 1974비래옥 선릉점
+서울특별시 강남구 테헤란로63길 9
+
+https://maps.app.goo.gl/8qEayqHr9EYyAMTP7
+- 수하동 본점
+서울특별시 강남구 테헤란로78길 16
+
+https://maps.app.goo.gl/t9q3k1PphyRn64Y28
+- 신동궁 감자탕 뼈숯불구이 선릉직영점
+서울특별시 강남구 선릉로86길 39
+
+https://maps.app.goo.gl/9kVyxv4XrSD8TGQv9
+- 선릉을지순대국
+서울특별시 강남구 선릉로86길 46
+
+- Brunches -
+
+https://maps.app.goo.gl/Gt2Y4gjAp3kun5TH6
+- 비마이게스트 선릉점
+서울특별시 강남구 삼성동 141-8
+
+https://maps.app.goo.gl/yk77GBjwAbQ9kFtu8
+- 블랙랩
+서울특별시 강남구 선릉로96길 5-16
+
+https://maps.app.goo.gl/du3haFnu58GJhxe6A
+- 르뱅룰즈 선릉
+서울특별시 강남구 삼성로95길 27`,
+    },
+    variables: [],
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "근처 식당 목록을 안내합니다.",
+  }),
+  defineTemplate({
+    id: "full-cleaning-notice",
+    category: "GUEST_NOTICE",
+    audience: "guest",
+    title: "전체 청소 안내",
+    branchScope: ALL_BRANCHES,
+    languages: {
+      KO: `안녕하십니까, 고객님.
+
+[청소 예정일]에 고객님의 [객실명/객실번호] 전체 청소가 예정되어 있습니다.
+청소 가능 시간은 [청소 가능 시간대]입니다.
+
+전체 청소 진행을 원하시는 경우, [회신 마감일시]까지 회신 부탁드립니다.
+
+회신이 없을 경우 전체 청소를 원하지 않으시는 것으로 판단하여 진행하지 않겠습니다.
+
+감사합니다.
+[호텔명]`,
+      EN: `Dear Guest,
+
+A full cleaning of your [객실명/객실번호] is scheduled for [청소 예정일].
+The available cleaning time is [청소 가능 시간대].
+
+If you would like us to proceed with the full cleaning, please reply by [회신 마감일시].
+
+If we do not receive a response, we will assume that you do not wish to have a full cleaning and will not proceed.
+
+Thank you.
+[호텔명]`,
+      JP: `お客様
+
+[청소 예정일]に、お客様の[객실명/객실번호]の全体清掃を予定しております。
+清掃可能時間は[청소 가능 시간대]でございます。
+
+全体清掃をご希望の場合は、[회신 마감일시]までにご返信くださいませ。
+
+ご返信がない場合は、全体清掃をご希望されないものと判断し、実施いたしません。
+
+ありがとうございます。
+[호텔명]`,
+      CN: `尊敬的客人，您好。
+
+您的[객실명/객실번호]预计于[청소 예정일]进行全房清洁。
+可清洁时间为[청소 가능 시간대]。
+
+如您希望进行全房清洁，请于[회신 마감일시]前回复我们。
+
+如未收到回复，我们将视为您不需要全房清洁，并不会安排进行。
+
+谢谢。
+[호텔명]`,
+    },
+    variables: cleaningNoticeVariables,
+    attachments: [],
+    requiresContext: "none",
+    editable: true,
+    defaultValue: "[청소 예정일]에 고객님의 [객실명/객실번호] 전체 청소가 예정되어 있습니다.",
   }),
   defineTemplate({
     id: "early-checkin-inquiry",
