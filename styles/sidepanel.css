@@ -95,8 +95,8 @@ body {
   --home-submenu-row-height: 48px;
   --home-root-row-gap: 16px;
   --home-panel-inline-pad: 32px;
-  --home-root-panel-top-pad: 32px;
-  --home-detail-panel-top-pad: 32px;
+  --home-root-panel-top-pad: 22px;
+  --home-detail-panel-top-pad: 22px;
   --home-row-icon-size: 20px;
 
   width: var(--panel-width);
