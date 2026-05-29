@@ -24,6 +24,7 @@ import {
 } from "../src/application/laundry-records.js";
 import { readLaundryRecords } from "../src/laundry/storage.js";
 import { upsertWingsRemarkLine } from "../src/application/wings-remark.js";
+import { fillWingsReservationFromPreview } from "../src/application/ota-reservation-input.js";
 import { fetchPmsGuests, PmsRequestError } from "../src/pms/client.js";
 import { buildPmsSearchParams } from "../src/pms/filter-builder.js";
 import { normalizeOtaReservation, requireOtaDraftMinimum } from "../src/ota/normalizer.js";
@@ -101,7 +102,26 @@ test("OTA normalization builds WINGS input fields without save or confirm semant
   assert.equal(fields.DEPT_DATE, "2026-05-01");
   assert.equal(fields.ROOM_FEE, "297150");
   assert.equal(fields.TOTAL_AMT, "594300");
+  assert.equal(fields.SOURCE_NAME, "Telephone");
+  assert.equal(fields.SOURCE_CODE, "PHN");
   assert.equal(Object.keys(fields).some((key) => /save|insert|update|confirm/i.test(key)), false);
+});
+
+test("Naver business id from the OTA document participates in branch validation", () => {
+  const draft = normalizeOtaReservation(
+    {
+      source: "naver",
+      pageUrl: "https://partner.booking.naver.com/bizes/1217752/booking-list-view/bookings/1219592380",
+      businessId: "1217752",
+      bookingId: "1219592380",
+      apiUrl: "https://partner.booking.naver.com/api/businesses/1217752/bookings/1219592380",
+    },
+    { guestName: "Kim", phone: "01012345678", checkInDate: "20260501", checkOutDate: "20260503" },
+  );
+
+  assert.equal(draft.branchId, "gangnam");
+  assert.throws(() => buildWingsReservationFieldMap(draft, "coex"), /올바른 지점이 아닙니다/);
+  assert.equal(buildWingsReservationFieldMap(draft, "gangnam").CORP_CUSTM_NO, "00048147");
 });
 
 test("OTA branch mismatch and WINGS remark dependency gaps fail before hidden side effects", async () => {
@@ -134,6 +154,36 @@ test("OTA branch mismatch and WINGS remark dependency gaps fail before hidden si
   );
   assert.equal(result.line, "- 제공 카드키 : 2장");
   assert.equal(writtenRemark, "기존 메모\n\n- 제공 카드키 : 2장");
+});
+
+test("WINGS fill rebinds OTA preview fields to the current selected branch", async () => {
+  const draft = normalizeOtaReservation(
+    {
+      source: "naver",
+      pageUrl: "https://partner.booking.naver.com/bookings/AG-1",
+      businessId: "9999999",
+      bookingId: "AG-1",
+      apiUrl: "https://partner.booking.naver.com/bookings/AG-1",
+    },
+    { guestName: "Kim", phone: "01012345678", checkInDate: "20260501", checkOutDate: "20260503" },
+  );
+  const preview = {
+    draft,
+    fields: buildWingsReservationFieldMap(draft, "coex"),
+  };
+  let filledFields: Record<string, string> = {};
+
+  await fillWingsReservationFromPreview(preview, "gangnam", {
+    fillForm: async (fields) => {
+      filledFields = fields;
+      return { filled: Object.keys(fields), missing: [] };
+    },
+  });
+
+  assert.equal(filledFields.PROPERTY_NO, "91");
+  assert.equal(filledFields.BSNS_CODE, "91");
+  assert.equal(filledFields.CORP_CUSTM_NAME, "네이버[91]");
+  assert.equal(filledFields.CORP_CUSTM_NO, "00048147");
 });
 
 test("operator OTA errors use confirmed copy and collapse repeated setup failures", () => {

@@ -5,7 +5,13 @@ import type {
   UnifiedTemplateDefinition,
 } from "./template-types.js";
 
-export type MenuId = TemplateMenuId | "AIRPORT_VAN_MANAGEMENT" | "OTA_RESERVATION_INPUT" | "SETTINGS";
+export type MenuId =
+  | TemplateMenuId
+  | "AIRPORT_VAN_MANAGEMENT"
+  | "OTA_RESERVATION_INPUT"
+  | "SETTINGS"
+  | "TEMPLATE_EDITOR"
+  | "FORM_EDITOR";
 
 export type HomeMenuSectionId = "primary" | "room-operations" | "work-forms";
 
@@ -13,9 +19,13 @@ export type MenuScreenKind =
   | "customerGuidance"
   | "airportVan"
   | "laundry"
+  | "salesManagement"
+  | "roomRemarkMemo"
   | "templateList"
   | "otaReservationInput"
-  | "settings";
+  | "settings"
+  | "templateSettings"
+  | "formSettings";
 
 export type MenuTemplateFilter =
   | { kind: "menu" }
@@ -89,16 +99,6 @@ export type HomeNavigationLabels = {
   openSubmenuLabel: (title: string) => string;
 };
 
-export type HomeQuickAction = {
-  kind: "menu";
-  id: string;
-  label: string;
-  icon: string;
-  menuId: MenuId;
-  detailLabel: string;
-  confirmLabel: string;
-};
-
 export type RoomsSettingsCommandId = "UPSERT_WINGS_REMARK";
 
 export type RoomsSettingsCommandAction = {
@@ -115,7 +115,7 @@ export type RoomsSettingsCommandAction = {
   requiresWingsReservationWindow?: boolean;
 };
 
-export type RoomsSettingsAction = HomeQuickAction | RoomsSettingsCommandAction;
+export type RoomsSettingsAction = RoomsSettingsCommandAction;
 
 export class MenuRoutingError extends Error {
   constructor(message: string) {
@@ -199,7 +199,7 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "매지출 관리",
         description: "매지출 보고",
         icon: "payments",
-        screenKind: "templateList",
+        screenKind: "salesManagement",
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "room-operations",
@@ -214,7 +214,7 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         title: "객실 정보 메모",
         description: "객실 물품과 메모 작성",
         icon: "bedroom_parent",
-        screenKind: "templateList",
+        screenKind: "roomRemarkMemo",
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "work-forms",
@@ -265,18 +265,36 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
 
 export const settingsMenu: MenuItem = Object.freeze({
   id: "SETTINGS",
-  title: "템플릿 / 양식 편집",
-  description: "템플릿 기본값과 사용자 항목",
-  icon: "design_services",
+  title: "설정",
+  description: "운영 설정",
+  icon: "settings",
   screenKind: "settings",
   templateFilter: Object.freeze({ kind: "none" }),
   home: Object.freeze({
     sectionId: "work-forms",
-    title: "템플릿 / 양식 편집",
-    description: "문구와 사용자 항목 관리",
-    icon: "design_services",
+    title: "설정",
+    description: "운영 설정",
+    icon: "settings",
     order: 90,
   }),
+});
+
+export const templateEditorMenu: MenuItem = Object.freeze({
+  id: "TEMPLATE_EDITOR",
+  title: "템플릿 편집",
+  description: "템플릿 문구 관리",
+  icon: "description",
+  screenKind: "templateSettings",
+  templateFilter: Object.freeze({ kind: "none" }),
+});
+
+export const formEditorMenu: MenuItem = Object.freeze({
+  id: "FORM_EDITOR",
+  title: "양식 편집",
+  description: "필수 입력값 관리",
+  icon: "edit_note",
+  screenKind: "formSettings",
+  templateFilter: Object.freeze({ kind: "none" }),
 });
 
 const HOME_SECTION_LABELS: Readonly<Record<HomeMenuSectionId | "settings", string>> =
@@ -287,20 +305,7 @@ const HOME_SECTION_LABELS: Readonly<Record<HomeMenuSectionId | "settings", strin
     settings: "설정",
   });
 
-export const homeQuickActions: readonly HomeQuickAction[] = Object.freeze([
-  Object.freeze({
-    kind: "menu",
-    id: "settings",
-    label: "설정",
-    icon: "settings",
-    menuId: "SETTINGS",
-    detailLabel: "설정 열기",
-    confirmLabel: "열기",
-  }),
-]);
-
 export const roomsSettingsActions: readonly RoomsSettingsAction[] = Object.freeze([
-  ...homeQuickActions,
   Object.freeze({
     kind: "command",
     id: "upsert-wings-remark",
@@ -478,8 +483,8 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     icon: "design_services",
     selectionMode: "menuScreen",
     items: Object.freeze([
-      Object.freeze({ id: "template-customer", title: "고객 템플릿 / 빠른답변", icon: "description", menuId: "SETTINGS" }),
-      Object.freeze({ id: "template-work", title: "업무 내용 변경", icon: "edit_note", menuId: "SETTINGS" }),
+      Object.freeze({ id: "template-edit", title: "템플릿 편집", icon: "description", menuId: "TEMPLATE_EDITOR" }),
+      Object.freeze({ id: "form-edit", title: "양식 편집", icon: "edit_note", menuId: "FORM_EDITOR" }),
     ]),
   }),
 ]);
@@ -571,7 +576,7 @@ export function getRoomsSettingsCommand(
 }
 
 export function getMenu(menuId: MenuId): MenuItem {
-  const menu = [...menuGroups.flatMap((group) => group.items), settingsMenu].find(
+  const menu = [...menuGroups.flatMap((group) => group.items), settingsMenu, templateEditorMenu, formEditorMenu].find(
     (item) => item.id === menuId,
   );
   if (!menu) {

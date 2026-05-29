@@ -27,6 +27,7 @@
     LAUNDRY_SCHEDULED_TARGET,
     getAllowedLaundryMoveTargets,
   } from "../../application/laundry-records.js";
+  import { isPrimaryRemarkTemplateId } from "../../domain/remarks.js";
   import type { LaundryColumnView } from "../../application/laundry-records.js";
   import type { LaundryMoveTarget, LaundryRecord } from "../../laundry/types.js";
   import type { Language } from "../../types.js";
@@ -87,6 +88,7 @@
   export let onSetTemplateVariableValue: (variableName: string, value: string) => void;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
   export let onCopyAirportVanText: (target: AirportVanCopyTarget) => void;
+  export let onUpsertRoomRemark: (templateId: string) => void;
 
   let resetArmed = false;
   let expandedTemplateId: string | null = null;
@@ -94,6 +96,7 @@
   let draggedLaundryRecordId = "";
   let invalidDropTarget: LaundryMoveTarget | null = null;
   let laundryActionRecordId: string | null = null;
+  let selectedTemplateId = "";
 
   $: templateGroups = resolveTemplateGroups(templates);
   $: availableLanguages = Array.from(
@@ -101,6 +104,11 @@
   ) as Language[];
   $: showLanguageSelector = usesWorkLanguageSelector(menu.id) && availableLanguages.length > 0;
   $: airportRoutePointLabels = getRoutePointLabels(airportVanFormValues.rideDirection);
+  $: selectedTemplate = templates.find((template) => template.id === selectedTemplateId) || null;
+  $: selectedTemplateVariables = selectedTemplate ? getManualVariables(selectedTemplate) : [];
+  $: roomContextLabel = templateValue("displayRoom") || templateValue("roomNo");
+  $: roomMemoFeaturedTemplates = templates.filter((template) => isPrimaryRemarkTemplateId(template.id));
+  $: roomMemoOtherTemplates = templates.filter((template) => !isPrimaryRemarkTemplateId(template.id));
 
   function laundryBlockTitle(record: LaundryRecord): string {
     return record.displayRoom || record.roomNo || record.itemSummary;
@@ -138,8 +146,17 @@
     });
   }
 
+  function templateValue(variableName: string): string {
+    return templateVariableValues[variableName] || templateValues[variableName] || "";
+  }
+
   function toggleTemplate(templateId: string) {
     expandedTemplateId = expandedTemplateId === templateId ? null : templateId;
+  }
+
+  function selectTemplate(templateId: string) {
+    selectedTemplateId = templateId;
+    expandedTemplateId = templateId;
   }
 
   function handleVariableInput(variableName: string, event: Event) {
@@ -529,27 +546,137 @@
       </div>
     </details>
 
-  {:else if menu.screenKind === "settings"}
+  {:else if menu.screenKind === "salesManagement"}
+    <section class="sales-console" aria-label="매지출 입력">
+      <section class="template-pick-list" aria-label="매지출 양식">
+        {#each templates as template}
+          <article class:active={copiedTemplateId === template.id} class="template-pick-row">
+            <button type="button" onclick={() => onCopyTemplate(template.id)}>
+              <span class="template-icon" aria-hidden="true">
+                <MaterialIcon name={template.icon} size={18} />
+              </span>
+              <strong>{template.title}</strong>
+            </button>
+            <button
+              class="copy-action"
+              type="button"
+              aria-label={getTemplateRequirement(template) || `${template.title} 복사`}
+              disabled={loading || Boolean(getTemplateRequirement(template))}
+              onclick={() => onCopyTemplate(template.id)}
+            >
+              <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={17} />
+            </button>
+          </article>
+        {/each}
+      </section>
+    </section>
+  {:else if menu.screenKind === "roomRemarkMemo"}
+    <section class="room-memo-console" aria-label="객실 정보 메모">
+      <header class="room-memo-head">
+        <strong>{roomContextLabel || "객실 선택"}</strong>
+        <span>{hasSelectedPmsRecord ? "선택됨" : "미선택"}</span>
+      </header>
+
+      {#if roomMemoFeaturedTemplates.length > 0}
+        <section class="room-inventory-grid" aria-label="객실 보유 물품">
+          {#each roomMemoFeaturedTemplates as template}
+            {@const variable = getManualVariables(template)[0]}
+            <article class="inventory-stepper">
+              <span class="inventory-icon" aria-hidden="true">
+                <MaterialIcon name={template.icon} size={18} />
+              </span>
+              <strong>{template.title}</strong>
+              {#if variable}
+                <input
+                  value={templateValue(variable.name)}
+                  placeholder="0"
+                  inputmode="numeric"
+                  oninput={(event) => handleVariableInput(variable.name, event)}
+                />
+              {/if}
+              <button
+                class="copy-action"
+                type="button"
+                aria-label={getTemplateRequirement(template) || `${template.title} 리마크 입력`}
+                disabled={loading || Boolean(getTemplateRequirement(template))}
+                onclick={() => onUpsertRoomRemark(template.id)}
+              >
+                <MaterialIcon name={copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
+              </button>
+            </article>
+          {/each}
+        </section>
+      {/if}
+
+      {#if roomMemoOtherTemplates.length > 0}
+        <section class="template-pick-list" aria-label="객실 메모 양식">
+          {#each roomMemoOtherTemplates as template}
+            <article class:active={selectedTemplate?.id === template.id} class="template-pick-row">
+              <button type="button" onclick={() => selectTemplate(template.id)}>
+                <span class="template-icon" aria-hidden="true">
+                  <MaterialIcon name={template.icon} size={18} />
+                </span>
+                <strong>{template.title}</strong>
+              </button>
+              <button
+                class="copy-action"
+                type="button"
+                aria-label={getTemplateRequirement(template) || `${template.title} 리마크 입력`}
+                disabled={loading || Boolean(getTemplateRequirement(template))}
+                onclick={() => onUpsertRoomRemark(template.id)}
+              >
+                <MaterialIcon name={copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
+              </button>
+            </article>
+          {/each}
+        </section>
+      {/if}
+
+      {#if selectedTemplate && selectedTemplateVariables.length > 0}
+        <section class="work-input-card" aria-label={`${selectedTemplate.title} 입력`}>
+          <div class="variable-grid">
+            {#each selectedTemplateVariables as variable}
+              <label class:required={variable.kind === "manualRequired"} class="variable-field">
+                <span>{variable.label}</span>
+                <input
+                  value={templateValue(variable.name)}
+                  placeholder={variable.label}
+                  oninput={(event) => handleVariableInput(variable.name, event)}
+                />
+              </label>
+            {/each}
+          </div>
+        </section>
+      {/if}
+    </section>
+  {:else if menu.screenKind === "templateSettings"}
     <section class="settings-panel">
-      <article>
-        <MaterialIcon name="description" size={20} />
-        <div>
-          <strong>고객 템플릿 / 빠른답변</strong>
-          <span>사용자 수정값</span>
-        </div>
-      </article>
-      <article>
-        <MaterialIcon name="assignment" size={20} />
-        <div>
-          <strong>업무 내용 변경</strong>
-          <span>업무 양식</span>
-        </div>
-      </article>
+      <header class="settings-editor-head">
+        <span class="template-icon" aria-hidden="true">
+          <MaterialIcon name={menu.icon} size={20} />
+        </span>
+        <strong>{menu.title}</strong>
+      </header>
+      {#if resetArmed}
+        <p class="reset-confirmation">사용자 수정값이 삭제됩니다.</p>
+      {/if}
+      <button class="danger-action" type="button" disabled={loading} onclick={requestResetTemplateSettings}>
+        <MaterialIcon name="restart_alt" size={18} />
+        <span>{resetArmed ? "다시 눌러 초기화" : "템플릿 설정 초기화"}</span>
+      </button>
+    </section>
+  {:else if menu.screenKind === "formSettings"}
+    <section class="settings-panel">
+      <header class="settings-editor-head">
+        <span class="template-icon" aria-hidden="true">
+          <MaterialIcon name={menu.icon} size={20} />
+        </span>
+        <strong>{menu.title}</strong>
+      </header>
       {#if requiredManualVariables.length > 0}
         <section class="settings-inputs" aria-label="필수 입력값">
           <header>
             <strong>필수 입력값</strong>
-            <span>복사 전 자동 적용</span>
           </header>
           <div class="variable-grid">
             {#each requiredManualVariables as variable}
@@ -565,13 +692,15 @@
           </div>
         </section>
       {/if}
-      {#if resetArmed}
-        <p class="reset-confirmation">사용자 수정값이 삭제됩니다.</p>
-      {/if}
-      <button class="danger-action" type="button" disabled={loading} onclick={requestResetTemplateSettings}>
-        <MaterialIcon name="restart_alt" size={18} />
-        <span>{resetArmed ? "다시 눌러 초기화" : "템플릿 설정 초기화"}</span>
-      </button>
+    </section>
+  {:else if menu.screenKind === "settings"}
+    <section class="settings-panel">
+      <header class="settings-editor-head">
+        <span class="template-icon" aria-hidden="true">
+          <MaterialIcon name={menu.icon} size={20} />
+        </span>
+        <strong>{menu.title}</strong>
+      </header>
     </section>
   {:else}
     {#if showLanguageSelector}
@@ -599,7 +728,6 @@
         <details class="work-accordion" open>
           <summary>
             <span>{group.label}</span>
-            <b>{group.templates.length}</b>
           </summary>
           <div class="template-list">
             {#each group.templates as template}
@@ -653,7 +781,6 @@
                   onclick={() => onCopyTemplate(template.id)}
                 >
                   <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={17} />
-                  <span>{copiedTemplateId === template.id ? "복사됨" : "복사"}</span>
                 </button>
               </article>
             {/each}

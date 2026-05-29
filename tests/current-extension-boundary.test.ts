@@ -66,7 +66,7 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.match(readFileSync(join(root, "src/ui/components/HomeView.svelte"), "utf8"), /export let initialGroupId = ""/);
   assert.match(sidePanel, /function syncViewFromController\(\)/);
   assert.match(sidePanel, /renderedBottomPanel = controller\.activeBottomPanel/);
-  assert.match(sidePanel, /renderedMenu = typeof target === "string" \? baseMenu : \{ \.\.\.baseMenu, title: target\.title, icon: target\.icon \}/);
+  assert.match(sidePanel, /renderedMenu = typeof target === "string"\s*\?\s*baseMenu\s*:\s*\{ \.\.\.baseMenu, title: target\.title, icon: target\.icon \}/);
   assert.match(sidePanel, /let renderedMenu = \$state<MenuItem \| null>\(null\)/);
   assert.match(sidePanel, /let renderedViewKey = \$state\(""\)/);
   assert.match(
@@ -103,7 +103,14 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.match(shellHeader, /class="branch-picker-strip"/);
   assert.doesNotMatch(shellHeader, /class="branch-trigger"/);
   assert.doesNotMatch(workSurface, />\s*\{getManualVariables\(template\)\.length\} 입력\s*</);
+  assert.doesNotMatch(workSurface, /<b>\{group\.templates\.length\}<\/b>|<b>\{requiredManualVariables\.length\}<\/b>|총 지출|복사 전 자동 적용/);
+  assert.doesNotMatch(workSurface, /<span>\{copiedTemplateId === template\.id \? "복사됨" : "복사"\}<\/span>/);
+  assert.doesNotMatch(workSurface, /menu\.id === "SALES_MANAGEMENT"|menu\.id === "ROOM_REMARK_MEMO"/);
+  assert.doesNotMatch(workSurface, /remark-card-keys|remark-rentals/);
+  assert.doesNotMatch(workSurface, /screenKind === "templateSettings" \|\| menu\.screenKind === "settings"/);
+  assert.doesNotMatch(workSurface, /screenKind === "formSettings" \|\| menu\.screenKind === "settings"/);
   assert.doesNotMatch(workSurface, /work-hero|template-meta|kanban-drop-zones|progress-card|진행 기록|업무 기록과 고객 전달|History Log Preview|진행상태|<p>\{menu\.description\}<\/p>/);
+  assert.doesNotMatch(readFileSync(join(root, "src/catalog/menu-routing.ts"), "utf8"), /homeQuickActions/);
   assert.doesNotMatch(screenStage + sidePanel, /onRefreshLaundry|onHideLaundryProgressEntry|onRemoveLaundryProgressEntry|laundryProgressLog/);
   assert.doesNotMatch(workSurface, /class="settings-inputs" aria-label="공항밴/);
   assert.doesNotMatch(workSurface, /<div class="kanban-stack" aria-label="세탁 상태">/);

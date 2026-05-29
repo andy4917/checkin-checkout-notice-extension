@@ -33,7 +33,9 @@
     lastHomeGroupId = typeof target === "string" ? "" : findHomeGroupId(target);
     homeReturnGroupId = "";
     const baseMenu = getMenu(typeof target === "string" ? target : target.menuId);
-    renderedMenu = typeof target === "string" ? baseMenu : { ...baseMenu, title: target.title, icon: target.icon };
+    renderedMenu = typeof target === "string"
+      ? baseMenu
+      : { ...baseMenu, title: target.title, icon: target.icon };
     renderedViewKey = typeof target === "string" ? target : `${target.menuId}:${target.id}`;
     renderedBottomPanel = null;
     await controller.openMenu(target);
@@ -146,6 +148,7 @@
       onSelectPmsRecord={controller.selectPmsGuestRecord}
       onSetAirportVanFormValue={controller.setAirportVanFormValue}
       onSetTemplateVariableValue={controller.setTemplateVariableValue}
+      onUpsertRoomRemark={controller.upsertRoomRemark}
     />
   {/key}
 </main>

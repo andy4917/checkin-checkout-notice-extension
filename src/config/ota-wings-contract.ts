@@ -9,8 +9,8 @@ export const WINGS_RESERVATION_DEFAULTS = Object.freeze({
   roomCount: "1",
   marketName: "Domestic Online",
   marketCode: "DOO",
-  sourceName: "OTA",
-  sourceCode: "OTA",
+  sourceName: "Telephone",
+  sourceCode: "PHN",
   rateName: "Rack Rate",
   rateCode: "RAC",
   lodgRoomCount: "0",
@@ -31,6 +31,10 @@ const NAVER_CUSTOMER_NUMBERS: Readonly<Record<BranchId, string>> = Object.freeze
   seolleung: "",
 });
 
+const NAVER_BUSINESS_BRANCH_IDS: Readonly<Record<string, BranchId>> = Object.freeze({
+  "1217752": "gangnam",
+});
+
 const STATION_BRANCH_IDS: Readonly<Record<string, BranchId>> = Object.freeze({
   "16": "gangnam",
   "18": "coex",
@@ -39,6 +43,7 @@ const STATION_BRANCH_IDS: Readonly<Record<string, BranchId>> = Object.freeze({
 
 export function normalizeWingsBranchFromOtaValue(value: string): BranchId | undefined {
   if (isBranchId(value)) return value;
+  if (NAVER_BUSINESS_BRANCH_IDS[value]) return NAVER_BUSINESS_BRANCH_IDS[value];
   if (STATION_BRANCH_IDS[value]) return STATION_BRANCH_IDS[value];
   const branch = Object.values(BRANCHES).find(
     (candidate) =>

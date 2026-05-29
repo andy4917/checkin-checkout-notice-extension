@@ -1,5 +1,6 @@
 import { loadOtaReservationPreview, fillWingsReservationFromPreview } from "../application/ota-reservation-input.js";
 import { renderAirportVanCopy } from "../application/airport-van-form.js";
+import { upsertWingsRemarkLine, type WingsRemarkDependencies } from "../application/wings-remark.js";
 import {
   addLaundryRecord,
   createLaundryColumnViews,
@@ -17,6 +18,7 @@ import {
 import { syncGuests } from "../application/sync-guests.js";
 import { resetAllTemplateSettings } from "../application/template-settings.js";
 import { resolveDefaultLanguageFromNationalityFields } from "../domain/language.js";
+import { getBuiltInRemarkType } from "../domain/remarks.js";
 import { resolveWorkRoomContext } from "../domain/room-context.js";
 import { getBranchOptions, isBranchId } from "../config/branches.js";
 import {
@@ -49,6 +51,7 @@ export type SidePanelNavigationControllerDependencies = {
   };
   laundryStorage: LaundryStorageArea;
   otaReservation: OtaReservationInputDependencies;
+  wingsRemark?: WingsRemarkDependencies;
   pmsGuests: {
     fetchImpl: PmsFetch;
   };
@@ -117,6 +120,7 @@ export function createSidePanelNavigationController(
     }
     clearSelectedPmsRecord();
     pmsRecords = [];
+    otaPreview = null;
     if (activeMenuId && getMenu(activeMenuId).screenKind === "laundry") {
       await refreshLaundryRecords();
     }
@@ -422,6 +426,7 @@ export function createSidePanelNavigationController(
     try {
       const result = await fillWingsReservationFromPreview(
         otaPreview,
+        selectedBranchId,
         dependencies.otaReservation,
       );
       setStatus(
@@ -514,6 +519,33 @@ export function createSidePanelNavigationController(
       setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
+    }
+  }
+
+  async function upsertRoomRemark(templateId: string) {
+    const template = activeTemplates().find((item) => item.id === templateId);
+    const type = template ? getBuiltInRemarkType(template.id) : null;
+    if (!template || !type) {
+      setStatus("리마크 양식을 찾지 못했습니다.", "error");
+      return;
+    }
+
+    loading = true;
+    copiedTemplateId = null;
+    try {
+      await upsertWingsRemarkLine(
+        {
+          type,
+          values: templateValues(),
+        },
+        dependencies.wingsRemark,
+      );
+      copiedTemplateId = template.id;
+      setStatus("WINGS 리마크에 입력했습니다.", "success");
+    } catch (error) {
+      setErrorStatus(error);
+    } finally {
+      loading = false;
     }
   }
 
@@ -655,6 +687,7 @@ export function createSidePanelNavigationController(
     setTemplateVariableValue,
     setAirportVanFormValue,
     copyAirportVanText,
+    upsertRoomRemark,
     openBottomNavigation,
     refreshPmsGuests,
     setPmsSearchTerm,

@@ -67,6 +67,7 @@
   export let onSelectPmsRecord: (recordId: string) => void;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
   export let onSetTemplateVariableValue: (variableName: string, value: string) => void;
+  export let onUpsertRoomRemark: (templateId: string) => void;
 
 </script>
 
@@ -100,6 +101,7 @@
         onSetTemplateVariableValue={onSetTemplateVariableValue}
         onSetAirportVanFormValue={onSetAirportVanFormValue}
         onCopyAirportVanText={onCopyAirportVanText}
+        onUpsertRoomRemark={onUpsertRoomRemark}
       />
     {/key}
   {:else if activeBottomPanel}

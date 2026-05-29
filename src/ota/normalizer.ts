@@ -21,6 +21,7 @@ export function normalizeOtaReservation(
     normalizeBranchId(
       pickFirstString(payload, ["branchId", "branch_id", "hotelBranchId", "propertyId", "businessId"]),
     ) ||
+    (locator.source === "naver" ? normalizeBranchId(locator.businessId) : undefined) ||
     (locator.source === "station" ? normalizeBranchId(locator.branchCode) : undefined);
   const checkInDate = normalizeDate(
     pickFirstString(payload, [

@@ -17,7 +17,10 @@ async function createControllerHarness(
       NAT_CODE: "KOR",
     },
   ],
-  options: { recovered?: boolean } = {},
+  options: {
+    recovered?: boolean;
+    otaReservation?: SidePanelNavigationControllerDependencies["otaReservation"];
+  } = {},
 ) {
   Object.assign(globalThis, {
     $state: <T>(value: T) => value,
@@ -28,6 +31,7 @@ async function createControllerHarness(
   let state = normalizeStoredExtensionState(initial);
   const laundryStore: Record<string, unknown> = {};
   const writes: string[] = [];
+  const remarks = [""];
   const pmsCalls: Array<{ input: string; body: URLSearchParams }> = [];
 
   const dependencies: SidePanelNavigationControllerDependencies = {
@@ -55,12 +59,20 @@ async function createControllerHarness(
         Object.assign(laundryStore, values);
       },
     },
-    otaReservation: {
+    otaReservation: options.otaReservation || {
       async fetchPayload() {
         throw new Error("not used");
       },
       async fillForm() {
         throw new Error("not used");
+      },
+    },
+    wingsRemark: {
+      async readRemark() {
+        return remarks.at(-1) || "";
+      },
+      async writeRemark(nextRemark) {
+        remarks.push(nextRemark);
       },
     },
     pmsGuests: {
@@ -86,6 +98,7 @@ async function createControllerHarness(
     getState: () => state,
     getLaundryStore: () => laundryStore,
     writes,
+    remarks,
     pmsCalls,
   };
 }
@@ -329,6 +342,79 @@ test("bottom PMS navigation loads branch-scoped records and selected room values
   assert.equal(controller.statusMessage, "");
   assert.equal(controller.statusTone, "neutral");
   assert.match(writes.at(-1) || "", /제공 카드키/);
+});
+
+test("room remark upsert writes the requested WINGS remark template", async () => {
+  const { controller, remarks } = await createControllerHarness({
+    schemaVersion: 1,
+    lastBranchId: "coex",
+    templateOverrides: {},
+    customTemplates: [],
+    ui: {
+      templateVariableValues: {
+        count: "2",
+        items: "충전기",
+      },
+    },
+  });
+
+  await controller.mount();
+  await controller.openMenu("ROOM_REMARK_MEMO");
+  await controller.upsertRoomRemark("remark-rentals");
+
+  assert.equal(controller.statusMessage, "WINGS 리마크에 입력했습니다.");
+  assert.equal(controller.statusTone, "success");
+  assert.match(remarks.at(-1) || "", /- 대여물품 : 충전기/);
+  assert.doesNotMatch(remarks.at(-1) || "", /제공 카드키/);
+});
+
+test("branch changes discard OTA preview fields before WINGS fill", async () => {
+  const { controller } = await createControllerHarness(
+    {
+      schemaVersion: 1,
+      lastBranchId: "coex",
+      templateOverrides: {},
+      customTemplates: [],
+      ui: {},
+    },
+    undefined,
+    {
+      otaReservation: {
+        async fetchPayload() {
+          return {
+            locator: {
+              source: "station",
+              pageUrl: "https://admin.admin-stationbyuhc.com/reservations/1",
+              branchCode: "18",
+              reservationId: "1",
+              apiUrl: "https://api.admin-stationbyuhc.com/reservations/1",
+            },
+            payload: {
+              guestName: "Kim",
+              phone: "01012345678",
+              checkInDate: "20260501",
+              checkOutDate: "20260503",
+            },
+          };
+        },
+        async fillForm() {
+          throw new Error("stale OTA preview must not be filled");
+        },
+      },
+    },
+  );
+
+  await controller.mount();
+  await controller.openMenu("OTA_RESERVATION_INPUT");
+  await controller.loadOtaPreview();
+  assert.equal(controller.otaPreview?.fields.PROPERTY_NO, "13");
+
+  await controller.handleBranchChange({ target: { value: "gangnam" } } as unknown as Event);
+
+  assert.equal(controller.otaPreview, null);
+  await controller.fillOtaPreview();
+  assert.equal(controller.statusMessage, "먼저 예약정보를 가져와주세요.");
+  assert.equal(controller.statusTone, "error");
 });
 
 test("template copy fails visibly when the selected language is not registered", async () => {

@@ -64,10 +64,22 @@ export async function loadOtaReservationPreview(
 
 export async function fillWingsReservationFromPreview(
   preview: OtaReservationInputPreview,
+  selectedBranchId: BranchId | "" | null,
   dependencies: Pick<OtaReservationInputDependencies, "fillForm">,
 ): Promise<{ filled: string[]; missing: string[] }> {
   const fillForm = requireWingsReservationFormFiller(dependencies);
-  return fillForm(preview.fields);
+  const branchBoundPreview = bindOtaReservationPreviewToBranch(preview, selectedBranchId);
+  return fillForm(branchBoundPreview.fields);
+}
+
+export function bindOtaReservationPreviewToBranch(
+  preview: OtaReservationInputPreview,
+  selectedBranchId: BranchId | "" | null,
+): OtaReservationInputPreview {
+  return {
+    draft: preview.draft,
+    fields: buildWingsReservationFieldMap(preview.draft, selectedBranchId),
+  };
 }
 
 function requireOtaPayloadFetcher(

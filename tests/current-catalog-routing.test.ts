@@ -95,8 +95,17 @@ test("home navigation is a five-group drill-down schema with accordion and menu-
       ],
       ["세탁물 관리", "매지출 관리", "공항밴 관리"],
       ["객실 정보 메모", "NAVER / STATION 예약입력", "업무보고 양식"],
-      ["고객 템플릿 / 빠른답변", "업무 내용 변경"],
+      ["템플릿 편집", "양식 편집"],
     ],
+  );
+  assert.deepEqual(
+    homeNavigationGroups[4]?.items.map((item) => item.menuId),
+    ["TEMPLATE_EDITOR", "FORM_EDITOR"],
+  );
+  assert.notEqual(homeNavigationGroups[4]?.items[0]?.menuId, homeNavigationGroups[4]?.items[1]?.menuId);
+  assert.deepEqual(
+    homeNavigationGroups[4]?.items.map((item) => getMenu(item.menuId).screenKind),
+    ["templateSettings", "formSettings"],
   );
   assert.equal(Object.hasOwn(homeNavigationGroups[3]?.items.find((item) => item.id === "work-ota") || {}, "badgeLabel"), false);
   assert.deepEqual(
@@ -120,7 +129,9 @@ test("home navigation is a five-group drill-down schema with accordion and menu-
   assert.equal(usesWorkLanguageSelector("CUSTOMER_NOTICE"), true);
   assert.equal(usesWorkLanguageSelector("WORK_REPORT"), false);
   assert.equal(getMenu("SALES_MANAGEMENT").title, "매지출 관리");
+  assert.equal(getMenu("SALES_MANAGEMENT").screenKind, "salesManagement");
   assert.equal(getMenu("ROOM_REMARK_MEMO").title, "객실 정보 메모");
+  assert.equal(getMenu("ROOM_REMARK_MEMO").screenKind, "roomRemarkMemo");
 });
 
 test("visible home navigation icons are backed by local material paths", () => {

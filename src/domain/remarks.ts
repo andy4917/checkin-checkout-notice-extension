@@ -30,8 +30,17 @@ const BUILT_IN_REMARK_TYPES: Readonly<Record<string, RemarkType>> = Object.freez
   "remark-stone-house": "stoneHouse",
 });
 
+const PRIMARY_REMARK_TEMPLATE_IDS = Object.freeze([
+  "remark-card-keys",
+  "remark-rentals",
+]);
+
 export function getBuiltInRemarkType(templateId: string): RemarkType | null {
   return BUILT_IN_REMARK_TYPES[templateId] || null;
+}
+
+export function isPrimaryRemarkTemplateId(templateId: string): boolean {
+  return (PRIMARY_REMARK_TEMPLATE_IDS as readonly string[]).includes(templateId);
 }
 
 export function createRemarkLine(type: RemarkType, values: RemarkValues = {}): string {

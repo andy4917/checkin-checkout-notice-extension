@@ -7,6 +7,8 @@ import {
 import {
   fetchActiveOtaPayload,
   fillActiveWingsReservationForm,
+  readActiveWingsRemark,
+  writeActiveWingsRemark,
 } from "../platform/active-tab-automation.js";
 import type { StoredExtensionState } from "../catalog/template-types.js";
 import type { BranchId } from "../types.js";
@@ -43,6 +45,10 @@ export const browserSidePanelNavigationDependencies: SidePanelNavigationControll
     otaReservation: Object.freeze({
       fetchPayload: fetchActiveOtaPayload,
       fillForm: fillActiveWingsReservationForm,
+    }),
+    wingsRemark: Object.freeze({
+      readRemark: readActiveWingsRemark,
+      writeRemark: writeActiveWingsRemark,
     }),
     pmsGuests: Object.freeze({
       fetchImpl: requireGlobalFetch(),
