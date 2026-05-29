@@ -98,10 +98,7 @@ test("home navigation is a five-group drill-down schema with accordion and menu-
       ["고객 템플릿 / 빠른답변", "업무 내용 변경"],
     ],
   );
-  assert.equal(
-    homeNavigationGroups[3]?.items.find((item) => item.id === "work-ota")?.badgeLabel,
-    "WINGS",
-  );
+  assert.equal(Object.hasOwn(homeNavigationGroups[3]?.items.find((item) => item.id === "work-ota") || {}, "badgeLabel"), false);
   assert.deepEqual(
     homeNavigationGroups[2]?.items.map((item) => item.title),
     ["세탁물 관리", "매지출 관리", "공항밴 관리"],
@@ -126,6 +123,21 @@ test("home navigation is a five-group drill-down schema with accordion and menu-
   assert.equal(getMenu("ROOM_REMARK_MEMO").title, "객실 정보 메모");
 });
 
+test("visible home navigation icons are backed by local material paths", () => {
+  const materialIcon = readFileSync("src/ui/components/MaterialIcon.svelte", "utf8");
+  const iconDefinitions = new Set([...materialIcon.matchAll(/^\s{4}([a-z0-9_]+):/gm)].map((match) => match[1]));
+  const visibleIcons = [
+    ...homeNavigationGroups.map((group) => group.icon),
+    ...homeNavigationGroups.flatMap((group) => group.items.map((item) => item.icon)),
+    ...homeBottomNavigationItems.map((item) => item.icon),
+  ];
+
+  assert.deepEqual(
+    visibleIcons.filter((icon) => !iconDefinitions.has(icon)),
+    [],
+  );
+});
+
 test("home navigation styling contract keeps reference-like typography and drill-down motion", () => {
   const css = readFileSync("styles/sidepanel.css", "utf8");
 
@@ -143,7 +155,7 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item\s*\{[^}]*border-bottom:\s*0;/s);
   assert.match(css, /--home-row-icon-size:\s*20px;/);
   assert.match(css, /\.home-nav-icon\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;/s);
-  assert.match(css, /\.home-nav-badge\s*\{/);
+  assert.doesNotMatch(css, /\.home-nav-badge\s*\{/);
   assert.match(css, /--home-focus-ring:\s*#aeb5ae;/);
   assert.match(css, /--home-header-block-space:\s*64px;/);
   assert.match(css, /--font-display:\s*var\(--font-korean-body\);/);
@@ -184,10 +196,11 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item:hover > \.home-nav-label,\s*\.home-submenu-item:hover > \.home-nav-label,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-label-shift\)\);/s);
   assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 22px;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*overflow:\s*visible;/s);
-  assert.match(css, /\.home-nav-title-row\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) max-content;/s);
+  assert.match(css, /\.home-nav-title-row\s*\{[^}]*display:\s*inline-grid;[^}]*grid-template-columns:\s*minmax\(0,\s*max-content\);/s);
   assert.match(css, /\.interactive-label\s*\{[^}]*width:\s*max-content;[^}]*justify-self:\s*start;[^}]*overflow:\s*visible;/s);
-  assert.match(css, /\.home-nav-title-row:has\(\.home-nav-badge\) \.interactive-label\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;/s);
-  assert.match(css, /\.home-nav-badge\s*\{[^}]*max-width:\s*56px;[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;/s);
+  assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*text-wrap:\s*nowrap;[^}]*white-space:\s*nowrap;/s);
+  assert.match(css, /\.interactive-label\s*\{[^}]*text-wrap:\s*nowrap;[^}]*white-space:\s*nowrap;/s);
+  assert.doesNotMatch(css, /\.home-nav-title-row:has\(\.home-nav-badge\)/);
   assert.match(css, /\.interactive-label::after\s*\{[^}]*will-change:\s*opacity,\s*transform;/s);
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*transform:\s*translateX\(var\(--home-hover-chevron-shift\)\);/s);
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*color:\s*var\(--color-primary\);[^}]*opacity:\s*1;/s);

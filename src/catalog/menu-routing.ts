@@ -59,7 +59,6 @@ export type HomeNavigationItem = {
   icon: string;
   menuId: MenuId;
   templateFilter?: MenuTemplateFilter;
-  badgeLabel?: string;
 };
 
 export type HomeNavigationGroup = {
@@ -469,7 +468,7 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     selectionMode: "menuScreen",
     items: Object.freeze([
       Object.freeze({ id: "work-room-remark", title: "객실 정보 메모", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
-      Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT", badgeLabel: "WINGS" }),
+      Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT" }),
       Object.freeze({ id: "work-report", title: "업무보고 양식", icon: "summarize", menuId: "WORK_REPORT" }),
     ]),
   }),

@@ -1486,7 +1486,7 @@ button:disabled {
   font-size: var(--home-root-font-size);
   font-weight: var(--home-root-font-weight);
   line-height: 1.14;
-  text-overflow: ellipsis;
+  text-wrap: nowrap;
   white-space: nowrap;
   transition: transform var(--micro-motion-duration) var(--motion-standard);
 }
@@ -1516,13 +1516,12 @@ button:disabled {
 }
 
 .home-nav-title-row {
-  display: grid;
+  display: inline-grid;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, max-content);
   align-items: center;
-  gap: 6px;
 }
 
 .interactive-label {
@@ -1534,7 +1533,7 @@ button:disabled {
   padding-bottom: 4px;
   margin-bottom: -4px;
   color: inherit;
-  text-overflow: ellipsis;
+  text-wrap: nowrap;
   white-space: nowrap;
   will-change: transform;
 }
@@ -1555,11 +1554,6 @@ button:disabled {
   transition:
     opacity var(--micro-motion-duration) var(--motion-standard),
     transform var(--motion-reveal-duration) var(--motion-standard);
-}
-
-.home-nav-title-row:has(.home-nav-badge) .interactive-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .home-nav-root-item:hover .interactive-label::after,
@@ -1770,26 +1764,6 @@ button:disabled {
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 700;
-}
-
-.home-nav-badge {
-  display: inline-grid;
-  max-width: 56px;
-  min-width: 0;
-  align-items: center;
-  justify-self: start;
-  border-radius: 999px;
-  background: #eef1ed;
-  color: var(--color-primary-soft);
-  font-family: var(--font-ui);
-  font-size: 9px;
-  font-weight: 900;
-  line-height: 1;
-  padding: 2px 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .home-fixed-bottom-bar {

@@ -268,9 +268,6 @@
                     <span class="home-nav-label">
                       <span class="home-nav-title-row">
                         <span class="interactive-label">{item.title}</span>
-                        {#if item.badgeLabel}
-                          <span class="home-nav-badge">{item.badgeLabel}</span>
-                        {/if}
                       </span>
                     </span>
                     <b aria-hidden="true">
@@ -342,9 +339,6 @@
                     <span class="home-nav-label">
                       <span class="home-nav-title-row">
                         <span class="interactive-label">{item.title}</span>
-                        {#if item.badgeLabel}
-                          <span class="home-nav-badge">{item.badgeLabel}</span>
-                        {/if}
                       </span>
                     </span>
                     <b aria-hidden="true">
