@@ -108,20 +108,31 @@ test("OTA normalization builds WINGS input fields without save or confirm semant
 });
 
 test("Naver business id from the OTA document participates in branch validation", () => {
-  const draft = normalizeOtaReservation(
-    {
-      source: "naver",
-      pageUrl: "https://partner.booking.naver.com/bizes/1217752/booking-list-view/bookings/1219592380",
-      businessId: "1217752",
-      bookingId: "1219592380",
-      apiUrl: "https://partner.booking.naver.com/api/businesses/1217752/bookings/1219592380",
-    },
-    { guestName: "Kim", phone: "01012345678", checkInDate: "20260501", checkOutDate: "20260503" },
-  );
+  const drafts = [
+    ["1356779", "1202156803", "coex", "13"],
+    ["1217752", "1219592380", "gangnam", "91"],
+    ["1655089", "1249191128", "seolleung", "14"],
+  ] as const;
 
-  assert.equal(draft.branchId, "gangnam");
-  assert.throws(() => buildWingsReservationFieldMap(draft, "coex"), /올바른 지점이 아닙니다/);
-  assert.equal(buildWingsReservationFieldMap(draft, "gangnam").CORP_CUSTM_NO, "00048147");
+  for (const [businessId, bookingId, branchId, propertyNo] of drafts) {
+    const draft = normalizeOtaReservation(
+      {
+        source: "naver",
+        pageUrl: `https://partner.booking.naver.com/bizes/${businessId}/booking-list-view/bookings/${bookingId}`,
+        businessId,
+        bookingId,
+        apiUrl: `https://partner.booking.naver.com/api/businesses/${businessId}/bookings/${bookingId}`,
+      },
+      { guestName: "Kim", phone: "01012345678", checkInDate: "20260501", checkOutDate: "20260503" },
+    );
+
+    assert.equal(draft.branchId, branchId);
+    assert.equal(buildWingsReservationFieldMap(draft, branchId).PROPERTY_NO, propertyNo);
+    assert.throws(
+      () => buildWingsReservationFieldMap(draft, branchId === "coex" ? "gangnam" : "coex"),
+      /올바른 지점이 아닙니다/,
+    );
+  }
 });
 
 test("OTA branch mismatch and WINGS remark dependency gaps fail before hidden side effects", async () => {

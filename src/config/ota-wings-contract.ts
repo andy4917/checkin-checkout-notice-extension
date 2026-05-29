@@ -32,7 +32,9 @@ const NAVER_CUSTOMER_NUMBERS: Readonly<Record<BranchId, string>> = Object.freeze
 });
 
 const NAVER_BUSINESS_BRANCH_IDS: Readonly<Record<string, BranchId>> = Object.freeze({
+  "1356779": "coex",
   "1217752": "gangnam",
+  "1655089": "seolleung",
 });
 
 const STATION_BRANCH_IDS: Readonly<Record<string, BranchId>> = Object.freeze({
