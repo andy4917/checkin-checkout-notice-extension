@@ -49,11 +49,13 @@
   export let templateValues: Record<string, string>;
   export let templateVariableValues: Record<string, string>;
   export let airportVanFormValues: AirportVanFormValues;
-  export let onBack: () => void;
+  export let viewDirection: "forward" | "backward" | "replace";
   export let onCopyAirportVanText: (target: AirportVanCopyTarget) => void;
   export let onCopyHomeTemplate: (target: HomeNavigationItem, templateId: string) => void;
   export let onCopyTemplate: (templateId: string) => void;
   export let onCreateLaundryRecord: (itemSummary: string) => void;
+  export let onHomeDrillStateChange: (active: boolean) => void;
+  export let onBack: () => void;
   export let onFillOtaPreview: () => void;
   export let onLoadOtaPreview: () => void;
   export let onMoveLaundryRecord: (recordId: string, target: LaundryMoveTarget) => void;
@@ -66,12 +68,16 @@
   export let onSelectLanguage: (language: Language) => void;
   export let onSelectPmsRecord: (recordId: string) => void;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
-  export let onSetTemplateVariableValue: (variableName: string, value: string) => void;
-  export let onUpsertRoomRemark: (templateId: string) => void;
+  export let onSetTemplateVariableValue: (variableName: string, value: string) => void | Promise<void>;
+  export let onUpsertRoomRemark: (templateId: string) => void | Promise<void>;
 
 </script>
 
-<div class="screen-stage" data-view-key={activeMenuTitle || activeBottomPanel?.title || "navigation"}>
+<div
+  class="screen-stage"
+  data-view-key={activeMenuTitle || activeBottomPanel?.title || "navigation"}
+  data-view-motion={viewDirection}
+>
   {#if activeMenuTitle && activeMenu}
     {#key `${activeMenu.id}:${activeMenu.screenKind === "laundry" ? laundryVersion : 0}`}
       <WorkSurface
@@ -91,6 +97,7 @@
         hasSelectedPmsRecord={hasSelectedPmsRecord}
         requiredManualVariables={requiredManualVariables}
         onSelectLanguage={onSelectLanguage}
+        onBack={onBack}
         onCopyTemplate={onCopyTemplate}
         onCreateLaundryRecord={onCreateLaundryRecord}
         onMoveLaundryRecord={onMoveLaundryRecord}
@@ -131,6 +138,7 @@
       selectedBranchReady={selectedBranchReady}
       selectedLanguage={selectedLanguage}
       onCopyTemplate={onCopyHomeTemplate}
+      onDrillStateChange={onHomeDrillStateChange}
       onSelectLanguage={onSelectLanguage}
       onOpenMenu={onOpenMenu}
       onOpenBottomItem={onOpenBottomItem}

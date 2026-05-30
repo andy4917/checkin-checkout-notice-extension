@@ -16,6 +16,8 @@ export const REQUIRED_VARIABLE_MISSING_MESSAGE =
   "비어있는 필수 입력란을 확인 후 다시 시도해주십시오.";
 export const PMS_REQUIRED_VALUE_MISSING_MESSAGE =
   "비어있는 PMS 값을 확인 후 다시 시도해주십시오.";
+export const PMS_REQUEST_FAILED_MESSAGE =
+  "PMS 조회에 실패했습니다. 로그인 상태와 네트워크를 확인 후 다시 시도해주십시오.";
 export const INVALID_WORKFLOW_STEP_MESSAGE = "잘못된 절차입니다.";
 
 export type OperatorErrorKind =
@@ -27,6 +29,7 @@ export type OperatorErrorKind =
   | "storageCorruption"
   | "templateLanguageMissing"
   | "pmsRequiredValueMissing"
+  | "pmsRequestFailed"
   | "requiredVariableMissing"
   | "invalidWorkflowStep"
   | "raw";
@@ -73,6 +76,9 @@ export function resolveOperatorErrorMessage(error: unknown): OperatorErrorMessag
   }
   if (/PMS 핵심 정보를 가져오지 못했습니다/.test(message)) {
     return { kind: "pmsRequiredValueMissing", message: PMS_REQUIRED_VALUE_MISSING_MESSAGE, repeatable: false };
+  }
+  if (/PMS 요청 실패|PMS 응답/.test(message)) {
+    return { kind: "pmsRequestFailed", message: PMS_REQUEST_FAILED_MESSAGE, repeatable: true };
   }
   if (/잘못된 절차/.test(message)) {
     return { kind: "invalidWorkflowStep", message: INVALID_WORKFLOW_STEP_MESSAGE, repeatable: false };

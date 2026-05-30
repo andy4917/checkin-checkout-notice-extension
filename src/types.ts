@@ -33,11 +33,12 @@ export type PmsFetch = (
   input: string,
   init: {
     method: "POST";
+    credentials: "include";
     headers: { "Content-Type": "application/x-www-form-urlencoded" };
     body: URLSearchParams;
   },
 ) => Promise<{
-  ok?: boolean;
+  ok: boolean;
   status?: number;
   statusText?: string;
   json(): Promise<PmsRowsResponse>;

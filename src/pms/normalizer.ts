@@ -85,10 +85,22 @@ function createGuestRecordId(
   const rsvnNo = text(row.RSVN_NO ?? row.RSVN_FOLIO_NO ?? row.GLOBAL_RSVN_NO);
   const guestName = text(row.GUEST_NAME);
   const roomNo = text(row.ROOM_NO);
-  const source = rsvnNo || `${guestName}-${roomNo}` || "guest";
+  const source = rsvnNo || `${guestName || "unknown"}-${roomNo || "no-room"}-${stableRowFingerprint(row)}`;
   return `${context.branchId}-${context.mode.toLowerCase()}-${context.queryDate}-${source}`;
 }
 
 function text(value: unknown): string {
   return value == null ? "" : String(value);
+}
+
+function stableRowFingerprint(row: Guest): string {
+  const normalized = Object.entries(row)
+    .map(([key, value]) => [key, text(value)] as const)
+    .sort(([left], [right]) => left.localeCompare(right));
+  const payload = JSON.stringify(normalized);
+  let hash = 0;
+  for (let index = 0; index < payload.length; index += 1) {
+    hash = (hash * 31 + payload.charCodeAt(index)) >>> 0;
+  }
+  return hash.toString(36);
 }

@@ -9,8 +9,10 @@
   } from "../../catalog/menu-routing.js";
   import type { UnifiedTemplateDefinition } from "../../catalog/template-types.js";
   import type { Language } from "../../types.js";
+  import * as BackButtonModule from "./BackButton.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const BackButton = BackButtonModule.default;
   const MaterialIcon = MaterialIconModule.default;
   const languageOptions: readonly Language[] = Object.freeze(["KO", "EN", "JP", "CN"]);
 
@@ -28,6 +30,7 @@
   export let onSelectLanguage: (language: Language) => void;
   export let onOpenMenu: (target: MenuId | HomeNavigationItem) => void;
   export let onOpenBottomItem: (item: HomeBottomNavigationItem) => void;
+  export let onDrillStateChange: (active: boolean) => void = () => {};
 
   let activeGroupId = "";
   let renderedDetailGroupId = "";
@@ -36,6 +39,8 @@
   let motionDirection: "forward" | "backward" | "replace" = "replace";
   let detailBackButton: HTMLButtonElement | null = null;
   let releaseDetailTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastReportedDrillState = false;
+  let lastReportedDrillTitle = "";
   type ActionValue<T> = T | (() => T);
 
   function languageLabel(language: Language): string {
@@ -46,6 +51,15 @@
   $: renderedDetailGroup =
     groups.find((group) => group.id === (activeGroupId || renderedDetailGroupId)) || null;
   $: activeSubmenuId = renderedDetailGroup ? getSubmenuPanelId(renderedDetailGroup.id) : undefined;
+  $: {
+    const nextDrillState = Boolean(activeGroup);
+    const nextDrillTitle = activeGroup?.title || "";
+    if (nextDrillState !== lastReportedDrillState || nextDrillTitle !== lastReportedDrillTitle) {
+      lastReportedDrillState = nextDrillState;
+      lastReportedDrillTitle = nextDrillTitle;
+      onDrillStateChange(nextDrillState);
+    }
+  }
   $: if (!initialGroupApplied && initialGroupId && groups.some((group) => group.id === initialGroupId)) {
     activeGroupId = initialGroupId;
     renderedDetailGroupId = initialGroupId;
@@ -225,17 +239,15 @@
         aria-labelledby={renderedDetailGroup ? getSubmenuTitleId(renderedDetailGroup.id) : undefined}
       >
         {#if renderedDetailGroup}
-          <button
-            bind:this={detailBackButton}
-            class="home-nav-back"
-            type="button"
-            aria-label={labels.backToRootLabel}
-            onkeydown={handleKeydown}
-            onclick={goRoot}
-          >
-            <MaterialIcon name="arrow_back" size={18} />
-            <span id={getSubmenuTitleId(renderedDetailGroup.id)}>{renderedDetailGroup.title}</span>
-          </button>
+          <BackButton
+            bind:buttonElement={detailBackButton}
+            className="home-nav-back"
+            label={renderedDetailGroup.title}
+            onBack={goRoot}
+          />
+          <span id={getSubmenuTitleId(renderedDetailGroup.id)} class="visually-hidden">
+            {renderedDetailGroup.title}
+          </span>
           {#if isAccordionGroup(renderedDetailGroup)}
             <div
               class:loading={languageChanging}

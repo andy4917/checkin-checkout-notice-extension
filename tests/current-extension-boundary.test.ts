@@ -40,6 +40,7 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   const workSurface = readFileSync(join(root, "src/ui/components/WorkSurface.svelte"), "utf8");
   const pmsGuestPanel = readFileSync(join(root, "src/ui/components/PmsGuestPanel.svelte"), "utf8");
   const shellHeader = readFileSync(join(root, "src/ui/components/ShellHeader.svelte"), "utf8");
+  const backButton = readFileSync(join(root, "src/ui/components/BackButton.svelte"), "utf8");
 
   assert.match(main, /mount\(App, \{ target \}\)/);
   assert.match(
@@ -75,12 +76,15 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   );
   assert.match(sidePanel, /activeMenu=\{renderedMenu \|\| controller\.activeMenu\}/);
   assert.match(sidePanel, /activeMenuTitle=\{renderedMenu\?\.title \|\| controller\.activeMenu\?\.title \|\| null\}/);
+  assert.match(sidePanel, /let homeDrillActive = \$state\(false\)/);
+  assert.match(sidePanel, /activeMenuTitle=\{activeShellTitle\}/);
+  assert.match(screenStage, /export let onBack: \(\) => void/);
   assert.doesNotMatch(sidePanel, /renderedMenuId|renderedRouteKey|controller\.activeMenu\?\.title \|\| renderedMenu\?\.title/);
   assert.doesNotMatch(sidePanel, /#key renderedMenuId \|\| renderedBottomPanel\?\.id \|\| "navigation"/);
   assert.match(sidePanel, /await controller\.openMenu\(target\)/);
   assert.match(sidePanel, /await controller\.openBottomNavigation\(item\)/);
-  assert.match(sidePanel, /controller\.statusTone === "error"/);
   assert.match(sidePanel, /class="work-status shell-status"/);
+  assert.doesNotMatch(sidePanel, /showErrorToast|status-toast|statusVersion/);
   assert.match(workSurface, /usesWorkLanguageSelector\(menu\.id\) && availableLanguages\.length > 0/);
   assert.doesNotMatch(sidePanel, /selectedMenuId|selectedBottomItem/);
   assert.doesNotMatch(screenStage, /stageMenu|stageBottomPanel/);
@@ -99,9 +103,22 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.match(workSurface, /class="airport-route-card"/);
   assert.match(workSurface, /class="laundry-status-board"/);
   assert.match(workSurface, /class=\{`laundry-scheduled/);
-  assert.match(shellHeader, /class="branch-logo-trigger"/);
-  assert.match(shellHeader, /class="branch-picker-strip"/);
-  assert.doesNotMatch(shellHeader, /class="branch-trigger"/);
+  assert.match(workSurface, /class="room-memo-head"/);
+  assert.match(workSurface, /class="inventory-stepper"/);
+  assert.match(workSurface, /WINGS 리마크 입력/);
+  assert.match(workSurface, /adjustRoomRemarkCount/);
+  assert.match(workSurface, /class="room-note-panel"/);
+  assert.match(workSurface, /pendingRoomRemarkTemplateId/);
+  assert.doesNotMatch(workSurface, /return templateValue\(variable\.name\)\.trim\(\) \|\| "0"/);
+  assert.match(backButton, /onclick=\{onBack\}/);
+  assert.match(workSurface, /<BackButton className="home-nav-back work-nav-back" label=\{menu\.title\} onBack=\{onBack\}/);
+  assert.match(pmsGuestPanel, /<BackButton className="home-nav-back work-nav-back" label=\{panel\.title\} onBack=\{onBack\}/);
+  assert.match(screenStage, /onBack=\{onBack\}/);
+  assert.doesNotMatch(pmsGuestPanel, /돌아가기/);
+  assert.doesNotMatch(shellHeader, /BackButton|header-back-button|onBack/);
+  assert.match(shellHeader, /class="header-logo-mark"/);
+  assert.doesNotMatch(shellHeader, /class="branch-trigger"|class="branch-logo-trigger"|class="branch-picker-strip"|branchPanelOpen/);
+  assert.doesNotMatch(shellHeader, /MIN_BRANCH_APPLY_MS|waitForBranchApplyMotion|setTimeout/);
   assert.doesNotMatch(workSurface, />\s*\{getManualVariables\(template\)\.length\} 입력\s*</);
   assert.doesNotMatch(workSurface, /<b>\{group\.templates\.length\}<\/b>|<b>\{requiredManualVariables\.length\}<\/b>|총 지출|복사 전 자동 적용/);
   assert.doesNotMatch(workSurface, /<span>\{copiedTemplateId === template\.id \? "복사됨" : "복사"\}<\/span>/);

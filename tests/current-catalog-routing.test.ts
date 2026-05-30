@@ -182,6 +182,8 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /--home-content-motion-duration:\s*400ms;/);
   assert.match(css, /--home-content-motion-delay:\s*100ms;/);
   assert.match(css, /--home-hover-underline-height:\s*2px;/);
+  assert.match(css, /--back-motion-duration:\s*160ms;/);
+  assert.match(css, /--back-hover-color:\s*var\(--color-primary-soft\);/);
   assert.match(css, /--sidepanel-motion-duration:\s*600ms;/);
   assert.match(css, /--sidepanel-motion-ease:\s*cubic-bezier\(0\.54,\s*0\.01,\s*0\.19,\s*0\.93\);/);
   assert.match(css, /\.app-shell\.home-mode\s*\{[^}]*padding:\s*0;[^}]*padding-bottom:\s*0;/s);
@@ -191,12 +193,13 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.app-shell\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*auto auto minmax\(0,\s*1fr\);[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden;/s);
   assert.match(css, /\.screen-stage\s*\{[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/s);
   assert.match(css, /\.shell-status \+ \.screen-stage\s*\{[^}]*grid-row:\s*3;/s);
-  assert.match(css, /\.app-shell\.home-mode \.screen-stage\s*\{[^}]*overflow:\s*hidden;/s);
-  assert.match(css, /\.branch-picker-strip\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.app-shell\.home-mode \.screen-stage\s*\{[^}]*overflow:\s*hidden;[^}]*scrollbar-gutter:\s*stable;/s);
+  assert.doesNotMatch(css, /\.branch-picker-strip|branch-option-enter|branch-loading-sweep|branch-strip-enter/);
+  assert.match(css, /\.header-logo-mark\s*\{[^}]*display:\s*inline-flex;/s);
   assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
   assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
   assert.match(css, /\.home-fixed-bottom-bar \.material-icon\s*\{[^}]*display:\s*inline-grid;/s);
-  assert.match(css, /\.work-status\s*\{[^}]*position:\s*relative;[^}]*border-left:\s*3px solid var\(--color-icon\);/s);
+  assert.doesNotMatch(css, /\.status-toast/);
   assert.doesNotMatch(css, /\.work-status\s*\{[^}]*position:\s*fixed;/s);
   assert.match(css, /\.home-navigation-viewport\s*\{[^}]*overflow:\s*hidden;[^}]*height:\s*100%;/s);
   assert.match(css, /\.home-navigation-viewport\s*\{[^}]*mask:\s*linear-gradient/s);
@@ -208,7 +211,7 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item,\s*\.home-submenu-item\s*\{[^}]*grid-template-columns:\s*var\(--home-row-icon-size\) minmax\(0,\s*1fr\) 22px;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-title-row\s*\{[^}]*display:\s*inline-grid;[^}]*grid-template-columns:\s*minmax\(0,\s*max-content\);/s);
-  assert.match(css, /\.interactive-label\s*\{[^}]*width:\s*max-content;[^}]*justify-self:\s*start;[^}]*overflow:\s*visible;/s);
+  assert.match(css, /\.interactive-label\s*\{[^}]*width:\s*max-content;[^}]*max-width:\s*100%;[^}]*overflow:\s*visible;/s);
   assert.match(css, /\.home-nav-root-item > \.home-nav-label,\s*\.home-submenu-item > \.home-nav-label\s*\{[^}]*text-wrap:\s*nowrap;[^}]*white-space:\s*nowrap;/s);
   assert.match(css, /\.interactive-label\s*\{[^}]*text-wrap:\s*nowrap;[^}]*white-space:\s*nowrap;/s);
   assert.doesNotMatch(css, /\.home-nav-title-row:has\(\.home-nav-badge\)/);
@@ -217,6 +220,10 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.home-nav-root-item:hover b,\s*\.home-submenu-item:hover b,[^{]+\{[^}]*color:\s*var\(--color-primary\);[^}]*opacity:\s*1;/s);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-enter/s);
   assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-nav-back,[^{]+\{[^}]*animation:\s*home-detail-content-exit/s);
+  assert.match(css, /\.home-nav-back\s*\{[^}]*transition:\s*color var\(--back-motion-duration\) var\(--motion-standard\);/s);
+  assert.match(css, /\.home-nav-back:hover,\s*\.home-nav-back:focus-visible\s*\{[^}]*color:\s*var\(--back-hover-color\);/s);
+  assert.doesNotMatch(css, /\.home-nav-back:hover,\s*\.home-nav-back:focus-visible\s*\{[^}]*background:/s);
+  assert.doesNotMatch(css, /\.home-nav-back:hover \.material-icon|\.home-nav-back:focus-visible \.material-icon|\.home-nav-back:active/);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="forward"\]\.submenu-active \.detail-panel \.home-language-strip,/);
   assert.match(css, /\.home-navigation-viewport\.detail-retained \.detail-panel \.home-language-strip,/);
   assert.match(css, /\.home-navigation-viewport\[data-motion-direction="backward"\] \.root-panel \.home-nav-root-item\s*\{[^}]*animation:\s*home-root-content-return/s);
@@ -235,6 +242,7 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /@keyframes home-detail-content-enter\s*\{/);
   assert.match(css, /@keyframes home-detail-content-exit\s*\{/);
   assert.match(css, /@keyframes home-root-content-return\s*\{/);
+  assert.match(css, /@keyframes action-loading-spin\s*\{/);
   assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)\s*\{/);
 
   const homeView = readFileSync("src/ui/components/HomeView.svelte", "utf8");
@@ -244,7 +252,11 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(homeView, /aria-haspopup="true"/);
   assert.match(homeView, /aria-expanded=\{activeGroup\?\.id === group\.id\}/);
   assert.match(homeView, /aria-controls=\{getSubmenuPanelId\(group\.id\)\}/);
-  assert.match(homeView, /aria-label=\{labels\.backToRootLabel\}/);
+  assert.doesNotMatch(homeView, /title=\{group\.title\}/);
+  assert.doesNotMatch(homeView, /title=\{item\.title\}/);
+  assert.match(homeView, /className="home-nav-back"/);
+  assert.match(homeView, /onBack=\{goRoot\}/);
+  assert.doesNotMatch(homeView, /class="home-submenu-heading"|aria-label=\{labels\.backToRootLabel\}/);
   assert.match(homeView, /<details class="home-submenu-entry">/);
   assert.doesNotMatch(homeView, /<details class="home-submenu-entry" name=/);
   assert.match(homeView, /<summary class="home-submenu-item accordion-trigger"/);

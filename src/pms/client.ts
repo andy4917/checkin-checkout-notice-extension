@@ -20,11 +20,11 @@ export async function fetchPmsGuests(
   const endpoint = `${EXTENSION_CONFIG.allowedPmsOrigins[0]}${PMS_CONFIG.endpointPath}`;
   const response = await fetchImpl(endpoint, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: buildPmsSearchParams(date, mode, branch.id),
   });
-  const ok = response.ok ?? true;
-  if (!ok) {
+  if (!response.ok) {
     const status = response.status ? ` ${response.status}` : "";
     const statusText = response.statusText ? ` ${response.statusText}` : "";
     throw new PmsRequestError(`PMS 요청 실패:${status}${statusText}`.trim());

@@ -19,6 +19,14 @@
   let renderedViewKey = $state("");
   let lastHomeGroupId = $state("");
   let homeReturnGroupId = $state("");
+  let homeDrillActive = $state(false);
+  let viewDirection = $state<"forward" | "backward" | "replace">("replace");
+  let activeShellTitle = $derived(
+    renderedMenu?.title || controller.activeMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || null,
+  );
+  let shellStatusVisible = $derived(
+    !controller.activeMenu && !controller.activeBottomPanel && controller.statusMessage,
+  );
 
   onMount(() => {
     void mount();
@@ -30,8 +38,10 @@
   }
 
   async function openMenu(target: MenuId | HomeNavigationItem) {
+    homeDrillActive = false;
     lastHomeGroupId = typeof target === "string" ? "" : findHomeGroupId(target);
     homeReturnGroupId = "";
+    viewDirection = "forward";
     const baseMenu = getMenu(typeof target === "string" ? target : target.menuId);
     renderedMenu = typeof target === "string"
       ? baseMenu
@@ -43,9 +53,11 @@
   }
 
   async function openBottomItem(item: HomeBottomNavigationItem) {
+    homeDrillActive = false;
     homeReturnGroupId = "";
     lastHomeGroupId = "";
     renderedViewKey = "";
+    viewDirection = "forward";
     if (item.menuId) {
       await openMenu(item.menuId);
       return;
@@ -56,7 +68,9 @@
 
   function goBack() {
     homeReturnGroupId = lastHomeGroupId;
+    homeDrillActive = Boolean(lastHomeGroupId);
     renderedViewKey = "";
+    viewDirection = "backward";
     controller.goHome();
     syncViewFromController();
   }
@@ -77,19 +91,27 @@
     }
     renderedBottomPanel = controller.activeBottomPanel;
   }
+
+  function handleHomeDrillStateChange(active: boolean) {
+    homeDrillActive = active;
+    if (!active) {
+      homeReturnGroupId = "";
+    }
+  }
+
 </script>
 
 <main class:home-mode={!controller.activeMenu && !controller.activeBottomPanel} class="app-shell">
   <ShellHeader
-    activeMenuTitle={renderedMenu?.title || controller.activeMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || null}
+    activeMenuTitle={activeShellTitle}
+    branchPickerEnabled={!homeDrillActive}
     branchOptions={controller.branchOptions}
     navigationLocked={controller.navigationLocked}
     selectedBranchId={controller.selectedBranchId}
     onBranchChange={controller.handleBranchChange}
-    onBack={goBack}
   />
 
-  {#if controller.statusMessage && controller.statusTone === "error" && !controller.activeMenu && !controller.activeBottomPanel}
+  {#if shellStatusVisible}
     <p
       aria-live="polite"
       class:error={controller.statusTone === "error"}
@@ -129,12 +151,14 @@
       statusTone={controller.statusTone}
       templateValues={controller.templateValues}
       templateVariableValues={controller.templateVariableValues}
+      viewDirection={viewDirection}
       airportVanFormValues={controller.airportVanFormValues}
-      onBack={goBack}
       onCopyAirportVanText={controller.copyAirportVanText}
       onCopyHomeTemplate={controller.copyHomeTemplate}
       onCopyTemplate={controller.copyTemplate}
       onCreateLaundryRecord={controller.createManualLaundryRecord}
+      onHomeDrillStateChange={handleHomeDrillStateChange}
+      onBack={goBack}
       onFillOtaPreview={controller.fillOtaPreview}
       onLoadOtaPreview={controller.loadOtaPreview}
       onMoveLaundryRecord={controller.moveLaundryRecordTo}

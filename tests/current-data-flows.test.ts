@@ -6,6 +6,7 @@ import {
   OTA_ACTIVE_TAB_REFRESH_MESSAGE,
   OTA_BRANCH_MISMATCH_MESSAGE,
   OPERATION_REPEATED_ERROR_MESSAGE,
+  PMS_REQUEST_FAILED_MESSAGE,
   WINGS_RESERVATION_WINDOW_MESSAGE,
 } from "../src/application/operator-error-messages.js";
 import {
@@ -27,6 +28,7 @@ import { upsertWingsRemarkLine } from "../src/application/wings-remark.js";
 import { fillWingsReservationFromPreview } from "../src/application/ota-reservation-input.js";
 import { fetchPmsGuests, PmsRequestError } from "../src/pms/client.js";
 import { buildPmsSearchParams } from "../src/pms/filter-builder.js";
+import { normalizePmsGuestRows } from "../src/pms/normalizer.js";
 import { normalizeOtaReservation, requireOtaDraftMinimum } from "../src/ota/normalizer.js";
 import { buildWingsReservationFieldMap } from "../src/wings/reservation-draft.js";
 
@@ -43,14 +45,31 @@ test("PMS search body requires an explicit branch and puts date filters in the s
   assert.equal(departure.get("filter[filters][10][value]"), "20260426");
 });
 
-test("PMS client posts to the configured endpoint and rejects malformed responses", async () => {
-  const calls: Array<{ input: string; body: URLSearchParams }> = [];
+test("PMS client posts to the configured endpoint with session credentials and rejects malformed responses", async () => {
+  const calls: Array<{
+    input: string;
+    method: string;
+    credentials: RequestCredentials;
+    contentType: string;
+    body: URLSearchParams;
+  }> = [];
   const rows = await fetchPmsGuests("20260426", "ARRIVAL", "coex", async (input, init) => {
-    calls.push({ input, body: init.body });
+    calls.push({
+      input,
+      method: init.method,
+      credentials: init.credentials,
+      contentType: init.headers["Content-Type"],
+      body: init.body,
+    });
     return { ok: true, json: async () => ({ rows: [{ GUEST_NAME: "Kim", ROOM_NO: 1302 }] }) };
   });
 
   assert.equal(calls[0]?.input, "https://pms.sanhait.com/pms/biz/ir04_0100X/searchListGlobalRsvn_v03.do");
+  assert.equal(calls[0]?.method, "POST");
+  assert.equal(calls[0]?.credentials, "include");
+  assert.equal(calls[0]?.contentType, "application/x-www-form-urlencoded");
+  assert.equal(calls[0]?.body.get("filter[filters][0][value]"), "13");
+  assert.equal(calls[0]?.body.get("filter[filters][6][value]"), "20260426");
   assert.deepEqual(rows, [{ GUEST_NAME: "Kim", ROOM_NO: "1302" }]);
 
   await assert.rejects(
@@ -64,13 +83,26 @@ test("PMS client posts to the configured endpoint and rejects malformed response
     /PMS 요청 실패: 500 Server Error/,
   );
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "", async () => ({ json: async () => ({ rows: [] }) })),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "", async () => ({ ok: true, json: async () => ({ rows: [] }) })),
     /지점을 선택해주세요/,
   );
   await assert.rejects(
-    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", async () => ({ json: async () => ({ rows: {} }) })),
+    () => fetchPmsGuests("20260426", "ARRIVAL", "coex", async () => ({ ok: true, json: async () => ({ rows: {} }) })),
     PmsRequestError,
   );
+});
+
+test("PMS guest records do not collapse missing reservation ids into a shared guest fallback", () => {
+  const records = normalizePmsGuestRows(
+    [
+      { GUEST_NAME: "", ROOM_NO: "", DEPT_DATE: "20260530" },
+      { GUEST_NAME: "", ROOM_NO: "", DEPT_DATE: "20260531" },
+    ],
+    { branchId: "coex", mode: "ARRIVAL", queryDate: "20260530" },
+  );
+
+  assert.equal(new Set(records.map((record) => record.id)).size, 2);
+  assert.doesNotMatch(records[0]?.id || "", /-guest$/);
 });
 
 test("OTA normalization builds WINGS input fields without save or confirm semantics", () => {
@@ -221,6 +253,7 @@ test("operator OTA errors use confirmed copy and collapse repeated setup failure
 
   tracker.reset();
   assert.equal(tracker.format(new Error("올바른 지점이 아닙니다.")), OTA_BRANCH_MISMATCH_MESSAGE);
+  assert.equal(tracker.format(new Error("PMS 요청 실패: 500 Server Error")), PMS_REQUEST_FAILED_MESSAGE);
   assert.equal(
     tracker.format(new Error("internal token parser failed: secret-ish implementation detail")),
     OPERATION_REPEATED_ERROR_MESSAGE,

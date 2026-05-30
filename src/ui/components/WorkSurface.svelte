@@ -32,8 +32,10 @@
   import type { LaundryMoveTarget, LaundryRecord } from "../../laundry/types.js";
   import type { Language } from "../../types.js";
   import { getManualVariables, getTemplateRequirement as resolveTemplateRequirement } from "../template-list-state.js";
+  import * as BackButtonModule from "./BackButton.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const BackButton = BackButtonModule.default;
   const MaterialIcon = MaterialIconModule.default;
   const airportVanRideDirectionOptions = AIRPORT_VAN_RIDE_DIRECTION_OPTIONS;
   const airportVanPaymentOptions = AIRPORT_VAN_PAYMENT_OPTIONS;
@@ -80,15 +82,16 @@
   export let onSelectLanguage: (language: Language) => void;
   export let onCopyTemplate: (templateId: string) => void;
   export let onCreateLaundryRecord: (itemSummary: string) => void;
+  export let onBack: () => void;
   export let onMoveLaundryRecord: (recordId: string, target: LaundryMoveTarget) => void;
   export let onRemoveLaundryRecord: (recordId: string) => void;
   export let onLoadOtaPreview: () => void;
   export let onFillOtaPreview: () => void;
   export let onResetTemplateSettings: () => void;
-  export let onSetTemplateVariableValue: (variableName: string, value: string) => void;
+  export let onSetTemplateVariableValue: (variableName: string, value: string) => void | Promise<void>;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
   export let onCopyAirportVanText: (target: AirportVanCopyTarget) => void;
-  export let onUpsertRoomRemark: (templateId: string) => void;
+  export let onUpsertRoomRemark: (templateId: string) => void | Promise<void>;
 
   let resetArmed = false;
   let expandedTemplateId: string | null = null;
@@ -97,6 +100,7 @@
   let invalidDropTarget: LaundryMoveTarget | null = null;
   let laundryActionRecordId: string | null = null;
   let selectedTemplateId = "";
+  let pendingRoomRemarkTemplateId = "";
 
   $: templateGroups = resolveTemplateGroups(templates);
   $: availableLanguages = Array.from(
@@ -109,6 +113,13 @@
   $: roomContextLabel = templateValue("displayRoom") || templateValue("roomNo");
   $: roomMemoFeaturedTemplates = templates.filter((template) => isPrimaryRemarkTemplateId(template.id));
   $: roomMemoOtherTemplates = templates.filter((template) => !isPrimaryRemarkTemplateId(template.id));
+  $: if (
+    menu.screenKind === "roomRemarkMemo" &&
+    (!selectedTemplateId || !templates.some((template) => template.id === selectedTemplateId)) &&
+    roomMemoFeaturedTemplates[0]
+  ) {
+    selectedTemplateId = roomMemoFeaturedTemplates[0].id;
+  }
 
   function laundryBlockTitle(record: LaundryRecord): string {
     return record.displayRoom || record.roomNo || record.itemSummary;
@@ -154,9 +165,49 @@
     expandedTemplateId = expandedTemplateId === templateId ? null : templateId;
   }
 
-  function selectTemplate(templateId: string) {
-    selectedTemplateId = templateId;
-    expandedTemplateId = templateId;
+  function roomRemarkValue(template: UnifiedTemplateDefinition): string {
+    const variable = getManualVariables(template)[0];
+    if (!variable) return "";
+    return templateValue(variable.name).trim();
+  }
+
+  function roomRemarkNumericValue(template: UnifiedTemplateDefinition): number {
+    const rawValue = roomRemarkValue(template);
+    if (!rawValue) return 0;
+    const parsed = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+
+  function roomRemarkPrimaryVariable(template: UnifiedTemplateDefinition): TemplateVariable | null {
+    return getManualVariables(template)[0] || null;
+  }
+
+  function chooseRoomRemarkTemplate(templateId: string) {
+    selectedTemplateId = selectedTemplateId === templateId ? "" : templateId;
+    expandedTemplateId = selectedTemplateId;
+  }
+
+  async function adjustRoomRemarkCount(template: UnifiedTemplateDefinition, delta: number) {
+    const variable = roomRemarkPrimaryVariable(template);
+    if (!variable) return;
+    const nextValue = Math.max(0, roomRemarkNumericValue(template) + delta);
+    selectedTemplateId = template.id;
+    expandedTemplateId = template.id;
+    await onSetTemplateVariableValue(variable.name, String(nextValue));
+  }
+
+  async function applyRoomRemark(templateId: string) {
+    const template = templates.find((item) => item.id === templateId) || null;
+    const variable = template ? roomRemarkPrimaryVariable(template) : null;
+    if (template && variable?.name === "count" && !roomRemarkValue(template)) {
+      await onSetTemplateVariableValue(variable.name, "0");
+    }
+    pendingRoomRemarkTemplateId = templateId;
+    try {
+      await onUpsertRoomRemark(templateId);
+    } finally {
+      pendingRoomRemarkTemplateId = "";
+    }
   }
 
   function handleVariableInput(variableName: string, event: Event) {
@@ -240,6 +291,8 @@
 </script>
 
 <section class="work-surface" aria-label={menu.title}>
+  <BackButton className="home-nav-back work-nav-back" label={menu.title} onBack={onBack} />
+
   {#if statusMessage}
     <p
       aria-live="polite"
@@ -578,30 +631,39 @@
       </header>
 
       {#if roomMemoFeaturedTemplates.length > 0}
-        <section class="room-inventory-grid" aria-label="객실 보유 물품">
+        <section class="room-inventory-grid" aria-label="객실 물품 리마크">
           {#each roomMemoFeaturedTemplates as template}
-            {@const variable = getManualVariables(template)[0]}
-            <article class="inventory-stepper">
-              <span class="inventory-icon" aria-hidden="true">
-                <MaterialIcon name={template.icon} size={18} />
-              </span>
-              <strong>{template.title}</strong>
-              {#if variable}
+            {@const variable = roomRemarkPrimaryVariable(template)}
+            <article class:active={selectedTemplate?.id === template.id} class="inventory-stepper">
+              <button class="inventory-main" type="button" onclick={() => chooseRoomRemarkTemplate(template.id)}>
+                <span class="inventory-icon" aria-hidden="true">
+                  <MaterialIcon name={template.icon} size={18} />
+                </span>
+                <strong>{template.title}</strong>
+              </button>
+              {#if variable?.name === "count"}
+                <div class="inventory-count-stepper" aria-label={`${template.title} 수량`}>
+                  <button type="button" disabled={loading || roomRemarkNumericValue(template) <= 0} aria-label={`${template.title} 감소`} onclick={() => adjustRoomRemarkCount(template, -1)}>-</button>
+                  <output>{roomRemarkNumericValue(template)}</output>
+                  <button type="button" disabled={loading} aria-label={`${template.title} 증가`} onclick={() => adjustRoomRemarkCount(template, 1)}>+</button>
+                </div>
+              {:else if variable}
                 <input
                   value={templateValue(variable.name)}
-                  placeholder="0"
-                  inputmode="numeric"
+                  placeholder={variable.label}
                   oninput={(event) => handleVariableInput(variable.name, event)}
                 />
               {/if}
               <button
+                class:applying={pendingRoomRemarkTemplateId === template.id}
                 class="copy-action"
                 type="button"
-                aria-label={getTemplateRequirement(template) || `${template.title} 리마크 입력`}
+                aria-busy={pendingRoomRemarkTemplateId === template.id}
+                aria-label={getTemplateRequirement(template) || `${template.title} WINGS 리마크 입력`}
                 disabled={loading || Boolean(getTemplateRequirement(template))}
-                onclick={() => onUpsertRoomRemark(template.id)}
+                onclick={() => applyRoomRemark(template.id)}
               >
-                <MaterialIcon name={copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
+                <MaterialIcon name={pendingRoomRemarkTemplateId === template.id ? "sync" : copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
               </button>
             </article>
           {/each}
@@ -609,41 +671,65 @@
       {/if}
 
       {#if roomMemoOtherTemplates.length > 0}
-        <section class="template-pick-list" aria-label="객실 메모 양식">
-          {#each roomMemoOtherTemplates as template}
-            <article class:active={selectedTemplate?.id === template.id} class="template-pick-row">
-              <button type="button" onclick={() => selectTemplate(template.id)}>
-                <span class="template-icon" aria-hidden="true">
-                  <MaterialIcon name={template.icon} size={18} />
-                </span>
-                <strong>{template.title}</strong>
-              </button>
-              <button
-                class="copy-action"
-                type="button"
-                aria-label={getTemplateRequirement(template) || `${template.title} 리마크 입력`}
-                disabled={loading || Boolean(getTemplateRequirement(template))}
-                onclick={() => onUpsertRoomRemark(template.id)}
-              >
-                <MaterialIcon name={copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
-              </button>
-            </article>
-          {/each}
-        </section>
-      {/if}
-
-      {#if selectedTemplate && selectedTemplateVariables.length > 0}
-        <section class="work-input-card" aria-label={`${selectedTemplate.title} 입력`}>
-          <div class="variable-grid">
-            {#each selectedTemplateVariables as variable}
-              <label class:required={variable.kind === "manualRequired"} class="variable-field">
-                <span>{variable.label}</span>
-                <input
-                  value={templateValue(variable.name)}
-                  placeholder={variable.label}
-                  oninput={(event) => handleVariableInput(variable.name, event)}
-                />
-              </label>
+        <section class="room-note-panel" aria-label="추가 리마크">
+          <header>
+            <strong>추가 리마크</strong>
+          </header>
+          <div class="template-list">
+            {#each roomMemoOtherTemplates as template}
+              <article class:expanded={expandedTemplateId === template.id} class="template-card">
+                <button
+                  aria-expanded={expandedTemplateId === template.id}
+                  class="template-card-main"
+                  type="button"
+                  onclick={() => chooseRoomRemarkTemplate(template.id)}
+                >
+                  <div class="template-card-head">
+                    <span class="template-icon" aria-hidden="true">
+                      <MaterialIcon name={template.icon} size={18} />
+                    </span>
+                    <div>
+                      <strong>{template.title}</strong>
+                    </div>
+                  </div>
+                </button>
+                {#if getManualVariables(template).length > 0}
+                  <button
+                    class="template-field-toggle"
+                    type="button"
+                    aria-label={`${template.title} 입력값`}
+                    aria-expanded={expandedTemplateId === template.id}
+                    onclick={() => chooseRoomRemarkTemplate(template.id)}
+                  >
+                    <MaterialIcon name="edit_note" size={16} />
+                  </button>
+                {/if}
+                {#if expandedTemplateId === template.id && getManualVariables(template).length > 0}
+                  <div class="template-input-panel">
+                    {#each getManualVariables(template) as variable}
+                      <label class:required={variable.kind === "manualRequired"} class="variable-field">
+                        <span>{variable.label}</span>
+                        <input
+                          value={templateVariableValues[variable.name] || ""}
+                          placeholder={variable.label}
+                          oninput={(event) => handleVariableInput(variable.name, event)}
+                        />
+                      </label>
+                    {/each}
+                  </div>
+                {/if}
+                <button
+                  class:applying={pendingRoomRemarkTemplateId === template.id}
+                  class="copy-action"
+                  type="button"
+                  aria-busy={pendingRoomRemarkTemplateId === template.id}
+                  aria-label={getTemplateRequirement(template) || `${template.title} WINGS 리마크 입력`}
+                  disabled={loading || Boolean(getTemplateRequirement(template))}
+                  onclick={() => applyRoomRemark(template.id)}
+                >
+                  <MaterialIcon name={pendingRoomRemarkTemplateId === template.id ? "sync" : copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
+                </button>
+              </article>
             {/each}
           </div>
         </section>
@@ -694,14 +780,10 @@
       {/if}
     </section>
   {:else if menu.screenKind === "settings"}
-    <section class="settings-panel">
-      <header class="settings-editor-head">
-        <span class="template-icon" aria-hidden="true">
-          <MaterialIcon name={menu.icon} size={20} />
-        </span>
-        <strong>{menu.title}</strong>
-      </header>
-    </section>
+    <div class="work-empty">
+      <MaterialIcon name={menu.icon} size={20} />
+      <span>현재 설정 항목 없음</span>
+    </div>
   {:else}
     {#if showLanguageSelector}
       <div class="language-strip" aria-label="템플릿 언어">

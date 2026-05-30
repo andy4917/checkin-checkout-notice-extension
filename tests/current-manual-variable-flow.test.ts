@@ -171,7 +171,7 @@ test("home accordion templates copy without opening a work menu", async () => {
   assert.match(writes.at(-1) || "", /가습기/);
 });
 
-test("home accordion PMS page templates copy without requiring WINGS values", async () => {
+test("home accordion PMS page templates fail visibly when PMS values are missing", async () => {
   const { controller, writes } = await createControllerHarness({
     schemaVersion: 1,
     lastBranchId: "coex",
@@ -191,11 +191,10 @@ test("home accordion PMS page templates copy without requiring WINGS values", as
   await controller.copyHomeTemplate(checkinNotice, "guest-arrival-notice");
 
   assert.equal(controller.activeMenuId, null);
-  assert.equal(writes.length, 1);
-  assert.equal(controller.copiedTemplateId, "guest-arrival-notice");
-  assert.equal(controller.statusTone, "neutral");
-  assert.equal(controller.statusMessage, "");
-  assert.doesNotMatch(writes.at(-1) || "", /\{|\}|\[|\]/);
+  assert.equal(writes.length, 0);
+  assert.equal(controller.copiedTemplateId, null);
+  assert.equal(controller.statusTone, "error");
+  assert.equal(controller.statusMessage, "비어있는 PMS 값을 확인 후 다시 시도해주십시오.");
 });
 
 test("language selection briefly enters a dedicated loading state", async () => {

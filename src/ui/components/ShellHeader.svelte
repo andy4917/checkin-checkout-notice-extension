@@ -10,31 +10,36 @@
     locationLabel?: string;
   }>;
   export let activeMenuTitle: string | null = null;
+  export let branchPickerEnabled: boolean;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
-  export let onBranchChange: (event: Event) => void;
-  export let onBack: () => void;
+  export let onBranchChange: (event: Event) => void | Promise<void>;
 
   const MaterialIcon = MaterialIconModule.default;
-  let branchPanelOpen = false;
+  let branchApplyingId: BranchId | "" = "";
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
   $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "지점";
   $: workMode = Boolean(activeMenuTitle);
   $: activeLogoUrl = getHeaderLogoUrl(selectedBranchId);
   $: headerDate = formatHeaderDate(new Date());
-  $: if (workMode && branchPanelOpen) {
-    branchPanelOpen = false;
+
+  function nextBranchId(): BranchId | "" {
+    if (branchOptions.length === 0) return "";
+    const currentIndex = branchOptions.findIndex((branch) => branch.id === selectedBranchId);
+    return branchOptions[(currentIndex + 1) % branchOptions.length]?.id || branchOptions[0]?.id || "";
   }
 
-  function toggleBranchPanel() {
-    if (navigationLocked) return;
-    branchPanelOpen = !branchPanelOpen;
-  }
-
-  function chooseBranch(branchId: BranchId) {
-    onBranchChange({ target: { value: branchId } } as unknown as Event);
-    branchPanelOpen = false;
+  async function chooseNextBranch() {
+    if (!branchPickerEnabled || navigationLocked || branchApplyingId) return;
+    const branchId = nextBranchId();
+    if (!branchId) return;
+    branchApplyingId = branchId;
+    try {
+      await onBranchChange({ target: { value: branchId } } as unknown as Event);
+    } finally {
+      branchApplyingId = "";
+    }
   }
 
   function formatHeaderDate(date: Date): string {
@@ -46,20 +51,12 @@
     const valueByType = new Map(parts.map((part) => [part.type, part.value]));
     return `${valueByType.get("year") || ""}.${valueByType.get("month") || ""}.${valueByType.get("day") || ""}`;
   }
+
 </script>
 
 <header class:work-mode={workMode} class="app-header">
   <div class="header-left-lockup">
     {#if workMode}
-      <button
-        class="header-back-button"
-        type="button"
-        aria-label="뒤로가기"
-        disabled={navigationLocked}
-        onclick={onBack}
-      >
-        <MaterialIcon name="arrow_back" size={20} />
-      </button>
       {#if selectedBranch}
         <img class="work-branch-logo" src={activeLogoUrl} alt={selectedBranchHeaderLabel} />
       {/if}
@@ -67,19 +64,15 @@
       <div class="branch-selector">
         <button
           class:unselected={!selectedBranch}
-          class="branch-logo-trigger"
+          class="header-logo-mark"
           type="button"
-          aria-label={selectedBranch ? "지점 변경" : "지점 선택"}
-          aria-haspopup="dialog"
-          aria-expanded={branchPanelOpen}
-          disabled={navigationLocked}
-          onclick={toggleBranchPanel}
+          aria-label={selectedBranch ? "다음 지점 선택" : "지점 선택"}
+          disabled={!branchPickerEnabled || navigationLocked || Boolean(branchApplyingId)}
+          onclick={chooseNextBranch}
         >
           <img class="brand-logo" src={activeLogoUrl} alt={selectedBranch ? selectedBranchHeaderLabel : "UH Suite"} />
-          {#if !selectedBranch}
-            <span class="branch-chevron" aria-hidden="true">
-              <MaterialIcon name="expand_more" size={18} />
-            </span>
+          {#if branchApplyingId}
+            <MaterialIcon name="sync" size={16} />
           {/if}
         </button>
       </div>
@@ -92,27 +85,4 @@
     <MaterialIcon name="calendar_today" size={15} />
     <span>{headerDate}</span>
   </div>
-
-  {#if !workMode && branchPanelOpen}
-    <div
-      class="branch-picker-strip"
-      role="listbox"
-      aria-label="지점 선택"
-    >
-      {#each branchOptions as branch}
-        <button
-          class:selected={selectedBranchId === branch.id}
-          type="button"
-          role="option"
-          aria-selected={selectedBranchId === branch.id}
-          onclick={() => chooseBranch(branch.id)}
-        >
-          <span>{branch.headerLabel || branch.label}</span>
-          {#if selectedBranchId === branch.id}
-            <MaterialIcon name="check" size={16} />
-          {/if}
-        </button>
-      {/each}
-    </div>
-  {/if}
 </header>

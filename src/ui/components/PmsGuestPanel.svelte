@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { BottomPanelState } from "../side-panel-navigation-controller.svelte.js";
   import type { PmsGuestRecord } from "../../types.js";
+  import * as BackButtonModule from "./BackButton.svelte";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
 
+  const BackButton = BackButtonModule.default;
   const MaterialIcon = MaterialIconModule.default;
   const NA_LABEL = "N/A";
 
@@ -25,14 +27,14 @@
   function valueOrNa(value: string): string {
     return value.trim() || NA_LABEL;
   }
+
+  $: emptyLabel = statusTone === "error" ? "PMS 조회 실패" : "현재 등록된 PMS 기록 없음";
 </script>
 
 <section class="pms-panel" aria-label={panel.title}>
-  <div class="pms-toolbar">
-    <button class="soft-action" type="button" onclick={onBack}>
-      <MaterialIcon name="arrow_back" size={18} />
-      <span>돌아가기</span>
-    </button>
+  <BackButton className="home-nav-back work-nav-back" label={panel.title} onBack={onBack} />
+
+  <div class="pms-toolbar single">
     <button class="soft-action" type="button" disabled={loading} onclick={onRefresh}>
       <MaterialIcon name="refresh" size={18} />
       <span>새로고침</span>
@@ -60,7 +62,7 @@
     {#if records.length === 0}
       <div class="work-empty">
         <MaterialIcon name="meeting_room" size={20} />
-        <span>현재 등록된 PMS 기록 없음</span>
+        <span>{emptyLabel}</span>
       </div>
     {:else}
       {#each records as record}

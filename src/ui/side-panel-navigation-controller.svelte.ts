@@ -203,9 +203,7 @@ export function createSidePanelNavigationController(
     loading = true;
     copiedTemplateId = null;
     try {
-      const output = renderTemplate(template, selectedLanguage, templateValues(), {
-        missingRequiredValueMode: "blank",
-      });
+      const output = renderTemplate(template, selectedLanguage, templateValues());
       await dependencies.clipboard.writeText(output);
       copiedTemplateId = template.id;
       setStatus("", "neutral");
