@@ -6,6 +6,9 @@ coverage/
 .agent-runs/
 
 reports/*.log
+reports/*.json
+reports/*.png
+reports/*.html
 *.log
 
 .env

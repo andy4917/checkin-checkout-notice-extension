@@ -54,7 +54,7 @@
 
   <label class="pms-search">
     <MaterialIcon name="search" size={17} />
-    <input value={searchTerm} placeholder="객실 또는 이름" oninput={handleSearch} />
+    <input value={searchTerm} aria-label="PMS 목록 검색" oninput={handleSearch} />
   </label>
 
   <div class="pms-record-list" aria-label={`${panel.title} PMS 목록`}>

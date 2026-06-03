@@ -1,0 +1,40 @@
+{
+  "surfaceId": "form-settings",
+  "title": "양식 설정",
+  "menuPath": [
+    "설정",
+    "양식 편집"
+  ],
+  "ownerModules": [
+    "src/catalog/template-catalog.ts",
+    "src/ui/components/WorkSurface.svelte",
+    "src/platform/storage-schema.ts"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.templateVariableValues"
+  ],
+  "actions": [
+    "필수 입력값 수정"
+  ],
+  "expectedVisibleState": "필수 manual variable field만 보인다.",
+  "loadingState": "storage write 중 field/action disabled",
+  "emptyState": "필수 입력값이 없으면 fake field를 만들지 않는다.",
+  "errorState": "storage write/schema 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "input grid가 horizontal overflow 없이 보인다.",
+  "backendVerification": "setTemplateVariableValue와 writeState를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/탬플릿 설정 세팅 screen.png"
+  ]
+}

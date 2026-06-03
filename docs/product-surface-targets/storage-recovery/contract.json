@@ -1,0 +1,38 @@
+{
+  "surfaceId": "storage-recovery",
+  "title": "저장소 복구 / migration",
+  "menuPath": [
+    "app mount"
+  ],
+  "ownerModules": [
+    "src/platform/chrome-storage.ts",
+    "src/platform/storage-schema.ts",
+    "src/ui/side-panel-navigation-controller.svelte.ts"
+  ],
+  "storageKeys": [
+    "workAssistantState"
+  ],
+  "actions": [
+    "schema mismatch normalize/save",
+    "unrecoverable failure 표시"
+  ],
+  "expectedVisibleState": "복구 가능한 mismatch는 조용히 기본 state로 저장되고 붉은 복구 배너를 보이지 않는다.",
+  "loadingState": "mount 중",
+  "emptyState": "DEFAULT_EXTENSION_STATE",
+  "errorState": "실제 storage read/write 실패만 actionable error",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "mount should not force route motion.",
+  "overflowContract": "shell status가 layout overflow를 만들지 않는다.",
+  "backendVerification": "readExtensionStateWithRecovery recovered=true와 write failure를 검증한다.",
+  "smokeRequired": false,
+  "referenceFiles": []
+}

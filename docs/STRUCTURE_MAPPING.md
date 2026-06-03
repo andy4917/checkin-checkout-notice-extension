@@ -6,7 +6,7 @@ The removed DOM side panel is not a source of truth, migration target, or compat
 
 | Owner | Responsibility |
 | --- | --- |
-| `manifest.json` | MV3 extension declaration, fixed unpacked extension ID key, side panel path, host permission, module service worker |
+| `manifest.json` | MV3 extension declaration, fixed unpacked extension ID key, minimum Chrome runtime, side panel path, host permission, module service worker |
 | `src/background/index.ts` | side panel behavior and PMS-origin tab enablement |
 | `sidepanel.html`, `styles/sidepanel.css` | side panel shell and presentation |
 | `src/ui/main.ts`, `src/ui/App.svelte` | Svelte entry and skeleton/orchestrator |
@@ -33,8 +33,10 @@ The removed DOM side panel is not a source of truth, migration target, or compat
 ## Hardcoding Removed From Runtime Flow
 
 - PMS origin, endpoint path, branch WINGS codes, page defaults, status groups, supported languages, room tower boundary, side panel path, and install/error messages now live in `src/config/*`.
+- The manifest keeps `minimum_chrome_version` aligned with the Vite Chrome target and runtime API floor.
 - The manifest keeps `host_permissions` static because Chrome extension permissions must be declared in `manifest.json`.
 - The manifest keeps `key` static because Chrome derives the unpacked extension ID from that public key.
+- `docs/CHROME_EXTENSION_PRINCIPLES.md` is the active extension-platform rule set for manifest, permission, owner-module, and verification decisions.
 - Message text is isolated as catalog product copy under `src/catalog/*` instead of being mixed with DOM/API logic.
 - Do not use historical migration notes as permission to duplicate operation values in UI components or tests.
 

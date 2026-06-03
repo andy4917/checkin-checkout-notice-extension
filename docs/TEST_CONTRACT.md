@@ -5,6 +5,7 @@
 ## 테스트로 증명할 것
 
 - Svelte side panel entry가 실제 빌드에 포함되고 legacy DOM sidepanel 경로에 의존하지 않는다.
+- manifest는 MV3, 고정 extension ID, `minimum_chrome_version = 120`, static host permission, module service worker, Svelte side panel entry를 유지해야 한다.
 - 지점 선택은 명시적이어야 하며, 잘못된 저장 지점은 조용히 다른 지점으로 바뀌지 않는다.
 - 지점 선택은 로고 trigger가 여는 명시적 sheet/popup이어야 하며, 과거의 다음 지점 순환 버튼이나 dropdown strip으로 되돌아가면 실패해야 한다.
 - PMS 요청은 선택 지점의 WINGS 코드와 날짜 필터를 정확히 전송한다.
@@ -16,6 +17,8 @@
 - 고객 안내문/빠른 문의 답변의 아코디언 그룹은 사용자가 직접 접기 전까지 열린 상태를 유지하며, 하나만 열리는 제한을 두지 않는다.
 - 복사 성공은 누른 버튼의 상태로만 보이고, 화면 이동 후에도 남는 전역 `복사되었습니다.` 배너를 만들지 않는다.
 - 상단 공용 헤더는 오래된 활성 메뉴명, WINGS 배지, 업무 상태 suffix를 표시하지 않는다.
+- 홈 상세 패널에서 지점 선택이 잠겨도 로고는 전역 disabled opacity를 상속해 회색으로 흐려지면 안 된다.
+- 홈 상세 패널 전환은 shared `--sidepanel-motion-*` 토큰으로 forward slide를 사용하고, work/PMS surface는 `data-view-motion`에 맞는 direction animation을 사용해야 한다.
 - 언어 선택바는 고객 안내문/빠른 문의 답변 템플릿 화면과 현재 work menu 게이트가 허용한 화면에만 나타난다.
 - 홈 상세 패널이 숨겨져 있을 때 언어/복사/하위 메뉴 컨트롤은 탭 순서에서 빠져야 한다.
 - 설정 import/export/reset은 storage schema와 template schema를 통과한 값만 저장한다.
@@ -33,13 +36,14 @@
 
 ## 현재 테스트 묶음
 
-기존 테스트 파일은 폐기하고 현재 기준을 직접 보는 `current-*` 묶음으로 재작성한다.
+기존 `current-*` 테스트 파일은 폐기했다. 현재 테스트는 제품 계약과
+owner/application/domain 동작만 보호한다.
 
-- `current-repo-contract.test.ts`: repo-local `agents.md` casing, absent external workflow hardcoding 방지, `.agent-runs` 추적 방지, legacy sidepanel 문서/경로 제거, UI operation 값 소유권.
-- `current-extension-boundary.test.ts`: MV3 manifest, Svelte side panel entry, `App.svelte` skeleton/orchestrator, side panel open policy, tab context.
-- `current-catalog-routing.test.ts`: 홈/고객 안내문 routing, settings hub routing, catalog metadata filtering, branchScope attachment exclusion, renderer required-value/language failure, context guard.
-- `current-data-flows.test.ts`: PMS request/date/branch body, PMS failure, OTA normalization, WINGS field map, branch mismatch, WINGS remark dependency and write behavior.
-- `current-storage-settings.test.ts`: extension storage schema, recoverable corruption policy, template settings import/export/reset validation.
+- `product-surface-contract.test.ts`: `docs/product-surface-targets/*/contract.json`과 `target.svg`를 읽고 모든 surface target, catalog-backed route, smoke coverage를 검증한다.
+- `repo-boundary.test.ts`: MV3 manifest, minimum Chrome runtime, Svelte side panel entry, App skeleton, legacy sidepanel 제거, placeholder attribute 금지, logo/motion/scroll CSS contract를 검증한다.
+- `application-domain.test.ts`: PMS, OTA/WINGS, storage schema, template rendering, laundry, sales, airport van owner 함수의 성공/실패 contract를 검증한다.
+- `integration-state.test.ts`: UI action이 controller/application/storage/backend boundary를 호출하고 visible state로 이어지는지 검증한다.
+- `extension-smoke-contract.test.ts`: actual Chrome profile path 확인, runtime/console error 수집, placeholder/overflow/logo/motion/surface coverage가 smoke에 들어있는지 검증한다.
 
 ## Closeout Rule
 
@@ -66,9 +70,10 @@ extension-capable Chromium runtime at
 `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html`. It must
 exercise the full home root menu state, branch popup, bottom menu enablement,
 all five home submenu groups, settings hub, template editor routing, one
-service/work menu path, and the PMS loading/resolved backend state. It must fail
-on horizontal overflow, banned placeholder text, fake PMS fallback text, wrong
-extension ID, missing extension worker, or runtime errors.
+service/work menu path, work report surface, all PMS bottom panels, and the PMS loading/resolved backend state. It must fail
+on horizontal overflow, banned placeholder text, fake PMS fallback text, dimmed
+locked shell logo, missing shared submenu transition, missing work-surface route
+motion, wrong extension ID, missing extension worker, or runtime errors.
 
 Vite-rendered pages are non-authoritative for frontend closeout. They may help
 debug a bundle issue, but they do not replace the actual Chrome extension proof.

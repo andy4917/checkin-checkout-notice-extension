@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { get } from "node:http";
 import { tmpdir } from "node:os";
@@ -18,6 +18,8 @@ type DevtoolsTarget = {
 
 type CdpResponse = {
   id?: number;
+  method?: string;
+  params?: Record<string, unknown>;
   result?: {
     result?: {
       type?: string;
@@ -30,6 +32,20 @@ type CdpResponse = {
   exceptionDetails?: unknown;
 };
 
+type ActualChromeExtensionInstall = {
+  id: string;
+  path: string;
+  location: unknown;
+  securePreferencesPath: string;
+};
+
+type PendingCdpRequest = {
+  resolve: (value: CdpResponse) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+  method: string;
+};
+
 type SmokeResult = {
   href: string;
   initialHasHome: boolean;
@@ -40,12 +56,49 @@ type SmokeResult = {
   noHorizontalPageOverflow: boolean;
   overflowItems: unknown[];
   bannedFinal: boolean;
+  runtimeErrors?: string[];
+  consoleErrors?: string[];
   ok: boolean;
+};
+
+type ExtensionSmokeManifest = {
+  key: string;
+  manifest_version?: number;
+  minimum_chrome_version?: string;
+  background?: {
+    service_worker?: string;
+  };
+  side_panel?: {
+    default_path?: string;
+  };
 };
 
 const rootDir = resolve(import.meta.dirname, "..");
 const distDir = resolve(rootDir, "dist");
-const expectedExtensionId = getExtensionIdFromManifestKey(manifest.key);
+const reportsDir = resolve(rootDir, "reports");
+const distManifest = manifest as ExtensionSmokeManifest;
+const expectedExtensionId = getExtensionIdFromManifestKey(distManifest.key);
+const SMOKE_SURFACE_IDS = Object.freeze([
+  "home-root",
+  "branch-picker-header-lock",
+  "home-submenu-customer-guidance",
+  "home-submenu-quick-replies",
+  "home-submenu-service-management",
+  "home-submenu-work-management",
+  "home-submenu-template-editor",
+  "settings-hub",
+  "template-settings",
+  "form-settings",
+  "laundry-management",
+  "sales-management",
+  "airport-van-management",
+  "room-remark-memo",
+  "ota-reservation-input",
+  "work-report-template-list",
+  "pms-checkin-list",
+  "pms-checkout-list",
+  "pms-room-select",
+]);
 
 async function runSmoke() {
   const browserPath = findBrowserPath();
@@ -55,6 +108,7 @@ async function runSmoke() {
 
   try {
   validateDistManifest();
+  const actualChromeInstall = readActualChromeExtensionInstall();
   browserProcess = launchBrowser(browserPath, debuggingPort, profileDir);
   const targets = await waitForExtensionTargets(debuggingPort);
   const worker = targets.find(
@@ -80,6 +134,7 @@ async function runSmoke() {
   try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
+    await session.send("Log.enable");
     const extensionUrl = `chrome-extension://${expectedExtensionId}/sidepanel.html`;
     await session.send("Page.navigate", { url: extensionUrl });
     await delay(1_000);
@@ -88,7 +143,7 @@ async function runSmoke() {
       expression: smokeExpression(),
       awaitPromise: true,
       returnByValue: true,
-    });
+    }, 120_000);
     const exceptionDetails =
       smokeResponse.exceptionDetails ||
       smokeResponse.result?.exceptionDetails ||
@@ -103,29 +158,32 @@ async function runSmoke() {
     }
 
     const smoke = JSON.parse(rawResult) as SmokeResult;
+    smoke.consoleErrors = collectConsoleErrors(session.events);
     const screenshot = await session.send("Page.captureScreenshot", {
       format: "png",
       captureBeyondViewport: false,
     });
-    await writeFailureScreenshotIfNeeded(smoke, screenshot);
+    const report = {
+      browser: browserPath,
+      extensionId: expectedExtensionId,
+      actualChromeExtension: actualChromeInstall,
+      distPath: distDir,
+      distManifestPath: join(distDir, "manifest.json"),
+      targetUrl: extensionUrl,
+      smokeSurfaceIds: SMOKE_SURFACE_IDS,
+      checkedSteps: smoke.steps.map((step) => step.step),
+      menuState: smoke.menuState,
+      pmsStatus: smoke.pmsStatus,
+      overflowItems: smoke.overflowItems.length,
+      runtimeErrors: smoke.runtimeErrors || [],
+      consoleErrors: smoke.consoleErrors || [],
+      passed: smoke.ok,
+      smoke,
+    };
+    await writeSmokeReport(report, smoke, screenshot);
     assertSmokeResult(smoke, extensionUrl);
 
-    console.log(
-      JSON.stringify(
-        {
-          browser: browserPath,
-          extensionId: expectedExtensionId,
-          targetUrl: extensionUrl,
-          checkedSteps: smoke.steps.map((step) => step.step),
-          menuState: smoke.menuState,
-          pmsStatus: smoke.pmsStatus,
-          overflowItems: smoke.overflowItems.length,
-          passed: true,
-        },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify({ ...report, passed: true }, null, 2));
   } finally {
     session.close();
   }
@@ -142,15 +200,50 @@ function validateDistManifest() {
   if (!existsSync(join(distDir, "manifest.json")) || !existsSync(join(distDir, "sidepanel.html"))) {
     throw new Error("dist is missing manifest.json or sidepanel.html. Run npm run build first.");
   }
-  if (manifest.manifest_version !== 3) {
+  if (distManifest.manifest_version !== 3) {
     throw new Error("dist manifest is not MV3.");
   }
-  if (manifest.background?.service_worker !== "assets/background.js") {
+  if (distManifest.minimum_chrome_version !== "120") {
+    throw new Error("dist manifest minimum_chrome_version must be 120.");
+  }
+  if (distManifest.background?.service_worker !== "assets/background.js") {
     throw new Error("dist manifest background service worker must be assets/background.js.");
   }
-  if (manifest.side_panel?.default_path !== "sidepanel.html") {
+  if (distManifest.side_panel?.default_path !== "sidepanel.html") {
     throw new Error("dist manifest side_panel.default_path must be sidepanel.html.");
   }
+}
+
+function readActualChromeExtensionInstall(): ActualChromeExtensionInstall {
+  const localAppData = process.env.LOCALAPPDATA || "";
+  const securePreferencesPath = join(localAppData, "Google", "Chrome", "User Data", "Default", "Secure Preferences");
+  if (!existsSync(securePreferencesPath)) {
+    throw new Error(`Chrome Secure Preferences not found: ${securePreferencesPath}`);
+  }
+
+  const preferences = JSON.parse(readFileSync(securePreferencesPath, "utf8")) as {
+    extensions?: { settings?: Record<string, { path?: string; location?: unknown }> };
+  };
+  const setting = preferences.extensions?.settings?.[expectedExtensionId];
+  if (!setting?.path) {
+    throw new Error(`Actual Chrome profile does not list extension ${expectedExtensionId}.`);
+  }
+  if (resolve(setting.path) !== distDir) {
+    throw new Error(
+      [
+        `Actual Chrome profile loads a different path for ${expectedExtensionId}.`,
+        `Expected: ${distDir}`,
+        `Observed: ${setting.path}`,
+      ].join("\n"),
+    );
+  }
+
+  return {
+    id: expectedExtensionId,
+    path: setting.path,
+    location: setting.location ?? null,
+    securePreferencesPath,
+  };
 }
 
 function findBrowserPath(): string {
@@ -289,45 +382,91 @@ async function getFreePort(): Promise<number> {
 
 class CdpSession {
   private nextId = 1;
-  private pending = new Map<number, (value: CdpResponse) => void>();
+  private pending = new Map<number, PendingCdpRequest>();
+  readonly events: CdpResponse[] = [];
 
   private constructor(private readonly socket: WebSocket) {
     this.socket.addEventListener("message", (event) => {
       const raw = typeof event.data === "string" ? event.data : "";
       if (!raw) return;
       const message = JSON.parse(raw) as CdpResponse;
-      if (!message.id) return;
-      const resolver = this.pending.get(message.id);
-      if (!resolver) return;
+      if (!message.id) {
+        if (message.method) this.events.push(message);
+        return;
+      }
+      const pending = this.pending.get(message.id);
+      if (!pending) return;
       this.pending.delete(message.id);
-      resolver(message);
+      clearTimeout(pending.timer);
+      pending.resolve(message);
+    });
+    this.socket.addEventListener("error", () => {
+      this.rejectPending(new Error("Chrome DevTools WebSocket error."));
+    });
+    this.socket.addEventListener("close", () => {
+      this.rejectPending(new Error("Chrome DevTools WebSocket closed."));
     });
   }
 
   static async connect(url: string): Promise<CdpSession> {
     const socket = new WebSocket(url);
     await new Promise<void>((resolvePromise, rejectPromise) => {
-      socket.addEventListener("open", () => resolvePromise(), { once: true });
-      socket.addEventListener("error", () => rejectPromise(new Error("Failed to connect to Chrome DevTools WebSocket")), {
-        once: true,
-      });
+      const timer = setTimeout(() => rejectPromise(new Error("Timed out connecting to Chrome DevTools WebSocket.")), 10_000);
+      socket.addEventListener("open", () => {
+        clearTimeout(timer);
+        resolvePromise();
+      }, { once: true });
+      socket.addEventListener("error", () => {
+        clearTimeout(timer);
+        rejectPromise(new Error("Failed to connect to Chrome DevTools WebSocket"));
+      }, { once: true });
     });
     return new CdpSession(socket);
   }
 
-  async send(method: string, params?: Record<string, unknown>): Promise<CdpResponse> {
+  async send(method: string, params?: Record<string, unknown>, timeoutMs = 30_000): Promise<CdpResponse> {
     const id = this.nextId;
     this.nextId += 1;
-    const response = new Promise<CdpResponse>((resolvePromise) => {
-      this.pending.set(id, resolvePromise);
+    const response = new Promise<CdpResponse>((resolvePromise, rejectPromise) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        rejectPromise(new Error(`Timed out waiting for CDP ${method}.`));
+      }, timeoutMs);
+      this.pending.set(id, {
+        resolve: resolvePromise,
+        reject: rejectPromise,
+        timer,
+        method,
+      });
     });
     this.socket.send(JSON.stringify({ id, method, params }));
     return response;
   }
 
   close() {
+    this.rejectPending(new Error("Chrome DevTools session closed."));
     this.socket.close();
   }
+
+  private rejectPending(error: Error) {
+    for (const [id, pending] of this.pending.entries()) {
+      this.pending.delete(id);
+      clearTimeout(pending.timer);
+      pending.reject(new Error(`${error.message} Pending CDP method: ${pending.method}.`));
+    }
+  }
+}
+
+function collectConsoleErrors(events: readonly CdpResponse[]): string[] {
+  return events
+    .filter((event) =>
+      event.method === "Runtime.exceptionThrown" ||
+      event.method === "Log.entryAdded" ||
+      event.method === "Runtime.consoleAPICalled"
+    )
+    .map((event) => JSON.stringify(event.params || {}))
+    .filter((entry) => /error|exception|unhandled|TypeError|ReferenceError/i.test(entry))
+    .slice(0, 20);
 }
 
 function smokeExpression(): string {
@@ -370,9 +509,29 @@ function smokeExpression(): string {
  const visibleDetailItems=()=>[...document.querySelectorAll(".detail-panel .home-submenu-item")]
    .map((node)=>(node.innerText || "").trim())
    .filter(Boolean);
- const inputPlaceholders=()=>[...document.querySelectorAll(".work-surface input[placeholder],.work-surface textarea[placeholder]")]
+ const inputPlaceholders=()=>[...document.querySelectorAll("input[placeholder],textarea[placeholder]")]
    .map((node)=>node.getAttribute("placeholder") || "")
    .filter(Boolean);
+ const shellVisualState=()=> {
+   const logoButton=document.querySelector(".header-logo-mark");
+   const logoImage=document.querySelector(".header-logo-mark img");
+   const viewport=document.querySelector(".home-navigation-viewport");
+   const track=document.querySelector(".home-navigation-track");
+   const workSurface=document.querySelector(".work-surface");
+   const pmsPanel=document.querySelector(".pms-panel");
+   const logoStyle=logoButton ? getComputedStyle(logoButton) : null;
+   const trackStyle=track ? getComputedStyle(track) : null;
+   const surfaceStyle=workSurface || pmsPanel ? getComputedStyle(workSurface || pmsPanel) : null;
+   return {
+     logoDisabled:Boolean(logoButton?.disabled),
+     logoOpacity:logoStyle?.opacity || "",
+     logoAlt:logoImage?.getAttribute("alt") || "",
+     navigationDirection:viewport?.getAttribute("data-motion-direction") || "",
+     navigationTransition:trackStyle?.transition || "",
+     stageMotion:document.querySelector(".screen-stage")?.getAttribute("data-view-motion") || "",
+     surfaceAnimationName:surfaceStyle?.animationName || ""
+   };
+ };
  const clippedLabels=()=>[...document.querySelectorAll(".work-surface strong,.work-surface button,.work-surface span")]
    .filter((node)=>{
      const style=getComputedStyle(node);
@@ -392,7 +551,10 @@ function smokeExpression(): string {
      noStorageCorruptionBanner: !/저장된 데이터 손상이 발견되었습니다/.test(workText),
      noLegacyPlaceholderText: !/YYYY\.MM\.DD|HH:MM|현재 설정 항목 없음/.test(workText),
      noClippedLabels: clippedLabels().length === 0,
-     clippedLabels: clippedLabels()
+     clippedLabels: clippedLabels(),
+     logoVisible: shellVisualState().logoOpacity === "1",
+     usesRouteMotion:
+       ["work-view-enter-forward","work-view-enter-backward","work-view-replace"].includes(shellVisualState().surfaceAnimationName)
    };
  };
  const homeRootVisible=()=>document.querySelector(".root-panel") && !document.querySelector(".home-navigation-viewport.submenu-active") && /고객 서비스 관리/.test(text());
@@ -420,11 +582,18 @@ function smokeExpression(): string {
    await waitFor(()=>document.querySelector(".home-navigation-viewport.submenu-active"), label+" detail");
    await sleep(260);
    const detail=document.querySelector(".detail-panel");
+   const visual=shellVisualState();
    const state={
      label,
      items: visibleDetailItems(),
      languageVisible: Boolean(detail?.querySelector(".home-language-strip")),
-     copyButtons: detail?.querySelectorAll(".home-template-copy").length || 0
+     copyButtons: detail?.querySelectorAll(".home-template-copy").length || 0,
+     logoVisibleWhenLocked: visual.logoDisabled && visual.logoOpacity === "1",
+     usesForwardMotion: visual.navigationDirection === "forward",
+     usesContractTransition:
+       /transform/.test(visual.navigationTransition) &&
+       /0\.6s|600ms/.test(visual.navigationTransition) &&
+       /cubic-bezier\(0\.54,\s*0\.01,\s*0\.19,\s*0\.93\)/.test(visual.navigationTransition)
    };
    await click(detail?.querySelector("[aria-label$='뒤로가기']"), label+" back");
    await waitFor(()=>!document.querySelector(".home-navigation-viewport.submenu-active"), label+" root return");
@@ -497,6 +666,9 @@ function smokeExpression(): string {
    step:"full-menu-state",
    capturedAllRootGroups: result.menuState.groups.length === expectedRoot.length,
    allSubmenusHaveItems: result.menuState.groups.every((group)=>group.items.length > 0),
+   shellLogoStaysVisibleWhileSubmenuLocked: result.menuState.groups.every((group)=>group.logoVisibleWhenLocked),
+   allSubmenusUseForwardMotion: result.menuState.groups.every((group)=>group.usesForwardMotion),
+   allSubmenusUseContractTransition: result.menuState.groups.every((group)=>group.usesContractTransition),
    accordionGroupsHaveLanguage: result.menuState.groups
      .filter((group)=>["고객 안내문","빠른 문의 답변"].includes(group.label))
      .every((group)=>group.languageVisible && group.copyButtons > 0),
@@ -560,6 +732,12 @@ function smokeExpression(): string {
    hasFetchCard:Boolean(document.querySelector(".ota-fetch-card")),
    hasExtractAction:/예약정보 가져오기/.test(text())
  });
+ await openHomeWorkItem("업무 관리","업무보고 양식");
+ result.steps.push({
+   ...workSurfaceState("work-report-template-list"),
+   hasTemplateList:Boolean(document.querySelector(".accordion-stack")),
+   hasCopyActions:document.querySelectorAll(".copy-action").length > 0
+ });
  await click(document.querySelector("[aria-label$='뒤로가기']"),"back to home before pms");
  await waitFor(()=>/체크인 목록/.test(text()),"home before pms");
  await click(byText("체크인 목록"),"checkin pms panel");
@@ -587,7 +765,7 @@ function smokeExpression(): string {
    records: pmsRecords
  };
  result.steps.push({
-   step:"pms-backend-state-visible",
+   step:"pms-checkin-list",
    hasPmsPanel: result.menuState.pms.panelTitleVisible,
    hasLoadingOrResolvedState:
      /PMS 조회 중/.test(result.menuState.pms.loadingLabel) ||
@@ -600,11 +778,37 @@ function smokeExpression(): string {
      result.menuState.pms.recordCount > 0,
    noFakePmsRecordText: !/N\/A/.test(pmsText)
  });
+ for (const [label, stepName] of [["체크아웃 목록","pms-checkout-list"],["객실 선택","pms-room-select"]]) {
+   await click(document.querySelector("[aria-label$='뒤로가기']"),"back before "+label);
+   await waitFor(()=>/체크인 목록/.test(text()),"home before "+label);
+   await click(byText(label),label+" pms panel");
+   await waitFor(()=>text().includes(label),"pms panel "+label);
+   await waitFor(
+     ()=>/PMS 조회 중|PMS 조회에 실패했습니다|PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(text()) || byText("새로고침")?.disabled === true || document.querySelector(".pms-record-row"),
+     label+" pms loading or resolved state"
+   );
+   await waitFor(()=>byText("새로고침")?.disabled === false,label+" pms loading finished",15000);
+   await waitFor(
+     ()=>/PMS 조회에 실패했습니다|PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(text()) || document.querySelector(".pms-record-row"),
+     label+" pms result",
+     10000
+   );
+   const panelText=text();
+   result.steps.push({
+     step: stepName,
+     hasPmsPanel: panelText.includes(label),
+     hasResolvedBackendState:
+       /PMS 조회에 실패했습니다|PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(panelText) ||
+       Boolean(document.querySelector(".pms-record-row")),
+     noInputPlaceholders: inputPlaceholders().length === 0,
+     noFakePmsRecordText: !/N\/A/.test(panelText)
+   });
+ }
  const finalText=text();
  result.noHorizontalPageOverflow=document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1 && document.body.scrollWidth <= document.documentElement.clientWidth + 1;
  result.overflowItems=overflow();
  result.bannedFinal=/현재 설정 항목 없음|저장된 데이터 손상이 발견되었습니다|The Gangnan|복사되었습니다\.|YYYY\.MM\.DD|HH:MM/.test(finalText);
- result.ok=result.initialHasHome && !result.bannedInitial && result.noHorizontalPageOverflow && !result.bannedFinal && result.steps.every((step)=>Object.entries(step).every(([key,value])=>key === "logoAlt" || typeof value !== "boolean" || value));
+ result.ok=result.initialHasHome && !result.bannedInitial && runtimeErrors.length === 0 && result.noHorizontalPageOverflow && !result.bannedFinal && result.steps.every((step)=>Object.entries(step).every(([key,value])=>key === "logoAlt" || typeof value !== "boolean" || value));
  return JSON.stringify(result);
  } catch (error) {
    return JSON.stringify({
@@ -628,13 +832,20 @@ function smokeExpression(): string {
 `;
 }
 
-async function writeFailureScreenshotIfNeeded(smoke: SmokeResult, screenshot: CdpResponse) {
-  if (smoke.ok || typeof screenshot.result?.data !== "string") {
-    return;
+async function writeSmokeReport(report: unknown, smoke: SmokeResult, screenshot: CdpResponse) {
+  mkdirSync(reportsDir, { recursive: true });
+  const reportPath = join(reportsDir, "extension-smoke-result.json");
+  await writeFile(reportPath, JSON.stringify(report, null, 2));
+  if (!smoke.ok && typeof screenshot.result?.data === "string") {
+    const failurePath = join(reportsDir, "extension-smoke-failure.png");
+    await writeFile(failurePath, Buffer.from(screenshot.result.data, "base64"));
+    const snapshotPath = join(reportsDir, "extension-smoke-failure.html");
+    const failureHtml = typeof (smoke as { html?: unknown }).html === "string" ? String((smoke as { html?: unknown }).html) : "";
+    await writeFile(snapshotPath, failureHtml);
+    console.error(`Failure screenshot: ${failurePath}`);
+    console.error(`Failure DOM snapshot: ${snapshotPath}`);
   }
-  const failurePath = join(tmpdir(), "sidepanel-extension-smoke-failure.png");
-  await writeFile(failurePath, Buffer.from(screenshot.result.data, "base64"));
-  console.error(`Failure screenshot: ${failurePath}`);
+  console.error(`Smoke result JSON: ${reportPath}`);
 }
 
 function assertSmokeResult(smoke: SmokeResult, extensionUrl: string) {
@@ -646,6 +857,8 @@ function assertSmokeResult(smoke: SmokeResult, extensionUrl: string) {
   if (!smoke.noHorizontalPageOverflow) failures.push("page-level horizontal overflow was detected");
   if (smoke.overflowItems.length > 0) failures.push(`element overflow was detected: ${JSON.stringify(smoke.overflowItems)}`);
   if (smoke.bannedFinal) failures.push("banned legacy/placeholder text appeared after navigation");
+  if ((smoke.runtimeErrors || []).length > 0) failures.push(`runtime errors were captured: ${JSON.stringify(smoke.runtimeErrors)}`);
+  if ((smoke.consoleErrors || []).length > 0) failures.push(`console errors were captured: ${JSON.stringify(smoke.consoleErrors)}`);
   const failedSteps = smoke.steps.filter((step) =>
     Object.entries(step).some(([key, value]) => key !== "logoAlt" && typeof value === "boolean" && !value),
   );

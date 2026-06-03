@@ -1,0 +1,42 @@
+{
+  "surfaceId": "template-settings",
+  "title": "템플릿 설정",
+  "menuPath": [
+    "설정",
+    "템플릿 편집"
+  ],
+  "ownerModules": [
+    "src/application/template-settings.ts",
+    "src/platform/storage-schema.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.templateOverrides",
+    "workAssistantState.customTemplates"
+  ],
+  "actions": [
+    "초기화 armed",
+    "초기화 실행"
+  ],
+  "expectedVisibleState": "템플릿 설정 초기화 action과 armed warning만 보인다.",
+  "loadingState": "storage write 중 action disabled",
+  "emptyState": "해당 없음",
+  "errorState": "storage write/schema 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "danger action이 clipped 되지 않는다.",
+  "backendVerification": "resetAllTemplateSettings와 writeState success/failure를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/탬플릿 설정 세팅 screen.png"
+  ]
+}

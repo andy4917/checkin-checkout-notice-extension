@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="620" viewBox="0 0 720 620" role="img" aria-labelledby="title desc">
+  <title id="title">업무보고 양식</title>
+  <desc id="desc">업무보고 템플릿 accordion과 copy action이 보인다.</desc>
+  <style>
+    .frame { fill: #fbfbfa; stroke: #111; stroke-width: 2; }
+    .header { fill: #fff; stroke: #dedede; }
+    .panel { fill: #fff; stroke: #e4e4e2; stroke-width: 1.5; }
+    .primary { fill: #111; }
+    .body { font: 18px Arial, sans-serif; fill: #1b1f23; }
+    .title { font: 700 30px Arial, sans-serif; fill: #111; }
+    .meta { font: 15px Arial, sans-serif; fill: #687076; }
+    .button { font: 700 18px Arial, sans-serif; fill: #fff; }
+  </style>
+  <rect x="1" y="1" width="718" height="618" rx="28" class="frame"/>
+  <rect x="24" y="24" width="672" height="78" rx="14" class="header"/>
+  <text x="48" y="72" class="title">업무보고 양식</text>
+  <text x="520" y="72" class="meta">UH SUITE / 2026.06.04</text>
+  <rect x="24" y="122" width="672" height="360" rx="16" class="panel"/>
+<text x="34" y="120" class="body">Path: 홈 &gt; 업무 관리 &gt; 업무보고 양식</text>
+<text x="34" y="154" class="body">Visible: 업무보고 템플릿 accordion과 copy action이 보인다.</text>
+<text x="34" y="188" class="body">Actions: 업무보고 템플릿 선택, 복사</text>
+<text x="34" y="222" class="body">Loading: copy/write 중 action disabled</text>
+<text x="34" y="256" class="body">Empty: 템플릿 목록 없음은 최소 empty로만 표현</text>
+<text x="34" y="290" class="body">Error: 필수값/clipboard 실패 status</text>
+<text x="34" y="324" class="body">Motion: work surface uses data-view-motion direction animation.</text>
+<text x="34" y="358" class="body">Overflow: accordion rows가 clipped 되지 않는다.</text>
+<text x="34" y="392" class="body">Backend: renderTemplate와 clipboard.writeText를 검증한다.</text>
+<text x="34" y="426" class="body">Forbidden: N/A, YYYY.MM.DD, HH:MM, The Gangnan, 복사되었습니다, 저장된 데이터 손상이 발견되었습니다, placeholder attribute, fake business data</text>
+  <rect x="34" y="510" width="652" height="58" rx="12" class="primary"/>
+  <text x="58" y="546" class="button">업무보고 템플릿 선택</text>
+</svg>

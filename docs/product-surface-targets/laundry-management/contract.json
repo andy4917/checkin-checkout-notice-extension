@@ -1,0 +1,43 @@
+{
+  "surfaceId": "laundry-management",
+  "title": "세탁물 관리",
+  "menuPath": [
+    "홈",
+    "고객 서비스 관리",
+    "세탁물 관리"
+  ],
+  "ownerModules": [
+    "src/application/laundry-records.ts",
+    "src/laundry/storage.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "laundryRecords:v1"
+  ],
+  "actions": [
+    "세탁물 추가",
+    "세탁/건조/완료 이동",
+    "삭제"
+  ],
+  "expectedVisibleState": "진행 중, 세탁 예정, 완료 영역과 실제 추가 control이 보인다.",
+  "loadingState": "storage write 중 action disabled",
+  "emptyState": "count 0은 badge로만 보이고 fake room card는 만들지 않는다.",
+  "errorState": "storage/move 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "board/cards/dock이 horizontal overflow를 만들지 않는다.",
+  "backendVerification": "chrome.storage read/write와 move rule 실패를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/세탁물 관리 screen.png"
+  ]
+}

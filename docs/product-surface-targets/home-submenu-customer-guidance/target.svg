@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="620" viewBox="0 0 720 620" role="img" aria-labelledby="title desc">
+  <title id="title">고객 안내문 하위 메뉴</title>
+  <desc id="desc">체크인/체크아웃/객실/요금 안내 항목과 언어 strip이 보인다.</desc>
+  <style>
+    .frame { fill: #fbfbfa; stroke: #111; stroke-width: 2; }
+    .header { fill: #fff; stroke: #dedede; }
+    .panel { fill: #fff; stroke: #e4e4e2; stroke-width: 1.5; }
+    .primary { fill: #111; }
+    .body { font: 18px Arial, sans-serif; fill: #1b1f23; }
+    .title { font: 700 30px Arial, sans-serif; fill: #111; }
+    .meta { font: 15px Arial, sans-serif; fill: #687076; }
+    .button { font: 700 18px Arial, sans-serif; fill: #fff; }
+  </style>
+  <rect x="1" y="1" width="718" height="618" rx="28" class="frame"/>
+  <rect x="24" y="24" width="672" height="78" rx="14" class="header"/>
+  <text x="48" y="72" class="title">고객 안내문 하위 메뉴</text>
+  <text x="520" y="72" class="meta">UH SUITE / 2026.06.04</text>
+  <rect x="24" y="122" width="672" height="360" rx="16" class="panel"/>
+<text x="34" y="120" class="body">Path: 홈 &gt; 고객 안내문</text>
+<text x="34" y="154" class="body">Visible: 체크인/체크아웃/객실/요금 안내 항목과 언어 strip이 보인다.</text>
+<text x="34" y="188" class="body">Actions: 언어 변경, 템플릿 복사</text>
+<text x="34" y="222" class="body">Loading: 언어 변경 또는 복사 중 해당 버튼만 busy/disabled</text>
+<text x="34" y="256" class="body">Empty: 템플릿이 없을 때 업무 데이터처럼 보이지 않는 최소 empty</text>
+<text x="34" y="290" class="body">Error: 필수 PMS/clipboard 실패 status</text>
+<text x="34" y="324" class="body">Motion: forward/backward home track transform uses --sidepanel-motion-*.</text>
+<text x="34" y="358" class="body">Overflow: detail panel single scroll; labels must not clip.</text>
+<text x="34" y="392" class="body">Backend: clipboard.writeText가 성공해야 copied state가 보인다.</text>
+<text x="34" y="426" class="body">Forbidden: N/A, YYYY.MM.DD, HH:MM, The Gangnan, 복사되었습니다, 저장된 데이터 손상이 발견되었습니다, placeholder attribute, fake business data</text>
+  <rect x="34" y="510" width="652" height="58" rx="12" class="primary"/>
+  <text x="58" y="546" class="button">언어 변경</text>
+</svg>

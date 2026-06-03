@@ -9,7 +9,7 @@ export const OTA_BRANCH_MISMATCH_MESSAGE =
 export const WINGS_BROWSER_TAB_MESSAGE = "WINGS 브라우저 탭에서 진행하여주십시오.";
 export const WINGS_ROOM_INFO_WINDOW_MESSAGE = "WINGS 객실 정보창을 선택해주세요.";
 export const STORAGE_CORRUPTION_MESSAGE =
-  "저장된 데이터 손상이 발견되었습니다. 복구를 시도하여 이전 데이터를 불러와주십시오.";
+  "저장소 작업에 실패했습니다. 확장 프로그램 저장 권한과 Chrome 상태를 확인 후 다시 시도해주십시오.";
 export const TEMPLATE_LANGUAGE_MISSING_MESSAGE =
   "해당 언어는 등록되어있지 않습니다. 등록 후 다시 시도해주십시오.";
 export const REQUIRED_VARIABLE_MISSING_MESSAGE =

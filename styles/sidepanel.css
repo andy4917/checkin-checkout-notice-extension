@@ -260,6 +260,10 @@ button:disabled {
   cursor: default;
 }
 
+.header-logo-mark:disabled {
+  opacity: 1;
+}
+
 .branch-selection-popup {
   position: absolute;
   z-index: 45;
@@ -389,7 +393,7 @@ button:disabled {
   gap: 16px;
   min-height: 0;
   padding: 12px 0 calc(26px + var(--bottom-bar-gap));
-  animation: work-view-enter var(--motion-reveal-duration) var(--motion-standard) both;
+  animation: work-view-enter-forward var(--motion-reveal-duration) var(--motion-standard) both;
 }
 
 .pms-panel {
@@ -398,7 +402,17 @@ button:disabled {
   gap: 14px;
   min-height: 0;
   padding: 12px 0 calc(26px + var(--bottom-bar-gap));
-  animation: work-view-enter var(--motion-reveal-duration) var(--motion-standard) both;
+  animation: work-view-enter-forward var(--motion-reveal-duration) var(--motion-standard) both;
+}
+
+.screen-stage[data-view-motion="backward"] > .work-surface,
+.screen-stage[data-view-motion="backward"] > .pms-panel {
+  animation-name: work-view-enter-backward;
+}
+
+.screen-stage[data-view-motion="replace"] > .work-surface,
+.screen-stage[data-view-motion="replace"] > .pms-panel {
+  animation-name: work-view-replace;
 }
 
 .pms-toolbar {
@@ -2350,7 +2364,7 @@ button:disabled {
   }
 }
 
-@keyframes work-view-enter {
+@keyframes work-view-enter-forward {
   from {
     opacity: 0.96;
     transform: translateX(8px);
@@ -2358,6 +2372,26 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes work-view-enter-backward {
+  from {
+    opacity: 0.96;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes work-view-replace {
+  from {
+    opacity: 0.96;
+  }
+  to {
+    opacity: 1;
   }
 }
 

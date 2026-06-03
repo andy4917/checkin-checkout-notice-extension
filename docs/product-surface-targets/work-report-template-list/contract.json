@@ -1,0 +1,42 @@
+{
+  "surfaceId": "work-report-template-list",
+  "title": "업무보고 양식",
+  "menuPath": [
+    "홈",
+    "업무 관리",
+    "업무보고 양식"
+  ],
+  "ownerModules": [
+    "src/catalog/template-catalog.ts",
+    "src/catalog/template-renderer.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.templateVariableValues"
+  ],
+  "actions": [
+    "업무보고 템플릿 선택",
+    "복사"
+  ],
+  "expectedVisibleState": "업무보고 템플릿 accordion과 copy action이 보인다.",
+  "loadingState": "copy/write 중 action disabled",
+  "emptyState": "템플릿 목록 없음은 최소 empty로만 표현",
+  "errorState": "필수값/clipboard 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "accordion rows가 clipped 되지 않는다.",
+  "backendVerification": "renderTemplate와 clipboard.writeText를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/업무보고 설정 screen.png"
+  ]
+}

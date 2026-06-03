@@ -1,0 +1,37 @@
+{
+  "surfaceId": "home-root",
+  "title": "홈 루트",
+  "menuPath": [
+    "확장 열기"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts",
+    "src/ui/components/HomeView.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.lastBranchId"
+  ],
+  "actions": [
+    "그룹 진입",
+    "하단 PMS/설정 진입"
+  ],
+  "expectedVisibleState": "5개 업무 그룹과 하단 4개 작업이 보이고 지점 미선택 시 PMS 하단 작업만 비활성화된다.",
+  "loadingState": "지점 적용 중 navigation lock만 적용한다.",
+  "emptyState": "해당 없음",
+  "errorState": "공용 shell status에 실제 오류만 표시한다.",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "home detail track uses shared motion tokens; root has no work animation.",
+  "overflowContract": "screen-stage/home viewport에서 horizontal overflow가 없어야 한다.",
+  "backendVerification": "backend 없음. 하단 PMS action은 지점 선택 전 호출되지 않는다.",
+  "smokeRequired": true,
+  "referenceFiles": []
+}

@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "입/퇴실 안내문 생성기",
   "version": "1.2",
+  "minimum_chrome_version": "120",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuRBgfUxC1+FbbCn+PeksTi4ZhwMMEuj6/tpv9CKiPNTz7OOxpQg/FYcj2OsULqXZMQWcvoSmzBdpkb/Bc3xc8MMA3PRnvye1JrZ3KFaKdykLSm0Znns6vZxaYZdzzLbWW876w1Evv+chHiYpcJ/A5d0cYp1CTF05P6z5CM8X6n5l2U8jsaO2ksdsIkLbxRVVtRrDG2WelXc79blVENd3NGqI8Wg1v9Smo5IufqpGmAWcrB+qAHgjml4ebdO7DoFKZ2kpUEQyKPf4xSqlECoeXR9y6zMawu1RntrW6mG95FJq3jUkoFVGHb929iQ+S5Bb/YXwyQugV4PnjaVZH1dNdQIDAQAB",
   "icons": {
     "16": "icons/logo-16.png",

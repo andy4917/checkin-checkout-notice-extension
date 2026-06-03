@@ -1,0 +1,44 @@
+{
+  "surfaceId": "room-remark-memo",
+  "title": "객실 정보 메모",
+  "menuPath": [
+    "홈",
+    "업무 관리",
+    "객실 정보 메모"
+  ],
+  "ownerModules": [
+    "src/application/wings-remark.ts",
+    "src/domain/remarks.ts",
+    "src/domain/room-context.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.templateVariableValues"
+  ],
+  "actions": [
+    "객실 물품 수량 조정",
+    "추가 리마크 입력",
+    "WINGS 리마크 입력"
+  ],
+  "expectedVisibleState": "객실 선택 상태, 물품 stepper, 추가 리마크, WINGS action이 보인다.",
+  "loadingState": "WINGS write 중 action busy",
+  "emptyState": "객실 미선택은 상태 badge로만 표시한다.",
+  "errorState": "WINGS tab/room/remark dependency 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "stepper와 dock이 clipped 되지 않는다.",
+  "backendVerification": "active tab remark read/write dependency success/failure를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/객실 리마크 관리 screen.png"
+  ]
+}

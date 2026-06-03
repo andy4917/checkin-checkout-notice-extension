@@ -1,0 +1,41 @@
+{
+  "surfaceId": "ota-reservation-input",
+  "title": "NAVER / STATION 예약입력",
+  "menuPath": [
+    "홈",
+    "업무 관리",
+    "NAVER / STATION 예약입력"
+  ],
+  "ownerModules": [
+    "src/application/ota-reservation-input.ts",
+    "src/ota/*",
+    "src/wings/reservation-draft.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [],
+  "actions": [
+    "예약정보 가져오기",
+    "WINGS 입력"
+  ],
+  "expectedVisibleState": "source segment, 추출 action, preview/result, WINGS 입력 action이 보인다.",
+  "loadingState": "fetch/fill 중 action disabled",
+  "emptyState": "preview 전에는 fake booking summary를 만들지 않는다.",
+  "errorState": "active tab/branch/WINGS dependency 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "preview card와 dock이 overflow 없이 보인다.",
+  "backendVerification": "active tab fetchPayload와 fillForm success/failure를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/OTA 예약관리 screen.png"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "surfaceId": "sales-management",
+  "title": "매지출 관리",
+  "menuPath": [
+    "홈",
+    "고객 서비스 관리",
+    "매지출 관리"
+  ],
+  "ownerModules": [
+    "src/application/sales-expense-form.ts",
+    "src/catalog/template-renderer.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.templateVariableValues"
+  ],
+  "actions": [
+    "금액 입력",
+    "분류 선택",
+    "상세 입력",
+    "저장/복사"
+  ],
+  "expectedVisibleState": "금액, 카테고리, 상세, 저장 action이 보인다.",
+  "loadingState": "clipboard/write 중 action disabled",
+  "emptyState": "새 지출 금액 0은 입력 초기값일 뿐 fake record가 아니다.",
+  "errorState": "필수값/clipboard 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "amount panel/category chips/detail panel이 clipped 되지 않는다.",
+  "backendVerification": "templateValues 저장과 clipboard.writeText를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/매지출관리 screen.png"
+  ]
+}

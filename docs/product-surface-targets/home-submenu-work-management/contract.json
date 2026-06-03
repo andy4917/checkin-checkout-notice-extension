@@ -1,0 +1,35 @@
+{
+  "surfaceId": "home-submenu-work-management",
+  "title": "업무 관리 하위 메뉴",
+  "menuPath": [
+    "홈",
+    "업무 관리"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts",
+    "src/ui/components/HomeView.svelte"
+  ],
+  "storageKeys": [],
+  "actions": [
+    "객실 정보 메모/NAVER-STATION/업무보고 진입"
+  ],
+  "expectedVisibleState": "업무 관련 3개 row가 보이고 언어 strip/copy button이 없다.",
+  "loadingState": "해당 없음",
+  "emptyState": "해당 없음",
+  "errorState": "해당 없음",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "forward/backward home track transform uses --sidepanel-motion-*.",
+  "overflowContract": "3개 row가 single column에서 overflow 없이 보인다.",
+  "backendVerification": "각 row가 owner WorkSurface로 연결되는지 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": []
+}

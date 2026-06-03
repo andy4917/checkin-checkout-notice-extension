@@ -1,0 +1,40 @@
+{
+  "surfaceId": "pms-room-select",
+  "title": "객실 선택",
+  "menuPath": [
+    "하단",
+    "객실 선택"
+  ],
+  "ownerModules": [
+    "src/application/sync-guests.ts",
+    "src/domain/room-context.ts",
+    "src/ui/components/PmsGuestPanel.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.lastBranchId"
+  ],
+  "actions": [
+    "PMS 조회",
+    "객실 선택",
+    "업무 template 값 반영"
+  ],
+  "expectedVisibleState": "객실 선택용 PMS 목록 또는 명확한 실패/빈 상태가 보인다.",
+  "loadingState": "PMS 조회 중",
+  "emptyState": "현재 등록된 PMS 기록 없음",
+  "errorState": "PMS 조회 실패와 운영 메시지",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "pms panel uses data-view-motion direction animation.",
+  "overflowContract": "record rows/search가 horizontal overflow 없이 보인다.",
+  "backendVerification": "selected record가 room context/templateValues에 반영되는지 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": []
+}

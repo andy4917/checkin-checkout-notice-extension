@@ -1,0 +1,39 @@
+{
+  "surfaceId": "home-submenu-quick-replies",
+  "title": "빠른 문의 답변 하위 메뉴",
+  "menuPath": [
+    "홈",
+    "빠른 문의 답변"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts",
+    "src/catalog/template-renderer.ts",
+    "src/ui/components/HomeView.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.templateVariableValues"
+  ],
+  "actions": [
+    "언어 변경",
+    "문의 답변 복사"
+  ],
+  "expectedVisibleState": "자주 쓰는 문의 유형과 copy action이 보인다.",
+  "loadingState": "언어 변경 또는 복사 중 해당 버튼만 busy/disabled",
+  "emptyState": "템플릿이 없을 때 최소 empty",
+  "errorState": "필수 수동값/clipboard 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "forward/backward home track transform uses --sidepanel-motion-*.",
+  "overflowContract": "accordion row와 copy button이 좁은 폭에서 겹치지 않는다.",
+  "backendVerification": "renderTemplate required value와 clipboard.writeText 결과를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": []
+}

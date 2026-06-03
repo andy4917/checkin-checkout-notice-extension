@@ -134,9 +134,10 @@ for this Chrome extension: typecheck, build, tests, side-panel scale, and actual
 unpacked-extension smoke. The smoke target is
 `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html`. It checks
 home root state, branch popup, bottom menu enablement, all home submenu groups,
-settings hub, template editor route, one service/work route, and PMS
-loading/resolved backend state for horizontal overflow, banned placeholder text,
-fake PMS fallback text, and runtime errors.
+settings hub, template/form settings, all service/work reference routes,
+work-report templates, all PMS bottom panels, logo/motion computed style,
+placeholder attributes, horizontal overflow, banned placeholder text, fake PMS
+fallback text, console errors, and runtime errors.
 
 Vite is build tooling here, not product-surface proof. If Chrome extension
 visual automation is blocked, record the exact blocker and leave that proof
@@ -144,12 +145,11 @@ unverified instead of substituting a Vite-rendered pass.
 
 Current tests that protect this contract include:
 
-- `tests/current-catalog-routing.test.ts`
-- `tests/current-extension-boundary.test.ts`
-- `tests/current-manual-variable-flow.test.ts`
-- `tests/current-data-flows.test.ts`
-- `tests/current-storage-settings.test.ts`
-- `tests/current-repo-contract.test.ts`
+- `tests/product-surface-contract.test.ts`
+- `tests/repo-boundary.test.ts`
+- `tests/application-domain.test.ts`
+- `tests/integration-state.test.ts`
+- `tests/extension-smoke-contract.test.ts`
 
 `SKILL_EVIDENCE used: clean-all-slop` applies when this document is used to
 remove stale UI/reference residue rather than preserve old plans.

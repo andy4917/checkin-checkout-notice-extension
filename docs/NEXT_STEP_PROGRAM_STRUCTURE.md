@@ -176,7 +176,9 @@ leave stale UI or documentation residue.
 ## Next Safe Work Slices
 
 1. Import additional real template-pack slices through `workflow-catalog.ts` and `template-catalog.ts`.
-2. Add or adjust focused contract tests under the relevant `current-*` test file.
+2. Add or adjust focused contract tests under the product contract suite:
+   `product-surface-contract`, `repo-boundary`, `application-domain`,
+   `integration-state`, or `extension-smoke-contract`.
 3. Normalize repeated row/list/form controls only inside `src/ui/components/*`.
 4. Keep PMS, OTA, WINGS, storage, laundry, and catalog behavior in their owner modules.
 5. Run `npm run verify` and inspect the touched side-panel path.

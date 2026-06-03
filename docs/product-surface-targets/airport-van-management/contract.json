@@ -1,0 +1,42 @@
+{
+  "surfaceId": "airport-van-management",
+  "title": "공항밴 관리",
+  "menuPath": [
+    "홈",
+    "고객 서비스 관리",
+    "공항밴 관리"
+  ],
+  "ownerModules": [
+    "src/application/airport-van-form.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.airportVanFormValues"
+  ],
+  "actions": [
+    "픽업/샌딩 선택",
+    "필드 입력",
+    "업무/고객 문구 복사"
+  ],
+  "expectedVisibleState": "route, 탑승/항공편/수하물/결제 control과 copy action이 보인다.",
+  "loadingState": "copy/write 중 action disabled",
+  "emptyState": "입력 전 필드는 비어 있고 placeholder value를 만들지 않는다.",
+  "errorState": "필수값/clipboard 실패 status",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "field grid와 dock이 overflow 없이 scroll된다.",
+  "backendVerification": "form state 저장, renderAirportVanCopy, clipboard.writeText를 검증한다.",
+  "smokeRequired": true,
+  "referenceFiles": [
+    "새 폴더/공항밴 관리 screen.png"
+  ]
+}

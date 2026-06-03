@@ -1,0 +1,35 @@
+{
+  "surfaceId": "template-form-editor-hub",
+  "title": "템플릿 / 양식 편집 route group",
+  "menuPath": [
+    "홈",
+    "템플릿 / 양식 편집"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts"
+  ],
+  "storageKeys": [],
+  "actions": [
+    "템플릿 설정",
+    "양식 설정"
+  ],
+  "expectedVisibleState": "편집용 두 row만 보인다.",
+  "loadingState": "해당 없음",
+  "emptyState": "해당 없음",
+  "errorState": "해당 없음",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "home submenu forward/back.",
+  "overflowContract": "row overflow 없음",
+  "backendVerification": "backend 없음.",
+  "smokeRequired": false,
+  "referenceFiles": []
+}

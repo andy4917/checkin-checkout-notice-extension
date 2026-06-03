@@ -1,0 +1,36 @@
+{
+  "surfaceId": "settings-hub",
+  "title": "설정 hub",
+  "menuPath": [
+    "하단",
+    "설정"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [],
+  "actions": [
+    "템플릿 편집 진입",
+    "양식 편집 진입"
+  ],
+  "expectedVisibleState": "템플릿 편집과 양식 편집 row만 보인다.",
+  "loadingState": "해당 없음",
+  "emptyState": "설정 항목 없음 placeholder 금지",
+  "errorState": "해당 없음",
+  "forbiddenResidue": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "placeholder attribute",
+    "fake business data"
+  ],
+  "motionContract": "work surface uses data-view-motion direction animation.",
+  "overflowContract": "settings row가 viewport 폭 안에 들어온다.",
+  "backendVerification": "backend 없음.",
+  "smokeRequired": true,
+  "referenceFiles": []
+}
