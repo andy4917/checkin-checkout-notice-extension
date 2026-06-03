@@ -104,3 +104,12 @@ test("Svelte UI files do not own operation codes, customer numbers, PMS endpoint
 
   assert.deepEqual(violations, []);
 });
+
+test("work surfaces do not reintroduce visible slop placeholders as product data", () => {
+  const workSurface = read("src/ui/components/WorkSurface.svelte");
+  const sidepanelCss = read("styles/sidepanel.css");
+
+  assert.doesNotMatch(workSurface, /placeholder=|>\s*없음\s*<|YYYY\.MM\.DD|HH:MM|settings-editor-head|column-empty/);
+  assert.doesNotMatch(workSurface, /저장된 데이터 손상이 발견되었습니다/);
+  assert.doesNotMatch(sidepanelCss, /settings-editor-head|laundry-chip\.empty|column-empty/);
+});

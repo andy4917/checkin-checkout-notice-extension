@@ -11,7 +11,6 @@ export type AirportVanRoutePointLabels = Readonly<{
 }>;
 export type AirportVanFieldPresentation = Readonly<{
   label: string;
-  placeholder: string;
 }>;
 
 export type AirportVanFormValues = {
@@ -68,19 +67,19 @@ export function getAirportVanRoutePointLabels(
 }
 
 export const AIRPORT_VAN_FIELD_PRESENTATIONS = Object.freeze({
-  rideDate: { label: "탑승일자", placeholder: "YYYY.MM.DD" },
-  rideTime: { label: "탑승시각", placeholder: "HH:MM" },
-  guestName: { label: "고객명", placeholder: "고객명" },
-  guestContact: { label: "연락처", placeholder: "연락처" },
-  roomNo: { label: "객실번호", placeholder: "객실번호" },
-  airportName: { label: "공항", placeholder: "공항명" },
-  terminal: { label: "터미널", placeholder: "터미널" },
-  flightNo: { label: "항공편명", placeholder: "항공편명" },
-  flightTime: { label: "항공 시간", placeholder: "HH:MM" },
-  passengerCount: { label: "인원", placeholder: "인원" },
-  largeLuggageCount: { label: "대형 수하물", placeholder: "개수" },
-  smallLuggageCount: { label: "소형 수하물", placeholder: "개수" },
-  requestNote: { label: "요청사항", placeholder: "요청사항" },
+  rideDate: { label: "탑승일자" },
+  rideTime: { label: "탑승시각" },
+  guestName: { label: "고객명" },
+  guestContact: { label: "연락처" },
+  roomNo: { label: "객실번호" },
+  airportName: { label: "공항" },
+  terminal: { label: "터미널" },
+  flightNo: { label: "항공편명" },
+  flightTime: { label: "항공 시간" },
+  passengerCount: { label: "인원" },
+  largeLuggageCount: { label: "대형 수하물" },
+  smallLuggageCount: { label: "소형 수하물" },
+  requestNote: { label: "요청사항" },
 } satisfies Record<AirportVanTextFieldName, AirportVanFieldPresentation>);
 
 export const AIRPORT_VAN_FORM_FIELD_NAMES = Object.freeze([

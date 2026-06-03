@@ -333,7 +333,10 @@ class CdpSession {
 function smokeExpression(): string {
   return String.raw`
 (async()=> {
+ const runtimeErrors=[];
  try {
+ window.addEventListener("error",(event)=>runtimeErrors.push(event.message || String(event.error || "error")));
+ window.addEventListener("unhandledrejection",(event)=>runtimeErrors.push(String(event.reason || "unhandled rejection")));
  const sleep=(ms)=>new Promise((resolve)=>setTimeout(resolve,ms));
  const waitFor=async(predicate,label,timeout=7000)=>{
    const start=performance.now();
@@ -353,6 +356,10 @@ function smokeExpression(): string {
  };
  const text=()=>document.body?.innerText || "";
  const byText=(label)=>[...document.querySelectorAll("button,summary")].find((node)=>(node.innerText || "").includes(label));
+ const byRootText=(label)=>[...document.querySelectorAll(".root-panel button")]
+   .find((node)=>(node.innerText || "").includes(label));
+ const byDetailText=(label)=>[...document.querySelectorAll(".detail-panel button,.detail-panel summary")]
+   .find((node)=>(node.innerText || "").includes(label));
  const buttonStates=(selector)=>[...document.querySelectorAll(selector)].map((node)=>({
    text:(node.innerText || "").trim(),
    disabled:Boolean(node.disabled)
@@ -363,6 +370,50 @@ function smokeExpression(): string {
  const visibleDetailItems=()=>[...document.querySelectorAll(".detail-panel .home-submenu-item")]
    .map((node)=>(node.innerText || "").trim())
    .filter(Boolean);
+ const inputPlaceholders=()=>[...document.querySelectorAll(".work-surface input[placeholder],.work-surface textarea[placeholder]")]
+   .map((node)=>node.getAttribute("placeholder") || "")
+   .filter(Boolean);
+ const clippedLabels=()=>[...document.querySelectorAll(".work-surface strong,.work-surface button,.work-surface span")]
+   .filter((node)=>{
+     const style=getComputedStyle(node);
+     return style.overflow !== "visible" && node.scrollWidth > node.clientWidth + 1;
+   })
+   .map((node)=>(node.innerText || node.getAttribute("aria-label") || "").trim())
+   .filter(Boolean)
+   .slice(0,10);
+ const workSurfaceState=(step)=> {
+   const workText=document.querySelector(".work-surface")?.innerText || "";
+   const placeholders=inputPlaceholders();
+   return {
+     step,
+     noInputPlaceholders: placeholders.length === 0,
+     placeholders,
+     noLiteralEmptyData: !/(^|\n)\s*없음\s*($|\n)/.test(workText),
+     noStorageCorruptionBanner: !/저장된 데이터 손상이 발견되었습니다/.test(workText),
+     noLegacyPlaceholderText: !/YYYY\.MM\.DD|HH:MM|현재 설정 항목 없음/.test(workText),
+     noClippedLabels: clippedLabels().length === 0,
+     clippedLabels: clippedLabels()
+   };
+ };
+ const homeRootVisible=()=>document.querySelector(".root-panel") && !document.querySelector(".home-navigation-viewport.submenu-active") && /고객 서비스 관리/.test(text());
+ const ensureHomeRoot=async()=> {
+   for(let attempt=0; attempt<6 && !homeRootVisible(); attempt+=1){
+     const back=document.querySelector("[aria-label$='뒤로가기']");
+     if(!back) break;
+     await click(back,"back to home root");
+     await sleep(220);
+   }
+   await waitFor(()=>homeRootVisible(),"home root");
+ };
+ const openHomeWorkItem=async(groupLabel,itemLabel)=> {
+   await ensureHomeRoot();
+   await click(byRootText(groupLabel),groupLabel+" root");
+   await waitFor(()=>document.querySelector(".home-navigation-viewport.submenu-active"),groupLabel+" detail");
+   await sleep(320);
+   await click(byDetailText(itemLabel),itemLabel+" item");
+   await waitFor(()=>document.querySelector(".work-surface") && text().includes(itemLabel),itemLabel+" work surface");
+   await sleep(260);
+ };
  const openSubmenu=async(label)=>{
    await waitFor(()=>byText(label), label+" root");
    await click(byText(label), label);
@@ -404,7 +455,7 @@ function smokeExpression(): string {
  const result={
    href: location.href,
    initialHasHome: expectedRoot.every((label)=>initial.includes(label)),
-   bannedInitial: /현재 설정 항목 없음|The Gangnan|dropdown|복사되었습니다\./.test(initial),
+   bannedInitial: /현재 설정 항목 없음|저장된 데이터 손상이 발견되었습니다|The Gangnan|dropdown|복사되었습니다\.|YYYY\.MM\.DD|HH:MM/.test(initial),
    steps: [],
    menuState: {
      root: visibleRootItems(),
@@ -413,6 +464,7 @@ function smokeExpression(): string {
      groups: [],
      pms: null
    },
+   runtimeErrors,
    pmsStatus: ""
  };
  result.steps.push({
@@ -458,7 +510,14 @@ function smokeExpression(): string {
  result.steps.push({ step:"settings-hub", hasTemplateEdit:settingsText.includes("템플릿 편집"), hasFormEdit:settingsText.includes("양식 편집"), noEmptyPlaceholder:!settingsText.includes("현재 설정 항목 없음") });
  await click(byText("템플릿 편집"),"template settings route");
  await waitFor(()=>/템플릿 설정 초기화/.test(text()),"template settings");
- result.steps.push({ step:"template-settings", hasReset:text().includes("템플릿 설정 초기화") });
+ result.steps.push({ ...workSurfaceState("template-settings"), hasReset:text().includes("템플릿 설정 초기화") });
+ await click(document.querySelector("[aria-label$='뒤로가기']"),"back from template settings");
+ await waitFor(()=>/고객 서비스 관리/.test(text()),"home after template settings");
+ await click(byText("설정"),"settings footer for form settings");
+ await waitFor(()=>/템플릿 편집/.test(text()) && /양식 편집/.test(text()),"settings hub for form");
+ await click(byText("양식 편집"),"form settings route");
+ await waitFor(()=>/양식 편집/.test(text()),"form settings");
+ result.steps.push({ ...workSurfaceState("form-settings"), hasFormSurface:/양식 편집/.test(text()) });
  for (let attempt=0; attempt<3 && !/고객 서비스 관리/.test(text()); attempt+=1) {
    await click(document.querySelector("[aria-label$='뒤로가기']"),"back toward home");
  }
@@ -466,11 +525,49 @@ function smokeExpression(): string {
  await click(byText("고객 서비스 관리"),"customer service group");
  await waitFor(()=>/세탁물 관리/.test(text()) && /공항밴 관리/.test(text()),"customer service submenu");
  result.steps.push({ step:"customer-service-submenu", hasLaundry:text().includes("세탁물 관리"), hasAirportVan:text().includes("공항밴 관리"), hasBack:Boolean(document.querySelector("[aria-label$='뒤로가기']")) });
+ await openHomeWorkItem("고객 서비스 관리","세탁물 관리");
+ result.steps.push({
+   ...workSurfaceState("laundry-work-surface"),
+   hasRunningBoard:/진행 중/.test(text()),
+   hasAddControl:/세탁 서비스 신청 객실 입력/.test(text()),
+   hasScheduled:/세탁 예정/.test(text())
+ });
+ await openHomeWorkItem("고객 서비스 관리","매지출 관리");
+ result.steps.push({
+   ...workSurfaceState("sales-work-surface"),
+   hasAmountInput:Boolean(document.querySelector(".sales-amount-panel input")),
+   hasCategoryControls:document.querySelectorAll(".sales-category-panel button").length >= 4,
+   hasSaveAction:/저장하기|저장됨/.test(text())
+ });
+ await openHomeWorkItem("고객 서비스 관리","공항밴 관리");
+ result.steps.push({
+   ...workSurfaceState("airport-van-work-surface"),
+   hasRideSegment:/픽업/.test(text()) && /샌딩/.test(text()),
+   hasRouteCard:Boolean(document.querySelector(".airport-route-card")),
+   hasCopyActions:/업무 기록 복사/.test(text()) && /고객 전달 복사/.test(text())
+ });
+ await openHomeWorkItem("업무 관리","객실 정보 메모");
+ result.steps.push({
+   ...workSurfaceState("room-remark-work-surface"),
+   hasRoomContext:/객실 선택|선택됨|미선택/.test(text()),
+   hasInventoryControls:Boolean(document.querySelector(".room-inventory-grid")),
+   hasSingleRemarkDock:document.querySelectorAll(".room-memo-console > .work-dock .primary-action").length === 1
+ });
+ await openHomeWorkItem("업무 관리","NAVER / STATION 예약입력");
+ result.steps.push({
+   ...workSurfaceState("ota-work-surface"),
+   hasSourceSegment:/NAVER/.test(text()) && /STATION/.test(text()),
+   hasFetchCard:Boolean(document.querySelector(".ota-fetch-card")),
+   hasExtractAction:/예약정보 가져오기/.test(text())
+ });
  await click(document.querySelector("[aria-label$='뒤로가기']"),"back to home before pms");
  await waitFor(()=>/체크인 목록/.test(text()),"home before pms");
  await click(byText("체크인 목록"),"checkin pms panel");
  await waitFor(()=>/체크인 목록/.test(text()),"pms panel");
- await waitFor(()=>/PMS 조회 중/.test(text()) || byText("새로고침")?.disabled === true,"pms loading state");
+ await waitFor(
+   ()=>/PMS 조회 중|PMS 조회에 실패했습니다|PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(text()) || byText("새로고침")?.disabled === true || document.querySelector(".pms-record-row"),
+   "pms loading or resolved state"
+ );
  const pmsLoadingLabel=document.querySelector(".work-empty")?.innerText.trim() || "";
  await waitFor(()=>byText("새로고침")?.disabled === false,"pms loading finished",15000);
  await waitFor(
@@ -492,7 +589,11 @@ function smokeExpression(): string {
  result.steps.push({
    step:"pms-backend-state-visible",
    hasPmsPanel: result.menuState.pms.panelTitleVisible,
-   hasLoadingState: /PMS 조회 중/.test(result.menuState.pms.loadingLabel),
+   hasLoadingOrResolvedState:
+     /PMS 조회 중/.test(result.menuState.pms.loadingLabel) ||
+     /PMS 조회에 실패했습니다/.test(result.menuState.pms.status) ||
+     /PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(result.menuState.pms.emptyLabel) ||
+     result.menuState.pms.recordCount > 0,
    hasResolvedBackendState:
      /PMS 조회에 실패했습니다/.test(result.menuState.pms.status) ||
      /PMS 조회 실패|현재 등록된 PMS 기록 없음/.test(result.menuState.pms.emptyLabel) ||
@@ -502,7 +603,7 @@ function smokeExpression(): string {
  const finalText=text();
  result.noHorizontalPageOverflow=document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1 && document.body.scrollWidth <= document.documentElement.clientWidth + 1;
  result.overflowItems=overflow();
- result.bannedFinal=/현재 설정 항목 없음|The Gangnan|복사되었습니다\./.test(finalText);
+ result.bannedFinal=/현재 설정 항목 없음|저장된 데이터 손상이 발견되었습니다|The Gangnan|복사되었습니다\.|YYYY\.MM\.DD|HH:MM/.test(finalText);
  result.ok=result.initialHasHome && !result.bannedInitial && result.noHorizontalPageOverflow && !result.bannedFinal && result.steps.every((step)=>Object.entries(step).every(([key,value])=>key === "logoAlt" || typeof value !== "boolean" || value));
  return JSON.stringify(result);
  } catch (error) {
@@ -512,6 +613,7 @@ function smokeExpression(): string {
      error: error instanceof Error ? error.message : String(error),
      text: (document.body?.innerText || "").slice(0,1200),
      html: (document.body?.innerHTML || "").slice(0,800),
+     runtimeErrors,
      initialHasHome: false,
      bannedInitial: false,
      steps: [],

@@ -28,6 +28,11 @@
     LAUNDRY_SCHEDULED_TARGET,
     getAllowedLaundryMoveTargets,
   } from "../../application/laundry-records.js";
+  import {
+    SALES_EXPENSE_CATEGORIES,
+    formatSalesExpenseAmount,
+    type SalesExpenseCategory,
+  } from "../../application/sales-expense-form.js";
   import { isPrimaryRemarkTemplateId } from "../../domain/remarks.js";
   import type { LaundryColumnView } from "../../application/laundry-records.js";
   import type { LaundryMoveTarget, LaundryRecord } from "../../laundry/types.js";
@@ -47,6 +52,7 @@
   const laundryScheduledTarget = LAUNDRY_SCHEDULED_TARGET;
   const otaSourcePresentations = OTA_SOURCE_PRESENTATIONS;
   const getOtaLabel = getOtaSourceLabel;
+  const salesExpenseCategories = SALES_EXPENSE_CATEGORIES;
   const settingsLinks = settingsNavigationItems;
   const airportVanMainFields = [
     { name: "rideDate", icon: "calendar_today" },
@@ -103,6 +109,7 @@
   let invalidDropTarget: LaundryMoveTarget | null = null;
   let laundryActionRecordId: string | null = null;
   let selectedTemplateId = "";
+  let selectedSalesTemplateId = "";
   let pendingRoomRemarkTemplateId = "";
 
   $: templateGroups = resolveTemplateGroups(templates);
@@ -123,6 +130,14 @@
   ) {
     selectedTemplateId = roomMemoFeaturedTemplates[0].id;
   }
+  $: if (
+    menu.screenKind === "salesManagement" &&
+    (!selectedSalesTemplateId || !templates.some((template) => template.id === selectedSalesTemplateId)) &&
+    templates[0]
+  ) {
+    selectedSalesTemplateId = templates[0].id;
+  }
+  $: selectedSalesTemplate = templates.find((template) => template.id === selectedSalesTemplateId) || templates[0] || null;
 
   function laundryBlockTitle(record: LaundryRecord): string {
     return record.displayRoom || record.roomNo || record.itemSummary;
@@ -162,6 +177,28 @@
 
   function templateValue(variableName: string): string {
     return templateVariableValues[variableName] || templateValues[variableName] || "";
+  }
+
+  function salesCategoryActive(category: SalesExpenseCategory): boolean {
+    return templateValue("salesItem") === category.itemValue || templateValue("itemName") === category.itemValue;
+  }
+
+  async function selectSalesCategory(category: SalesExpenseCategory) {
+    await onSetTemplateVariableValue("salesItem", category.itemValue);
+    await onSetTemplateVariableValue("itemName", category.itemValue);
+  }
+
+  function handleSalesInput(variableName: string, event: Event) {
+    onSetTemplateVariableValue(variableName, (event.currentTarget as HTMLInputElement | HTMLTextAreaElement).value);
+  }
+
+  function salesAmountDisplay(): string {
+    return formatSalesExpenseAmount(templateValue("amount"));
+  }
+
+  function copySelectedSalesTemplate() {
+    if (!selectedSalesTemplate) return;
+    onCopyTemplate(selectedSalesTemplate.id);
   }
 
   function toggleTemplate(templateId: string) {
@@ -320,11 +357,14 @@
       {/each}
     </div>
 
-    <section class="operation-card">
+    <section class="operation-card ota-fetch-card">
       <div class="operation-mark">
         <MaterialIcon name="travel_explore" size={28} />
       </div>
-      <strong>예약정보 추출</strong>
+      <div>
+        <strong>예약정보 추출</strong>
+        <span>현재 페이지의 예약 정보를 가져옵니다.</span>
+      </div>
       <button class="primary-action" type="button" disabled={loading} onclick={onLoadOtaPreview}>
         <MaterialIcon name="bolt" size={18} />
         <span>예약정보 가져오기</span>
@@ -371,7 +411,7 @@
           <span>{airportRoutePointLabels.first}</span>
           <input
             value={airportVanFormValues.airportName || ""}
-            placeholder={airportFieldPresentation("airportName").placeholder}
+            aria-label={airportFieldPresentation("airportName").label}
             oninput={(event) => handleAirportVanInput("airportName", event)}
           />
         </label>
@@ -382,7 +422,7 @@
           <span>{airportRoutePointLabels.second}</span>
           <input
             value={airportVanFormValues.roomNo || ""}
-            placeholder={airportFieldPresentation("roomNo").placeholder}
+            aria-label={airportFieldPresentation("roomNo").label}
             oninput={(event) => handleAirportVanInput("roomNo", event)}
           />
         </label>
@@ -395,7 +435,7 @@
             <span>{airportFieldPresentation(field.name).label}</span>
             <input
               value={airportVanFormValues[field.name] || ""}
-              placeholder={airportFieldPresentation(field.name).placeholder}
+              aria-label={airportFieldPresentation(field.name).label}
               oninput={(event) => handleAirportVanInput(field.name, event)}
             />
           </label>
@@ -409,7 +449,7 @@
             <span>{airportFieldPresentation(field.name).label}</span>
             <input
               value={airportVanFormValues[field.name] || ""}
-              placeholder={airportFieldPresentation(field.name).placeholder}
+              aria-label={airportFieldPresentation(field.name).label}
               oninput={(event) => handleAirportVanInput(field.name, event)}
             />
           </label>
@@ -428,7 +468,7 @@
               <span>{airportFieldPresentation(field.name).label}</span>
               <input
                 value={airportVanFormValues[field.name] || ""}
-                placeholder={airportFieldPresentation(field.name).placeholder}
+                aria-label={airportFieldPresentation(field.name).label}
                 oninput={(event) => handleAirportVanInput(field.name, event)}
               />
             </label>
@@ -438,7 +478,7 @@
             <span>{airportFieldPresentation("requestNote").label}</span>
             <input
               value={airportVanFormValues.requestNote || ""}
-              placeholder={airportFieldPresentation("requestNote").placeholder}
+              aria-label={airportFieldPresentation("requestNote").label}
               oninput={(event) => handleAirportVanInput("requestNote", event)}
             />
           </label>
@@ -499,8 +539,6 @@
                     {laundryBlockTitle(record)}
                   </button>
                 {/each}
-              {:else}
-                <span class="laundry-chip empty">없음</span>
               {/if}
             </div>
           </section>
@@ -512,14 +550,19 @@
       <span class="laundry-add-icon" aria-hidden="true">
         <MaterialIcon name="add_notes" size={22} />
       </span>
-      <input
-        value={laundryInputValue}
-        placeholder="세탁 서비스 신청 객실 입력"
-        oninput={handleLaundryInput}
-        onkeydown={(event) => {
-          if (event.key === "Enter") createLaundryFromInput();
-        }}
-      />
+      <span class="laundry-add-field">
+        {#if !laundryInputValue}
+          <span aria-hidden="true">세탁 서비스 신청 객실 입력</span>
+        {/if}
+        <input
+          value={laundryInputValue}
+          aria-label="세탁 서비스 신청 객실 입력"
+          oninput={handleLaundryInput}
+          onkeydown={(event) => {
+            if (event.key === "Enter") createLaundryFromInput();
+          }}
+        />
+      </span>
       <button type="button" disabled={loading || !laundryInputValue.trim()} onclick={createLaundryFromInput} aria-label="세탁 블록 생성">
         <MaterialIcon name="chevron_right" size={20} />
       </button>
@@ -563,8 +606,6 @@
               {/if}
             </article>
           {/each}
-        {:else}
-          <div class="column-empty">없음</div>
         {/if}
       </div>
     </section>
@@ -596,35 +637,76 @@
               </div>
             </article>
           {/each}
-        {:else}
-          <div class="column-empty">없음</div>
         {/if}
       </div>
     </details>
 
   {:else if menu.screenKind === "salesManagement"}
     <section class="sales-console" aria-label="매지출 입력">
-      <section class="template-pick-list" aria-label="매지출 양식">
-        {#each templates as template}
-          <article class:active={copiedTemplateId === template.id} class="template-pick-row">
-            <button type="button" onclick={() => onCopyTemplate(template.id)}>
-              <span class="template-icon" aria-hidden="true">
-                <MaterialIcon name={template.icon} size={18} />
-              </span>
-              <strong>{template.title}</strong>
-            </button>
-            <button
-              class="copy-action"
-              type="button"
-              aria-label={getTemplateRequirement(template) || `${template.title} 복사`}
-              disabled={loading || Boolean(getTemplateRequirement(template))}
-              onclick={() => onCopyTemplate(template.id)}
-            >
-              <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={17} />
-            </button>
-          </article>
-        {/each}
+      <section class="sales-amount-panel" aria-label="매지출 금액">
+        <span>새 지출</span>
+        <label>
+          <b aria-hidden="true">₩</b>
+          <input
+            value={templateValue("amount") || "0"}
+            aria-label="매지출 금액"
+            inputmode="numeric"
+            oninput={(event) => handleSalesInput("amount", event)}
+          />
+        </label>
+        <output aria-label="표시 금액">{salesAmountDisplay()}</output>
       </section>
+
+      <section class="sales-category-panel" aria-label="매지출 카테고리">
+        <strong>카테고리</strong>
+        <div>
+          {#each salesExpenseCategories as category}
+            <button
+              class:active={salesCategoryActive(category)}
+              type="button"
+              onclick={() => selectSalesCategory(category)}
+            >
+              {category.label}
+            </button>
+          {/each}
+        </div>
+      </section>
+
+      <label class="sales-detail-panel">
+        <span>상세 <small>(선택)</small></span>
+        <textarea
+          value={templateValue("memo")}
+          aria-label="매지출 상세 메모"
+          rows="4"
+          oninput={(event) => handleSalesInput("memo", event)}
+        ></textarea>
+      </label>
+
+      {#if templates.length > 1}
+        <section class="sales-template-panel" aria-label="보고 양식">
+          {#each templates as template}
+            <button
+              class:active={selectedSalesTemplate?.id === template.id}
+              type="button"
+              onclick={() => (selectedSalesTemplateId = template.id)}
+            >
+              {template.title}
+            </button>
+          {/each}
+        </section>
+      {/if}
+
+      <div class="work-dock">
+        <button
+          class="primary-action"
+          type="button"
+          disabled={loading || !selectedSalesTemplate}
+          onclick={copySelectedSalesTemplate}
+        >
+          <MaterialIcon name={copiedTemplateId === selectedSalesTemplate?.id ? "check" : "save"} size={18} />
+          <span>{copiedTemplateId === selectedSalesTemplate?.id ? "저장됨" : "저장하기"}</span>
+        </button>
+      </div>
     </section>
   {:else if menu.screenKind === "roomRemarkMemo"}
     <section class="room-memo-console" aria-label="객실 정보 메모">
@@ -653,21 +735,10 @@
               {:else if variable}
                 <input
                   value={templateValue(variable.name)}
-                  placeholder={variable.label}
+                  aria-label={variable.label}
                   oninput={(event) => handleVariableInput(variable.name, event)}
                 />
               {/if}
-              <button
-                class:applying={pendingRoomRemarkTemplateId === template.id}
-                class="copy-action"
-                type="button"
-                aria-busy={pendingRoomRemarkTemplateId === template.id}
-                aria-label={getTemplateRequirement(template) || `${template.title} WINGS 리마크 입력`}
-                disabled={loading || Boolean(getTemplateRequirement(template))}
-                onclick={() => applyRoomRemark(template.id)}
-              >
-                <MaterialIcon name={pendingRoomRemarkTemplateId === template.id ? "sync" : copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
-              </button>
             </article>
           {/each}
         </section>
@@ -714,7 +785,7 @@
                         <span>{variable.label}</span>
                         <input
                           value={templateVariableValues[variable.name] || ""}
-                          placeholder={variable.label}
+                          aria-label={variable.label}
                           oninput={(event) => handleVariableInput(variable.name, event)}
                         />
                       </label>
@@ -733,9 +804,25 @@
                   <MaterialIcon name={pendingRoomRemarkTemplateId === template.id ? "sync" : copiedTemplateId === template.id ? "check" : "edit_note"} size={17} />
                 </button>
               </article>
-            {/each}
-          </div>
-        </section>
+          {/each}
+        </div>
+      </section>
+      {/if}
+
+      {#if selectedTemplate}
+        <div class="work-dock">
+          <button
+            class:applying={pendingRoomRemarkTemplateId === selectedTemplate.id}
+            class="primary-action"
+            type="button"
+            aria-busy={pendingRoomRemarkTemplateId === selectedTemplate.id}
+            disabled={loading || Boolean(getTemplateRequirement(selectedTemplate))}
+            onclick={() => applyRoomRemark(selectedTemplate.id)}
+          >
+            <MaterialIcon name={pendingRoomRemarkTemplateId === selectedTemplate.id ? "sync" : copiedTemplateId === selectedTemplate.id ? "check" : "send"} size={18} />
+            <span>{copiedTemplateId === selectedTemplate.id ? "리마크 입력됨" : "WINGS 리마크 입력"}</span>
+          </button>
+        </div>
       {/if}
     </section>
   {:else if menu.screenKind === "settings"}
@@ -752,12 +839,6 @@
     </section>
   {:else if menu.screenKind === "templateSettings"}
     <section class="settings-panel">
-      <header class="settings-editor-head">
-        <span class="template-icon" aria-hidden="true">
-          <MaterialIcon name={menu.icon} size={20} />
-        </span>
-        <strong>{menu.title}</strong>
-      </header>
       {#if resetArmed}
         <p class="reset-confirmation">사용자 수정값이 삭제됩니다.</p>
       {/if}
@@ -768,12 +849,6 @@
     </section>
   {:else if menu.screenKind === "formSettings"}
     <section class="settings-panel">
-      <header class="settings-editor-head">
-        <span class="template-icon" aria-hidden="true">
-          <MaterialIcon name={menu.icon} size={20} />
-        </span>
-        <strong>{menu.title}</strong>
-      </header>
       {#if requiredManualVariables.length > 0}
         <section class="settings-inputs" aria-label="필수 입력값">
           <header>
@@ -785,7 +860,7 @@
                 <span>{variable.label}</span>
                 <input
                   value={templateVariableValues[variable.name] || ""}
-                  placeholder={variable.label}
+                  aria-label={variable.label}
                   oninput={(event) => handleVariableInput(variable.name, event)}
                 />
               </label>
@@ -857,7 +932,7 @@
                         <span>{variable.label}</span>
                         <input
                           value={templateVariableValues[variable.name] || ""}
-                          placeholder={variable.label}
+                          aria-label={variable.label}
                           oninput={(event) => handleVariableInput(variable.name, event)}
                         />
                       </label>

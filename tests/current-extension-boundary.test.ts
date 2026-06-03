@@ -54,6 +54,8 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   const pmsGuestPanel = readFileSync(join(root, "src/ui/components/PmsGuestPanel.svelte"), "utf8");
   const shellHeader = readFileSync(join(root, "src/ui/components/ShellHeader.svelte"), "utf8");
   const backButton = readFileSync(join(root, "src/ui/components/BackButton.svelte"), "utf8");
+  const sidepanelCss = readFileSync(join(root, "styles/sidepanel.css"), "utf8");
+  const salesExpenseForm = readFileSync(join(root, "src/application/sales-expense-form.ts"), "utf8");
 
   assert.match(main, /mount\(App, \{ target \}\)/);
   assert.match(
@@ -163,9 +165,18 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.doesNotMatch(workSurface, /onOpenMenu\("TEMPLATE_EDITOR"\)|onOpenMenu\("FORM_EDITOR"\)/);
   assert.doesNotMatch(workSurface, /placeholder:\s*fieldName|label:\s*fieldName/);
   assert.doesNotMatch(workSurface, /reference-screen-head|sales-entry-head|template-editor-card|template-toolbar|Copied|Copy Record|Save Template|Subject Line|Edit Template|Draft|Optional|현재 설정 항목 없음/);
+  assert.doesNotMatch(workSurface, /placeholder=|settings-editor-head|laundry-chip empty|column-empty|>\s*없음\s*</);
+  assert.match(workSurface, /class="sales-amount-panel"/);
+  assert.match(workSurface, /class="sales-category-panel"/);
+  assert.match(workSurface, /class="sales-detail-panel"/);
+  assert.match(workSurface, /class="operation-card ota-fetch-card"/);
+  assert.match(workSurface, /class="laundry-add-field"/);
   assert.doesNotMatch(workSurface, /<div class="kanban-stack" aria-label="세탁 상태">/);
   assert.doesNotMatch(workSurface, /class="laundry-entry"/);
-  assert.match(readFileSync(join(root, "styles/sidepanel.css"), "utf8"), /\.home-nav-root-item \{\s+min-height: var\(--home-root-row-height\);\s+border-bottom: 0;/);
+  assert.match(sidepanelCss, /\.home-nav-root-item \{\s+min-height: var\(--home-root-row-height\);\s+border-bottom: 0;/);
+  assert.doesNotMatch(sidepanelCss, /settings-editor-head|laundry-chip\.empty|column-empty|min-height:\s*calc\(100dvh - var\(--home-header-block-space\)/);
+  assert.match(salesExpenseForm, /SALES_EXPENSE_CATEGORIES/);
+  assert.doesNotMatch(workSurface, /SUPPLIES|REPAIRS|FOOD|OTHER/);
   assert.doesNotMatch(
     navigationController + navigationDependencies,
     /fetch\(|pms-workflow|ota-workflow|laundry-workflow|rooms-settings-actions|side-panel-controller|side-panel-dependencies/,

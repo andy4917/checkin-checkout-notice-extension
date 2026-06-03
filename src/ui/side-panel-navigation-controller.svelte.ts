@@ -13,7 +13,6 @@ import {
 } from "../application/laundry-records.js";
 import {
   createOperatorErrorMessageTracker,
-  STORAGE_CORRUPTION_MESSAGE,
 } from "../application/operator-error-messages.js";
 import { syncGuests } from "../application/sync-guests.js";
 import { resetAllTemplateSettings } from "../application/template-settings.js";
@@ -101,7 +100,7 @@ export function createSidePanelNavigationController(
         selectedBranchId = state.lastBranchId;
       }
       if (recovered) {
-        setStatus(STORAGE_CORRUPTION_MESSAGE, "error");
+        setStatus("", "neutral");
       }
     } catch (error) {
       extensionState = null;

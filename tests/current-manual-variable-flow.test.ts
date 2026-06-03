@@ -223,7 +223,7 @@ test("language selection briefly enters a dedicated loading state", async () => 
   assert.equal(controller.languageChanging, false);
 });
 
-test("recovered extension storage is visible to the operator", async () => {
+test("recovered extension storage is normalized without a persistent operator banner", async () => {
   const { controller } = await createControllerHarness(
     {
       schemaVersion: 1,
@@ -238,11 +238,8 @@ test("recovered extension storage is visible to the operator", async () => {
 
   await controller.mount();
 
-  assert.equal(
-    controller.statusMessage,
-    "저장된 데이터 손상이 발견되었습니다. 복구를 시도하여 이전 데이터를 불러와주십시오.",
-  );
-  assert.equal(controller.statusTone, "error");
+  assert.equal(controller.statusMessage, "");
+  assert.equal(controller.statusTone, "neutral");
 });
 
 test("initial storage dependency failure is normalized instead of escaping mount", async () => {
