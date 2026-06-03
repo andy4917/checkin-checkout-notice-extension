@@ -40,6 +40,6 @@
 ## Verification Expectations
 
 - Run `npm run verify` after implementation changes.
-- Confirm typecheck/build/test pass from the Svelte side-panel entrypoint.
-- Manually inspect forward/back route direction, hover/focus affordance, sheet z-index, reduced motion behavior, and absence of horizontal scroll when practical.
-- If Chrome extension visual automation is blocked, report the exact blocker and use build/typecheck plus code-level evidence as the closest direct check.
+- Treat `npm run verify` as the unified extension closeout gate. It includes typecheck, build, tests, side-panel scale inspection, and the actual unpacked-extension smoke path.
+- The smoke path must exercise forward/back route direction, branch popup, settings hub, template editor routing, one service/work route, and absence of horizontal scroll.
+- If the configured extension smoke browser is unavailable, report that blocker directly. Do not replace the proof with a non-extension browser page.

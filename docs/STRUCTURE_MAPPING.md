@@ -26,6 +26,8 @@ The removed DOM side panel is not a source of truth, migration target, or compat
 - The home language selector is shown only inside accordion template groups. Work-surface language selectors are additionally gated by `usesWorkLanguageSelector(menu.id)`.
 - Copy success is shown only through the copied button state such as a check icon. It must not create a global success banner or persistent shell status.
 - Shell/header status is reserved for blocking errors or real workflow state. The work header does not render stale active menu titles.
+- The shell logo is the branch-selection trigger and opens the real branch popup from config data. It must not reintroduce branch cycling, branch dropdown strips, or component-owned branch labels.
+- The settings bottom action opens the catalog-owned settings hub. `WorkSurface.svelte` must render the hub from `settingsNavigationItems` rather than a generic empty settings state.
 - Bottom PMS navigation clears stale status, copied-template, and OTA preview state before opening a PMS list panel.
 
 ## Hardcoding Removed From Runtime Flow

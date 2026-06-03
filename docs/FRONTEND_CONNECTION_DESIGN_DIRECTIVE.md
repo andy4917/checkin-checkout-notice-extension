@@ -211,7 +211,7 @@ PMS data exists to support copy/remark workflows. It is not a full PMS browser.
 
 Required controls:
 
-- branch trigger in the persistent header, opening the branch picker sheet
+- branch trigger in the persistent header, opening the branch picker sheet/popup
 - arrival/departure segmented control
 - search input
 - sync button
@@ -303,6 +303,13 @@ Required editing capabilities:
 - reset built-in template or delete custom template
 - add custom template with category, audience, context, branch scope, title, and body
 
+Required settings navigation:
+
+- the bottom `설정` action opens a real settings hub, not an empty placeholder
+- settings hub rows come from catalog-owned settings navigation data in `src/catalog/menu-routing.ts`
+- current settings hub rows are `템플릿 편집` and `양식 편집`
+- Svelte components may pass the catalog-owned `menuId` through callbacks, but must not hardcode settings route literals in button handlers
+
 Required constraints:
 
 - use `validateTemplateDefinitionForSave()`
@@ -380,6 +387,7 @@ Shared navigation rules:
 - missing PMS room context is a domain/workflow message, not a component-owned fallback label
 - language controls stay scoped to the active template/work surface and must not visually merge with the list below
 - branch selection opens a selection sheet/popup, not a dropdown
+- branch selection does not cycle through branches. The logo trigger opens the sheet/popup, the user chooses a visible branch option, the popup closes on selection/Escape/outside pointer, and focus returns to the trigger after selection or Escape.
 - language selection is a segmented bar, not a dropdown; its container and active segment must be pill-shaped with rounded ends
 - settings may keep data-management selects for template/category/audience/context, but language must remain segmented
 

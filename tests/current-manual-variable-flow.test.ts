@@ -20,6 +20,7 @@ async function createControllerHarness(
   options: {
     recovered?: boolean;
     otaReservation?: SidePanelNavigationControllerDependencies["otaReservation"];
+    branchStorageError?: Error;
   } = {},
 ) {
   Object.assign(globalThis, {
@@ -40,6 +41,9 @@ async function createControllerHarness(
         return { state, recovered: Boolean(options.recovered) };
       },
       async setLastBranchId(branchId) {
+        if (options.branchStorageError) {
+          throw options.branchStorageError;
+        }
         state = { ...state, lastBranchId: branchId };
       },
       async writeState(nextState: StoredExtensionState) {
@@ -408,12 +412,39 @@ test("branch changes discard OTA preview fields before WINGS fill", async () => 
   await controller.loadOtaPreview();
   assert.equal(controller.otaPreview?.fields.PROPERTY_NO, "13");
 
-  await controller.handleBranchChange({ target: { value: "gangnam" } } as unknown as Event);
+  await controller.handleBranchChange("gangnam");
 
   assert.equal(controller.otaPreview, null);
   await controller.fillOtaPreview();
   assert.equal(controller.statusMessage, "먼저 예약정보를 가져와주세요.");
   assert.equal(controller.statusTone, "error");
+});
+
+test("branch storage failure preserves the current branch and surfaces an operator error", async () => {
+  const { controller, getState } = await createControllerHarness(
+    {
+      schemaVersion: 1,
+      lastBranchId: "coex",
+      templateOverrides: {},
+      customTemplates: [],
+      ui: {},
+    },
+    undefined,
+    { branchStorageError: new Error("storage write failed") },
+  );
+
+  await controller.mount();
+  assert.equal(controller.selectedBranchId, "coex");
+
+  await controller.handleBranchChange("gangnam");
+
+  assert.equal(controller.selectedBranchId, "coex");
+  assert.equal(getState().lastBranchId, "coex");
+  assert.equal(controller.statusTone, "error");
+  assert.equal(
+    controller.statusMessage,
+    "저장된 데이터 손상이 발견되었습니다. 복구를 시도하여 이전 데이터를 불러와주십시오.",
+  );
 });
 
 test("template copy fails visibly when the selected language is not registered", async () => {
@@ -451,7 +482,7 @@ test("selected PMS room context is cleared when branch-scoped PMS data changes",
   controller.selectPmsGuestRecord(controller.pmsVisibleRecords[0].id);
   assert.equal(controller.workRoomContext.selected, true);
 
-  await controller.handleBranchChange({ target: { value: "gangnam" } } as unknown as Event);
+  await controller.handleBranchChange("gangnam");
 
   assert.equal(controller.selectedPmsRecord, null);
   assert.equal(controller.workRoomContext.selected, false);

@@ -11,6 +11,7 @@ import {
   homeBottomNavigationItems,
   homeNavigationGroups,
   homeNavigationLabels,
+  settingsNavigationItems,
   usesWorkLanguageSelector,
 } from "../src/catalog/menu-routing.js";
 import {
@@ -120,6 +121,11 @@ test("home navigation is a five-group drill-down schema with accordion and menu-
     homeBottomNavigationItems.map((item) => item.action?.kind || item.menuId),
     ["pmsGuestList", "pmsGuestList", "pmsGuestList", "SETTINGS"],
   );
+  assert.equal(getMenu("SETTINGS").screenKind, "settings");
+  assert.deepEqual(
+    settingsNavigationItems.map((item) => item.menuId),
+    ["TEMPLATE_EDITOR", "FORM_EDITOR"],
+  );
   assert.deepEqual(
     homeBottomNavigationItems.map((item) => item.action?.mode || null),
     ["ARRIVAL", "DEPARTURE", "ARRIVAL", null],
@@ -195,6 +201,10 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(css, /\.shell-status \+ \.screen-stage\s*\{[^}]*grid-row:\s*3;/s);
   assert.match(css, /\.app-shell\.home-mode \.screen-stage\s*\{[^}]*overflow:\s*hidden;[^}]*scrollbar-gutter:\s*stable;/s);
   assert.doesNotMatch(css, /\.branch-picker-strip|branch-option-enter|branch-loading-sweep|branch-strip-enter/);
+  assert.match(css, /\.branch-selection-popup\s*\{/);
+  assert.match(css, /@keyframes branch-panel-enter\s*\{/);
+  assert.match(css, /--panel-pad-left:\s*14px;/);
+  assert.match(css, /--sidepanel-right-rail:\s*0px;/);
   assert.match(css, /\.header-logo-mark\s*\{[^}]*display:\s*inline-flex;/s);
   assert.match(css, /\.home-surface\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) auto;[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
   assert.match(css, /\.home-fixed-bottom-bar\s*\{[^}]*position:\s*sticky;/s);
@@ -264,12 +274,14 @@ test("home navigation styling contract keeps reference-like typography and drill
   assert.match(homeView, /\{#if isAccordionGroup\(renderedDetailGroup\)\}\s*<div[^>]+class="home-language-strip"/s);
   assert.match(homeView, /class="home-language-strip"/);
   assert.match(homeView, /style=\{`--active-index: \$\{languageOptions\.indexOf\(selectedLanguage\)\}`\}/);
+  assert.match(homeView, /disabled=\{languageChanging\}\s+aria-pressed=\{selectedLanguage === language\}\s+tabindex=\{activeGroup \? 0 : -1\}/);
   assert.match(homeView, /getInlineTemplates\(item\)/);
   assert.match(homeView, /shouldGroupInlineTemplates\(item\)/);
   assert.match(homeView, /getDirectInlineTemplate\(item\)/);
   assert.match(homeView, /\.\.\.templateItems\.filter\(\(item\) => getInlineTemplates\(item\)\.length > 1\),\s*\.\.\.templateItems\.filter\(\(item\) => getInlineTemplates\(item\)\.length === 1\)/s);
   assert.match(homeView, /class="home-submenu-item home-template-row-direct"/);
   assert.match(homeView, /use:copyTemplateEvents=\{\{ item, templateId: template\.id \}\}/);
+  assert.match(homeView, /class="home-template-copy"[\s\S]*?disabled=\{loading\}\s+tabindex=\{activeGroup \? 0 : -1\}/);
   assert.doesNotMatch(homeView, /disabled=\{loading \|\| Boolean\(requirement\)\}/);
   assert.doesNotMatch(homeView, /template\.variables\.some\(\(variable\) => variable\.kind === "pmsRequired"\)/);
   assert.doesNotMatch(homeView, /template\.summary/);

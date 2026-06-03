@@ -5,14 +5,15 @@ const css = readFileSync("styles/sidepanel.css", "utf8");
 const expected = {
   "--sidepanel-reference-width": "400px",
   "--sidepanel-reference-height": "900px",
-  "--panel-pad-left": "16px",
-  "--panel-pad-right": "16px",
-  "--sidepanel-right-rail": "4px",
+  "--panel-pad-left": "14px",
+  "--panel-pad-right": "14px",
+  "--sidepanel-right-rail": "0px",
   "--panel-reference-ratio": "0.444",
 };
 
+const rootBody = css.match(/body\s*\{(?<body>[\s\S]*?)\n\}/)?.groups?.body || "";
 const values = new Map(
-  [...css.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map((match) => [
+  [...rootBody.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map((match) => [
     match[1],
     match[2].trim(),
   ]),
@@ -28,7 +29,7 @@ const failures = Object.entries(expected)
 
 const width = 400;
 const height = 900;
-const contentWidth = width - 16 - 16 - 4;
+const contentWidth = width - 14 - 14;
 
 const report = {
   sidepanel: {

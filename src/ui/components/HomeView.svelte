@@ -262,6 +262,7 @@
                   type="button"
                   disabled={languageChanging}
                   aria-pressed={selectedLanguage === language}
+                  tabindex={activeGroup ? 0 : -1}
                   onclick={() => onSelectLanguage(language)}
                 >
                   {languageLabel(language)}
@@ -299,6 +300,7 @@
                             aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
                             title={copiedTemplateId === template.id ? "복사됨" : "복사"}
                             disabled={loading}
+                            tabindex={activeGroup ? 0 : -1}
                             use:copyTemplateEvents={{ item, templateId: template.id }}
                           >
                             <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />
@@ -329,6 +331,7 @@
                         aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
                         title={copiedTemplateId === template.id ? "복사됨" : "복사"}
                         disabled={loading}
+                        tabindex={activeGroup ? 0 : -1}
                         use:copyTemplateEvents={{ item, templateId: template.id }}
                       >
                         <MaterialIcon name={copiedTemplateId === template.id ? "check" : "content_copy"} size={16} />

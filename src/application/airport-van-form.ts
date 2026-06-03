@@ -31,6 +31,7 @@ export type AirportVanFormValues = {
   paymentMethod?: AirportVanPaymentMethod;
   requestNote?: string;
 };
+export type AirportVanTextFieldName = Exclude<keyof AirportVanFormValues, "rideDirection" | "paymentMethod">;
 
 export type AirportVanCopyTarget = "workLog" | "guestMessage";
 
@@ -80,7 +81,7 @@ export const AIRPORT_VAN_FIELD_PRESENTATIONS = Object.freeze({
   largeLuggageCount: { label: "대형 수하물", placeholder: "개수" },
   smallLuggageCount: { label: "소형 수하물", placeholder: "개수" },
   requestNote: { label: "요청사항", placeholder: "요청사항" },
-} satisfies Partial<Record<keyof AirportVanFormValues, AirportVanFieldPresentation>>);
+} satisfies Record<AirportVanTextFieldName, AirportVanFieldPresentation>);
 
 export const AIRPORT_VAN_FORM_FIELD_NAMES = Object.freeze([
   "rideDirection",

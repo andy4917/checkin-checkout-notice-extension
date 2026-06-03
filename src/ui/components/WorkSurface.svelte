@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getAvailableTemplateLanguages } from "../../catalog/template-renderer.js";
   import { resolveTemplateGroups } from "../../catalog/template-groups.js";
-  import { usesWorkLanguageSelector } from "../../catalog/menu-routing.js";
-  import type { MenuItem } from "../../catalog/menu-routing.js";
+  import { settingsNavigationItems, usesWorkLanguageSelector } from "../../catalog/menu-routing.js";
+  import type { MenuId, MenuItem } from "../../catalog/menu-routing.js";
   import type { TemplateVariable, UnifiedTemplateDefinition } from "../../catalog/template-types.js";
   import type { OtaReservationInputPreview } from "../../application/ota-reservation-input.js";
   import {
@@ -14,6 +14,7 @@
     AirportVanFormValues,
     AirportVanPaymentMethod,
     AirportVanRideDirection,
+    AirportVanTextFieldName,
   } from "../../application/airport-van-form.js";
   import {
     AIRPORT_VAN_FIELD_PRESENTATIONS,
@@ -46,23 +47,24 @@
   const laundryScheduledTarget = LAUNDRY_SCHEDULED_TARGET;
   const otaSourcePresentations = OTA_SOURCE_PRESENTATIONS;
   const getOtaLabel = getOtaSourceLabel;
+  const settingsLinks = settingsNavigationItems;
   const airportVanMainFields = [
     { name: "rideDate", icon: "calendar_today" },
     { name: "rideTime", icon: "schedule" },
     { name: "guestName", icon: "person" },
     { name: "guestContact", icon: "call" },
-  ] as const;
+  ] satisfies readonly { name: AirportVanTextFieldName; icon: string }[];
   const airportVanFlightFields = [
     { name: "airportName", icon: "flight" },
     { name: "terminal", icon: "meeting_room" },
     { name: "flightNo", icon: "travel_explore" },
     { name: "flightTime", icon: "schedule" },
-  ] as const;
+  ] satisfies readonly { name: AirportVanTextFieldName; icon: string }[];
   const airportVanLuggageFields = [
     { name: "passengerCount", icon: "person" },
     { name: "largeLuggageCount", icon: "luggage" },
     { name: "smallLuggageCount", icon: "luggage" },
-  ] as const;
+  ] satisfies readonly { name: AirportVanTextFieldName; icon: string }[];
 
   export let menu: MenuItem;
   export let templates: readonly UnifiedTemplateDefinition[];
@@ -88,6 +90,7 @@
   export let onLoadOtaPreview: () => void;
   export let onFillOtaPreview: () => void;
   export let onResetTemplateSettings: () => void;
+  export let onOpenMenu: (target: MenuId) => void;
   export let onSetTemplateVariableValue: (variableName: string, value: string) => void | Promise<void>;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
   export let onCopyAirportVanText: (target: AirportVanCopyTarget) => void;
@@ -137,8 +140,8 @@
     return laundryColumn(target)?.records || [];
   }
 
-  function airportFieldPresentation(fieldName: keyof AirportVanFormValues) {
-    return airportVanFieldPresentations[fieldName] || { label: fieldName, placeholder: fieldName };
+  function airportFieldPresentation(fieldName: AirportVanTextFieldName) {
+    return airportVanFieldPresentations[fieldName];
   }
 
   function findLaundryRecord(recordId: string): LaundryRecord | null {
@@ -735,6 +738,18 @@
         </section>
       {/if}
     </section>
+  {:else if menu.screenKind === "settings"}
+    <section class="settings-panel" aria-label="설정">
+      {#each settingsLinks as item}
+        <button class="settings-link-row" type="button" onclick={() => onOpenMenu(item.menuId)}>
+          <span class="template-icon" aria-hidden="true">
+            <MaterialIcon name={item.icon} size={20} />
+          </span>
+          <strong>{item.title}</strong>
+          <MaterialIcon name="chevron_right" size={18} />
+        </button>
+      {/each}
+    </section>
   {:else if menu.screenKind === "templateSettings"}
     <section class="settings-panel">
       <header class="settings-editor-head">
@@ -779,11 +794,6 @@
         </section>
       {/if}
     </section>
-  {:else if menu.screenKind === "settings"}
-    <div class="work-empty">
-      <MaterialIcon name={menu.icon} size={20} />
-      <span>현재 설정 항목 없음</span>
-    </div>
   {:else}
     {#if showLanguageSelector}
       <div class="language-strip" aria-label="템플릿 언어">

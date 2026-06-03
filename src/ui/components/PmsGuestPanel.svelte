@@ -6,7 +6,6 @@
 
   const BackButton = BackButtonModule.default;
   const MaterialIcon = MaterialIconModule.default;
-  const NA_LABEL = "N/A";
 
   export let panel: BottomPanelState;
   export let records: readonly PmsGuestRecord[];
@@ -24,11 +23,11 @@
     onSearch((event.currentTarget as HTMLInputElement).value);
   }
 
-  function valueOrNa(value: string): string {
-    return value.trim() || NA_LABEL;
-  }
-
-  $: emptyLabel = statusTone === "error" ? "PMS 조회 실패" : "현재 등록된 PMS 기록 없음";
+  $: emptyLabel = loading
+    ? "PMS 조회 중"
+    : statusTone === "error"
+      ? "PMS 조회 실패"
+      : "현재 등록된 PMS 기록 없음";
 </script>
 
 <section class="pms-panel" aria-label={panel.title}>
@@ -72,15 +71,23 @@
           type="button"
           onclick={() => onSelectRecord(record.id)}
         >
-          <span class:na={!record.displayRoom && !record.roomNo} class="pms-room">
-            {valueOrNa(record.displayRoom || record.roomNo)}
+          <span class="pms-room">
+            {record.displayRoom || record.roomNo}
           </span>
           <span class="pms-record-main">
-            <strong class:na={!record.guestName}>{valueOrNa(record.guestName)}</strong>
-            <small>
-              <span class:na={!record.statusLabel}>{valueOrNa(record.statusLabel)}</span>
-              <span class:na={!record.departureDate}>{valueOrNa(record.departureDate)}</span>
-            </small>
+            {#if record.guestName}
+              <strong>{record.guestName}</strong>
+            {/if}
+            {#if record.statusLabel || record.departureDate}
+              <small>
+                {#if record.statusLabel}
+                  <span>{record.statusLabel}</span>
+                {/if}
+                {#if record.departureDate}
+                  <span>{record.departureDate}</span>
+                {/if}
+              </small>
+            {/if}
           </span>
           <MaterialIcon name={selectedRecordId === record.id ? "check" : "chevron_right"} size={18} />
         </button>

@@ -2,12 +2,13 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-05-25
+- Last refreshed: 2026-06-02
 - Primary product surfaces: Chrome extension Svelte side panel home navigation, fixed shell header, footer-style work shortcuts, nested submenu navigation, inline customer/quick-reply template accordions, PMS guest selection panel, template work surface, OTA reservation input surface, laundry workflow surface, airport van form surface, and template/settings surface.
 - Evidence reviewed:
   - `PRODUCT.md`
   - `styles/sidepanel.css`
   - `src/catalog/menu-routing.ts`
+  - `settingsNavigationItems` exported from `src/catalog/menu-routing.ts`
   - `src/ui/components/HomeView.svelte`
   - `src/ui/components/ShellHeader.svelte`
   - `src/ui/components/SidePanelView.svelte`
@@ -28,6 +29,7 @@
   - `docs/PANEL_MOTION_RESPONSIVE_CONTRACT.md`
   - `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
   - `docs/TEST_CONTRACT.md`
+  - 2026-06-02 actual Chrome unpacked-extension smoke target: built `dist` folder loaded with fixed extension ID `jeidoobjhbnnicfkcdfncheimgdnhmjk` and `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html`.
 
 ## Brand
 - Personality: quiet, operational, compact, Korean-first, precise staff-console feel.
@@ -62,7 +64,7 @@
 
 ## Information architecture
 - Primary navigation:
-  - Fixed shell header: company logo, branch selector, calendar/date.
+  - Fixed shell header: company logo as branch selector trigger, anchored branch-selection popup, calendar/date.
   - Central nested drill-down navigation viewport.
   - Footer-style work shortcuts: `체크인 목록`, `체크아웃 목록`, `객실 선택`, `설정`.
 - Core routes/screens:
@@ -70,6 +72,7 @@
   - Nested submenu navigation.
   - PMS guest panels for check-in, check-out, and room selection.
   - Work surfaces for supported templates, OTA reservation input, laundry management, airport van management, and settings/template editing.
+  - Settings hub route backed by catalog-owned `settingsNavigationItems`, currently linking to template editing and form editing.
 - Content hierarchy:
   - Root work groups first.
   - Drill-down submenu items second.
@@ -145,14 +148,14 @@
   - `MaterialIcon.svelte`
 - New/changed components:
   - `HomeView.svelte` renders data-driven root groups, nested submenu panels, inline template accordions for catalog-marked groups, and footer-style work shortcuts.
-  - `ShellHeader.svelte` includes the calendar icon/date and enlarged home-mode logo/branch treatment.
+  - `ShellHeader.svelte` includes the calendar icon/date and logo branch trigger. It opens an anchored branch-selection popup; it does not cycle branches.
   - `PmsGuestPanel.svelte` renders branch/date-scoped PMS lists and selected room context without inventing records.
-  - `WorkSurface.svelte` renders supported work screens from catalog/application-owned contracts, not route ID literals.
+  - `WorkSurface.svelte` renders supported work screens from catalog/application-owned contracts, not route ID literals. The settings screen renders the catalog-owned settings hub, not a generic empty placeholder.
 - Variants and states:
   - Root navigation: default, hover with unclipped text underline expansion, subtle label nudge, and chevron emphasis, active/pressed, focus-visible.
   - Drill-down detail: explicit forward/backward direction, retained outgoing detail panel during back motion, back button, submenu rows, accordion expansion for customer/quick-reply template lists, selected route click for work/menu groups, Escape-to-back, and focus restoration.
   - Footer shortcuts: enabled and real-disabled states only.
-  - Header: home navigation mode.
+  - Header: home navigation mode; branch popup closed/open/applying/selected states; disabled while nested home drill-down or navigation lock is active.
   - PMS panel: loading, empty, selectable row, selected row, and visible fetch failure.
   - Work surface: branch-required, loading, success, error, selected source, selected copy target, required manual value, and reset-confirmation states.
 - Token/component ownership:
@@ -170,6 +173,7 @@
   - Disabled footer actions use actual disabled button state when no real route exists.
   - Nested home navigation moves focus into the child panel and restores focus to the opening row after returning.
   - Escape returns one nested level when a child panel is active.
+  - Branch selection popup is a button group, not an ARIA menu. It closes on selection, Escape, or outside pointer interaction, and focus returns to the logo trigger after branch selection or keyboard dismissal.
 - Contrast/readability:
   - Text uses high-contrast neutral ink on white-family surfaces.
   - Disabled states remain visually distinct but not hidden.
@@ -245,8 +249,10 @@
   - No dependency on removed legacy `src/sidepanel/*` DOM code.
   - No hidden direct `fetch`, `chrome.storage`, `navigator.clipboard`, or `window` dependencies inside UI components.
 - Test/screenshot expectations:
-  - Run `npm run verify` for typecheck, extension build, and tests.
-  - Actual `chrome-extension://` visual automation may be blocked by browser policy; record that if it occurs.
+  - Run `npm run verify` as the unified Chrome extension closeout gate. It covers typecheck, extension build, tests, side-panel scale, and actual unpacked-extension smoke.
+  - The extension smoke loads built `dist` and inspects `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html` for home, branch popup, settings hub, template editor routing, and at least one service/work menu path.
+  - Vite may be used only as a bundler through `npm run build` or for local debugging that is explicitly marked non-authoritative. It is not the final product-surface validation path.
+  - If actual `chrome-extension://` visual automation is blocked by browser/tool policy, record the exact blocker and keep the UI work unverified rather than replacing it with a Vite pass.
 
 ## Open questions
 - [ ] Confirm whether the large bundled `Noto Sans KR` variable font is acceptable for extension package size / owner: Product Owner / impact: bundle size and load cost.

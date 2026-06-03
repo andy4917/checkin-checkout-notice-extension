@@ -489,6 +489,11 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
   }),
 ]);
 
+export const settingsNavigationItems: readonly HomeNavigationItem[] = Object.freeze([
+  Object.freeze({ id: "settings-template-edit", title: "템플릿 편집", icon: "description", menuId: "TEMPLATE_EDITOR" }),
+  Object.freeze({ id: "settings-form-edit", title: "양식 편집", icon: "edit_note", menuId: "FORM_EDITOR" }),
+]);
+
 export const homeBottomNavigationItems: readonly HomeBottomNavigationItem[] = Object.freeze([
   Object.freeze({ id: "checkin-list", title: "체크인 목록", icon: "login", action: Object.freeze({ kind: "pmsGuestList" as const, mode: "ARRIVAL" as const }) }),
   Object.freeze({ id: "checkout-list", title: "체크아웃 목록", icon: "keyboard_return", action: Object.freeze({ kind: "pmsGuestList" as const, mode: "DEPARTURE" as const }) }),

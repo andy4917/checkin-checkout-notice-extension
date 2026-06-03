@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { getHeaderLogoUrl } from "../../assets/asset-catalog.js";
   import type { BranchId } from "../../types.js";
   import * as MaterialIconModule from "./MaterialIcon.svelte";
@@ -13,10 +14,13 @@
   export let branchPickerEnabled: boolean;
   export let navigationLocked: boolean;
   export let selectedBranchId: BranchId | "";
-  export let onBranchChange: (event: Event) => void | Promise<void>;
+  export let onBranchChange: (branchId: BranchId) => void | Promise<void>;
 
   const MaterialIcon = MaterialIconModule.default;
   let branchApplyingId: BranchId | "" = "";
+  let branchPanelOpen = false;
+  let headerElement: HTMLElement | null = null;
+  let branchTriggerElement: HTMLButtonElement | null = null;
 
   $: selectedBranch = branchOptions.find((branch) => branch.id === selectedBranchId) || null;
   $: selectedBranchHeaderLabel = selectedBranch?.headerLabel || selectedBranch?.label || "지점";
@@ -24,21 +28,58 @@
   $: activeLogoUrl = getHeaderLogoUrl(selectedBranchId);
   $: headerDate = formatHeaderDate(new Date());
 
-  function nextBranchId(): BranchId | "" {
-    if (branchOptions.length === 0) return "";
-    const currentIndex = branchOptions.findIndex((branch) => branch.id === selectedBranchId);
-    return branchOptions[(currentIndex + 1) % branchOptions.length]?.id || branchOptions[0]?.id || "";
+  $: if (!branchPickerEnabled || navigationLocked) {
+    branchPanelOpen = false;
   }
 
-  async function chooseNextBranch() {
+  function toggleBranchPanel() {
     if (!branchPickerEnabled || navigationLocked || branchApplyingId) return;
-    const branchId = nextBranchId();
-    if (!branchId) return;
+    branchPanelOpen = !branchPanelOpen;
+  }
+
+  async function closeBranchPanel(restoreFocus = false) {
+    if (!branchPanelOpen) return;
+    branchPanelOpen = false;
+    if (restoreFocus) {
+      await tick();
+      branchTriggerElement?.focus({ preventScroll: true });
+    }
+  }
+
+  async function chooseBranch(branchId: BranchId) {
+    if (!branchPickerEnabled || navigationLocked || branchApplyingId) return;
+    if (branchId === selectedBranchId) {
+      await closeBranchPanel(true);
+      return;
+    }
     branchApplyingId = branchId;
+    let applied = false;
     try {
-      await onBranchChange({ target: { value: branchId } } as unknown as Event);
+      await onBranchChange(branchId);
+      applied = true;
     } finally {
       branchApplyingId = "";
+      if (applied) {
+        await closeBranchPanel(true);
+      }
+    }
+  }
+
+  function handleWindowKeydown(event: KeyboardEvent) {
+    if (branchPanelOpen && event.key === "Escape") {
+      void closeBranchPanel(true);
+    }
+  }
+
+  function handleWindowPointerdown(event: PointerEvent) {
+    const target = event.target;
+    if (
+      branchPanelOpen &&
+      target instanceof Node &&
+      headerElement &&
+      !headerElement.contains(target)
+    ) {
+      void closeBranchPanel();
     }
   }
 
@@ -54,29 +95,30 @@
 
 </script>
 
-<header class:work-mode={workMode} class="app-header">
+<svelte:window onkeydown={handleWindowKeydown} onpointerdown={handleWindowPointerdown} />
+
+<header bind:this={headerElement} class:work-mode={workMode} class="app-header">
   <div class="header-left-lockup">
-    {#if workMode}
-      {#if selectedBranch}
-        <img class="work-branch-logo" src={activeLogoUrl} alt={selectedBranchHeaderLabel} />
-      {/if}
-    {:else}
-      <div class="branch-selector">
-        <button
-          class:unselected={!selectedBranch}
-          class="header-logo-mark"
-          type="button"
-          aria-label={selectedBranch ? "다음 지점 선택" : "지점 선택"}
-          disabled={!branchPickerEnabled || navigationLocked || Boolean(branchApplyingId)}
-          onclick={chooseNextBranch}
-        >
-          <img class="brand-logo" src={activeLogoUrl} alt={selectedBranch ? selectedBranchHeaderLabel : "UH Suite"} />
-          {#if branchApplyingId}
-            <MaterialIcon name="sync" size={16} />
-          {/if}
-        </button>
-      </div>
-    {/if}
+    <div class="branch-selector">
+      <button
+        class:locked={!branchPickerEnabled}
+        class:unselected={!selectedBranch}
+        class="header-logo-mark"
+        bind:this={branchTriggerElement}
+        type="button"
+        aria-controls="branch-selection-popup"
+        aria-expanded={branchPanelOpen}
+        aria-label="지점 선택"
+        aria-busy={Boolean(branchApplyingId)}
+        disabled={!branchPickerEnabled || navigationLocked || Boolean(branchApplyingId)}
+        onclick={toggleBranchPanel}
+      >
+        <img class="brand-logo" src={activeLogoUrl} alt={selectedBranch ? selectedBranchHeaderLabel : "UH Suite"} />
+        {#if branchApplyingId}
+          <MaterialIcon name="sync" size={16} />
+        {/if}
+      </button>
+    </div>
   </div>
 
   <div class="header-room-slot" aria-hidden="true"></div>
@@ -85,4 +127,26 @@
     <MaterialIcon name="calendar_today" size={15} />
     <span>{headerDate}</span>
   </div>
+
+  {#if branchPanelOpen}
+    <div
+      id="branch-selection-popup"
+      class="branch-selection-popup"
+      role="group"
+      aria-label="지점 선택"
+    >
+      {#each branchOptions as branch}
+        <button
+          class:selected={branch.id === selectedBranchId}
+          type="button"
+          aria-pressed={branch.id === selectedBranchId}
+          disabled={navigationLocked || Boolean(branchApplyingId)}
+          onclick={() => chooseBranch(branch.id)}
+        >
+          <span>{branch.headerLabel || branch.label}</span>
+          <small>{branch.locationLabel}</small>
+        </button>
+      {/each}
+    </div>
+  {/if}
 </header>

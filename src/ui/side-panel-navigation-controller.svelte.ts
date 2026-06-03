@@ -109,11 +109,20 @@ export function createSidePanelNavigationController(
     }
   }
 
-  async function handleBranchChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    selectedBranchId = isBranchId(target.value) ? target.value : "";
+  async function handleBranchChange(branchId: string) {
+    const validatedBranchId = isBranchId(branchId) ? branchId : "";
+    const previousBranchId = selectedBranchId;
+    if (validatedBranchId) {
+      try {
+        await dependencies.extensionState.setLastBranchId(validatedBranchId);
+      } catch (error) {
+        selectedBranchId = previousBranchId;
+        setErrorStatus(error);
+        return;
+      }
+    }
+    selectedBranchId = validatedBranchId;
     if (selectedBranchId) {
-      await dependencies.extensionState.setLastBranchId(selectedBranchId);
       if (extensionState) {
         extensionState = { ...extensionState, lastBranchId: selectedBranchId };
       }

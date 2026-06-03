@@ -5,6 +5,21 @@ replaces older reference-planning notes. Do not use historical reference screens
 as permission to add sample dashboards, fake workflow data, broad status panels,
 or removed legacy DOM behavior.
 
+## Reference Boundary
+
+The current contract is based on user-provided Framer sidebar reference intent,
+user-provided product screenshots, and user-provided surface references for
+airport-van, sales expense, laundry, customer notice/reply template editing,
+NAVER/STATION reservation input, and room memo surfaces. These references are
+review evidence only; do not store local Codex session paths, generated-image
+paths, temp capture paths, or desktop-only artifact paths in product docs or
+runtime code.
+
+The invalid 2026-06-02 generated blueprint contact sheet is not design
+authority. It was generated from summarized repo docs/catalog prompts instead of
+directly using the user-provided screenshots, so it must not be used as a
+submenu or work-surface reference.
+
 ## Current Product Surface
 
 - Runtime UI is the Svelte side panel under `src/ui/*`.
@@ -70,6 +85,11 @@ appear in service/work/template management submenu lists.
 ## Header And Footer Contract
 
 - The shell header shows branch logo/date/back affordance only.
+- The shell logo is the branch-selection trigger. It opens a compact branch
+  button-group popup from the real branch config; it must not cycle branches or
+  render a select/dropdown strip.
+- The branch popup closes on selection, Escape, or outside pointer interaction,
+  and returns focus to the logo trigger after selection or Escape.
 - Active menu titles are not rendered in the top shell header because stale
   titles can survive shared menu IDs and crowd the layout.
 - The bottom bar labels come from catalog-owned bottom navigation items.
@@ -82,11 +102,12 @@ appear in service/work/template management submenu lists.
 | --- | --- | --- |
 | Customer notice templates | `CUSTOMER_NOTICE`, catalog templates | grouped template rows with guarded copy |
 | Quick replies | `QUICK_REPLY`, catalog templates | accordion/home copy and work-surface copy share renderer policy |
-| PMS guest list | `PmsGuestPanel.svelte`, `sync-guests.ts` | explicit bottom navigation, branch-scoped sync, search, selected room context |
+| PMS guest list | `PmsGuestPanel.svelte`, `sync-guests.ts` | explicit bottom navigation, branch-scoped sync, search, selected room context, visible loading/failure/empty states, no component-local fake record values |
 | Laundry management | `WorkSurface.svelte`, `laundry-records.ts`, `src/laundry/*` | real storage-backed records only |
 | OTA reservation input | `ota-reservation-input.ts`, `src/ota/*`, `reservation-draft.ts` | source detection, preview, WINGS fill, manual save in WINGS |
 | Airport van management | `airport-van-form.ts` | form values persisted in extension state, copy output only |
 | Room remark memo | `wings-remark.ts`, `domain/remarks.ts` | guarded WINGS remark behavior |
+| Settings hub | `settingsNavigationItems` in `menu-routing.ts`, `WorkSurface.svelte` | real links to template editing and form editing; no empty settings placeholder |
 | Template settings | `template-settings.ts`, storage/template schemas | schema-mediated import/export/reset |
 
 ## Localization Contract
@@ -99,6 +120,7 @@ appear in service/work/template management submenu lists.
 ## Backend Alignment Contract
 
 - PMS list/sync uses selected branch and current date filters through PMS owner modules.
+- PMS list UI shows `PMS 조회 중` while loading, then either real records, `PMS 조회 실패`, or the real empty-state label. It must not render `N/A` or other fake field values for missing PMS fields.
 - OTA extraction uses actual Naver/Station source detection and normalized payloads.
 - WINGS reservation input fills fields only; the user reviews and saves manually.
 - WINGS remark behavior is separate from reservation creation fill behavior.
@@ -107,8 +129,18 @@ appear in service/work/template management submenu lists.
 
 ## Verification
 
-Use `npm run verify` for the full local contract. For UI changes, also inspect the
-touched side-panel path in the browser when practical.
+Use `npm run verify` for the full local contract. It is the unified closeout gate
+for this Chrome extension: typecheck, build, tests, side-panel scale, and actual
+unpacked-extension smoke. The smoke target is
+`chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html`. It checks
+home root state, branch popup, bottom menu enablement, all home submenu groups,
+settings hub, template editor route, one service/work route, and PMS
+loading/resolved backend state for horizontal overflow, banned placeholder text,
+fake PMS fallback text, and runtime errors.
+
+Vite is build tooling here, not product-surface proof. If Chrome extension
+visual automation is blocked, record the exact blocker and leave that proof
+unverified instead of substituting a Vite-rendered pass.
 
 Current tests that protect this contract include:
 

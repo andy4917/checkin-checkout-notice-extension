@@ -166,7 +166,7 @@ button:disabled {
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 80;
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(40px, 1fr) auto;
   align-items: center;
@@ -199,7 +199,7 @@ button:disabled {
 }
 
 .app-header.work-mode {
-  grid-template-columns: minmax(84px, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(94px, auto) minmax(0, 1fr) auto;
 }
 
 .app-header.work-mode .header-left-lockup::after {
@@ -225,25 +225,18 @@ button:disabled {
   min-width: 0;
 }
 
-.brand-logo,
-.work-branch-logo {
+.brand-logo {
   width: 94px;
   max-height: 29px;
   height: auto;
   flex: 0 0 auto;
-  order: 1;
   object-fit: contain;
   object-position: left center;
-}
-
-.work-branch-logo {
-  width: 94px;
 }
 
 .branch-selector {
   position: relative;
   min-width: 0;
-  order: 3;
 }
 
 .header-logo-mark {
@@ -261,6 +254,83 @@ button:disabled {
 
 .header-logo-mark.unselected {
   color: var(--color-icon);
+}
+
+.header-logo-mark.locked {
+  cursor: default;
+}
+
+.branch-selection-popup {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% - 4px);
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: min(236px, calc(100dvw - 28px));
+  border: 1px solid var(--work-border);
+  border-radius: var(--work-card-radius);
+  background: var(--color-surface);
+  box-shadow: 0 12px 26px rgb(23 27 32 / 10%);
+  padding: 6px;
+  animation: branch-panel-enter var(--motion-reveal-duration) var(--motion-standard) both;
+}
+
+.branch-selection-popup button {
+  display: grid;
+  min-width: 0;
+  min-height: 42px;
+  align-content: center;
+  gap: 1px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-primary-soft);
+  cursor: pointer;
+  padding: 7px 8px;
+  text-align: left;
+  transition:
+    background var(--motion-hover-duration) var(--motion-standard),
+    border-color var(--motion-hover-duration) var(--motion-standard),
+    color var(--motion-hover-duration) var(--motion-standard),
+    transform var(--motion-hover-duration) var(--motion-standard);
+}
+
+.branch-selection-popup button:hover,
+.branch-selection-popup button:focus-visible,
+.branch-selection-popup button.selected {
+  background: var(--work-soft-surface);
+  color: var(--color-text);
+}
+
+.branch-selection-popup button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.branch-selection-popup button:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 1px var(--home-focus-ring);
+}
+
+.branch-selection-popup span,
+.branch-selection-popup small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-wrap: normal;
+  white-space: nowrap;
+}
+
+.branch-selection-popup span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.branch-selection-popup small {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .material-icon {
@@ -713,7 +783,7 @@ button:disabled {
   overflow: hidden;
   font-size: 14px;
   font-weight: 900;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   text-wrap: nowrap;
   white-space: nowrap;
 }
@@ -1025,6 +1095,43 @@ button:disabled {
   min-width: 32px;
   min-height: 32px;
   border-radius: var(--work-pill-radius);
+}
+
+.settings-link-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--work-border);
+  border-radius: var(--work-card-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 10px;
+  text-align: left;
+  transition:
+    background var(--micro-motion-duration) var(--motion-standard),
+    transform var(--micro-motion-duration) var(--motion-standard);
+}
+
+.settings-link-row strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-link-row:hover,
+.settings-link-row:focus-visible {
+  background: var(--work-soft-surface);
+}
+
+.settings-link-row:active {
+  transform: scale(0.98);
 }
 
 .copy-action:disabled {
@@ -2136,6 +2243,15 @@ button:disabled {
   }
 }
 
+@keyframes branch-panel-enter {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes home-detail-content-enter {
   from {
     opacity: 0;
@@ -2222,6 +2338,7 @@ button:disabled {
 
 @media (prefers-reduced-motion: reduce) {
   .home-navigation-track,
+  .branch-selection-popup,
   .home-nav-root-item,
   .home-submenu-item,
   .home-language-strip,

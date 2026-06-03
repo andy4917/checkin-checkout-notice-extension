@@ -91,6 +91,7 @@ test("Svelte UI files do not own operation codes, customer numbers, PMS endpoint
     /\b(?:BSNS_CODE|PROPERTY_NO|PP_BSNS_CODE)\b/,
     /\b(?:AIRPORT_VAN_MANAGEMENT|OTA_RESERVATION_INPUT|LAUNDRY_MANAGEMENT|SETTINGS)\b/,
     /\b(?:PICKUP|SENDING|CASH|CARD|ROOM_CHARGE|RECEIVED|WASHER|DRYER|READY|IN_PROGRESS)\b/,
+    /\bN\/A\b/,
     /fake|demo|sample customer|placeholder business data/i,
   ];
 

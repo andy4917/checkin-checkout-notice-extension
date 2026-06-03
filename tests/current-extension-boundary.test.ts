@@ -10,6 +10,8 @@ const root = process.cwd();
 
 test("manifest remains a Chrome MV3 Svelte side panel extension boundary", () => {
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
+  const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const testContract = readFileSync(join(root, "docs/TEST_CONTRACT.md"), "utf8");
 
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.background.service_worker, "dist/assets/background.js");
@@ -22,6 +24,17 @@ test("manifest remains a Chrome MV3 Svelte side panel extension boundary", () =>
     "https://admin.admin-stationbyuhc.com/*",
     "https://api.admin-stationbyuhc.com/*",
   ]);
+  assert.equal(packageJson.scripts["check:extension-smoke"], "tsx scripts/check-extension-sidepanel-smoke.ts");
+  assert.match(
+    packageJson.scripts.verify,
+    /npm run typecheck && npm run build && npm test && npm run check:sidepanel-scale && npm run check:extension-smoke/,
+  );
+  assert.doesNotMatch(testContract, /Vite-served|localhost render|localhost\/Vite/);
+  assert.match(testContract, /chrome-extension:\/\/jeidoobjhbnnicfkcdfncheimgdnhmjk\/sidepanel\.html/);
+  assert.doesNotMatch(
+    readFileSync(join(root, "scripts/check-extension-sidepanel-smoke.ts"), "utf8"),
+    /result:\s*"PASS"/,
+  );
 });
 
 test("Svelte entry is the only side panel app entry and App stays an orchestrator", () => {
@@ -115,9 +128,18 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.match(pmsGuestPanel, /<BackButton className="home-nav-back work-nav-back" label=\{panel\.title\} onBack=\{onBack\}/);
   assert.match(screenStage, /onBack=\{onBack\}/);
   assert.doesNotMatch(pmsGuestPanel, /돌아가기/);
+  assert.match(pmsGuestPanel, /loading\s*\?\s*"PMS 조회 중"/);
+  assert.doesNotMatch(pmsGuestPanel, /N\/A|NA_LABEL|valueOrNa/);
   assert.doesNotMatch(shellHeader, /BackButton|header-back-button|onBack/);
   assert.match(shellHeader, /class="header-logo-mark"/);
-  assert.doesNotMatch(shellHeader, /class="branch-trigger"|class="branch-logo-trigger"|class="branch-picker-strip"|branchPanelOpen/);
+  assert.match(shellHeader, /id="branch-selection-popup"/);
+  assert.match(shellHeader, /class="branch-selection-popup"/);
+  assert.match(shellHeader, /onclick=\{\(\) => chooseBranch\(branch\.id\)\}/);
+  assert.match(shellHeader, /bind:this=\{branchTriggerElement\}/);
+  assert.match(shellHeader, /onpointerdown=\{handleWindowPointerdown\}/);
+  assert.match(shellHeader, /closeBranchPanel\(true\)/);
+  assert.doesNotMatch(shellHeader, /nextBranchId|chooseNextBranch|target:\s*\{\s*value/);
+  assert.doesNotMatch(shellHeader, /class="branch-trigger"|class="branch-logo-trigger"|class="branch-picker-strip"/);
   assert.doesNotMatch(shellHeader, /MIN_BRANCH_APPLY_MS|waitForBranchApplyMotion|setTimeout/);
   assert.doesNotMatch(workSurface, />\s*\{getManualVariables\(template\)\.length\} 입력\s*</);
   assert.doesNotMatch(workSurface, /<b>\{group\.templates\.length\}<\/b>|<b>\{requiredManualVariables\.length\}<\/b>|총 지출|복사 전 자동 적용/);
@@ -130,6 +152,17 @@ test("Svelte entry is the only side panel app entry and App stays an orchestrato
   assert.doesNotMatch(readFileSync(join(root, "src/catalog/menu-routing.ts"), "utf8"), /homeQuickActions/);
   assert.doesNotMatch(screenStage + sidePanel, /onRefreshLaundry|onHideLaundryProgressEntry|onRemoveLaundryProgressEntry|laundryProgressLog/);
   assert.doesNotMatch(workSurface, /class="settings-inputs" aria-label="공항밴/);
+  assert.match(workSurface, /menu\.screenKind === "settings"/);
+  assert.match(workSurface, /settingsNavigationItems/);
+  const settingsHubBlock =
+    workSurface
+      .split('{:else if menu.screenKind === "settings"}')[1]
+      ?.split('{:else if menu.screenKind === "templateSettings"}')[0] || "";
+  assert.match(settingsHubBlock, /#each settingsLinks as item/);
+  assert.doesNotMatch(settingsHubBlock, /settings-editor-head|\{menu\.title\}/);
+  assert.doesNotMatch(workSurface, /onOpenMenu\("TEMPLATE_EDITOR"\)|onOpenMenu\("FORM_EDITOR"\)/);
+  assert.doesNotMatch(workSurface, /placeholder:\s*fieldName|label:\s*fieldName/);
+  assert.doesNotMatch(workSurface, /reference-screen-head|sales-entry-head|template-editor-card|template-toolbar|Copied|Copy Record|Save Template|Subject Line|Edit Template|Draft|Optional|현재 설정 항목 없음/);
   assert.doesNotMatch(workSurface, /<div class="kanban-stack" aria-label="세탁 상태">/);
   assert.doesNotMatch(workSurface, /class="laundry-entry"/);
   assert.match(readFileSync(join(root, "styles/sidepanel.css"), "utf8"), /\.home-nav-root-item \{\s+min-height: var\(--home-root-row-height\);\s+border-bottom: 0;/);

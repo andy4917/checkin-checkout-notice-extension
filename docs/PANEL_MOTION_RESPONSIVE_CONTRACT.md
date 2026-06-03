@@ -3,7 +3,7 @@
 ## Status
 
 - Status: Active common UI contract
-- Last refreshed: 2026-05-28
+- Last refreshed: 2026-06-02
 - Source basis: `DESIGN.md`, `PRODUCT.md`, `styles/sidepanel.css`, `src/ui/components/HomeView.svelte`, `docs/FRAMER_SIDEBAR_INTERACTION_GRAMMAR.md`
 - Reference boundary: Framer Sidebar Navigation is used for motion, responsive interaction quality, 400px/64px/48px sidebar rhythm, hover polish, and compact icon+label footer treatment. It is not used for product content, mobile navigation, full-screen drawer behavior, or remote runtime dependencies.
 
@@ -153,6 +153,15 @@ Anchored overlays, popovers, and sheets are separate from panel navigation.
 - Return focus to the trigger when the overlay closes.
 - Keep overlay motion shorter than panel navigation.
 
+Current branch selector overlay:
+
+- anchor: shell logo button in `ShellHeader.svelte`
+- content source: `getBranchOptions()` from `src/config/branches.ts`
+- pattern: revealed button group, not `role="menu"` and not a dropdown/select
+- close behavior: branch selection, Escape, outside pointer interaction, or navigation lock
+- focus behavior: after branch selection or Escape close, focus returns to the logo trigger
+- motion: `branch-panel-enter` uses transform only and respects `prefers-reduced-motion`
+
 ## Validation Checklist
 
 - Forward navigation enters from the right.
@@ -161,6 +170,7 @@ Anchored overlays, popovers, and sheets are separate from panel navigation.
 - Header and footer remain stable.
 - The motion viewport clips overflow.
 - Hidden panels cannot receive focus.
+- Hidden home detail controls, including language buttons and inline copy buttons, are removed from the tab path.
 - Escape returns one nested level.
 - Focus returns to the opening row after back navigation.
 - Narrow widths preserve the same navigation model.
@@ -170,3 +180,5 @@ Anchored overlays, popovers, and sheets are separate from panel navigation.
 - Reduced motion removes slide choreography without breaking state.
 - Primary transition uses transform and opacity, not layout properties.
 - Motion values come from shared tokens.
+- Branch selector popup closes on outside pointer interaction and returns focus to its trigger after selection or Escape.
+- PMS work-surface state distinguishes loading, failure, empty result, and actual records without fake placeholder values.

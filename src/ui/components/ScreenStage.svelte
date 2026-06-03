@@ -105,6 +105,7 @@
         onLoadOtaPreview={onLoadOtaPreview}
         onFillOtaPreview={onFillOtaPreview}
         onResetTemplateSettings={onResetTemplateSettings}
+        onOpenMenu={(target) => onOpenMenu(target)}
         onSetTemplateVariableValue={onSetTemplateVariableValue}
         onSetAirportVanFormValue={onSetAirportVanFormValue}
         onCopyAirportVanText={onCopyAirportVanText}

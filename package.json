@@ -8,9 +8,10 @@
     "check:syntax": "npm run typecheck",
     "extension:id": "tsx scripts/print-extension-id.ts",
     "check:sidepanel-scale": "tsx scripts/check-sidepanel-scale.ts",
+    "check:extension-smoke": "tsx scripts/check-extension-sidepanel-smoke.ts",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run build && npm test"
+    "verify": "npm run typecheck && npm run build && npm test && npm run check:sidepanel-scale && npm run check:extension-smoke"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
