@@ -1,6 +1,6 @@
 import { isBranchId } from "../config/branches.js";
 import { normalizeAirportVanFormValues } from "../application/airport-van-form.js";
-import type { StoredExtensionState } from "../catalog/template-types.js";
+import type { BranchFormValues, StoredExtensionState } from "../catalog/template-types.js";
 import {
   TemplateCatalogSchemaError,
   normalizeCustomTemplate,
@@ -107,7 +107,8 @@ function normalizeUiState(input: unknown): StoredExtensionState["ui"] {
     lastTab: input.lastTab === "ARRIVAL" || input.lastTab === "DEPARTURE" ? input.lastTab : undefined,
     compactMode: typeof input.compactMode === "boolean" ? input.compactMode : undefined,
     templateVariableValues: normalizeTemplateVariableValues(input.templateVariableValues),
-    airportVanFormValues: normalizeAirportVanFormValues(input.airportVanFormValues),
+    airportVanFormValues: normalizeOptionalAirportVanFormValues(input.airportVanFormValues),
+    branchFormValues: normalizeBranchFormValues(input.branchFormValues),
   };
 }
 
@@ -125,6 +126,50 @@ function normalizeTemplateVariableValues(input: unknown): Record<string, string>
     values[name] = value;
   }
   return values;
+}
+
+function normalizeBranchFormValues(input: unknown): StoredExtensionState["ui"]["branchFormValues"] {
+  if (input === undefined) return undefined;
+  if (!isRecord(input)) {
+    throw new StorageSchemaError("ui.branchFormValues must be an object.");
+  }
+
+  const values: StoredExtensionState["ui"]["branchFormValues"] = {};
+  for (const [branchId, branchValues] of Object.entries(input)) {
+    if (!isBranchId(branchId)) {
+      throw new StorageSchemaError(`ui.branchFormValues contains an unknown branch: ${branchId}`);
+    }
+    values[branchId] = normalizeBranchFormValue(branchValues, branchId);
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function normalizeBranchFormValue(input: unknown, branchId: string): BranchFormValues {
+  if (!isRecord(input)) {
+    throw new StorageSchemaError(`ui.branchFormValues.${branchId} must be an object.`);
+  }
+  const values: BranchFormValues = {
+    templateVariableValues: normalizeTemplateVariableValues(input.templateVariableValues),
+    airportVanFormValues: normalizeOptionalAirportVanFormValues(input.airportVanFormValues),
+  };
+  return compactBranchFormValue(values);
+}
+
+function normalizeOptionalAirportVanFormValues(input: unknown): StoredExtensionState["ui"]["airportVanFormValues"] {
+  if (input === undefined) return undefined;
+  const values = normalizeAirportVanFormValues(input);
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function compactBranchFormValue(values: BranchFormValues): BranchFormValues {
+  const result: BranchFormValues = {};
+  if (values.templateVariableValues && Object.keys(values.templateVariableValues).length > 0) {
+    result.templateVariableValues = values.templateVariableValues;
+  }
+  if (values.airportVanFormValues && Object.keys(values.airportVanFormValues).length > 0) {
+    result.airportVanFormValues = values.airportVanFormValues;
+  }
+  return result;
 }
 
 function wrapCatalogSchemaError<T>(callback: () => T, prefix: string): T {

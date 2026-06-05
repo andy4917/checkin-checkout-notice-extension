@@ -27,7 +27,14 @@ export async function fetchPmsGuests(
   if (!response.ok) {
     const status = response.status ? ` ${response.status}` : "";
     const statusText = response.statusText ? ` ${response.statusText}` : "";
-    throw new PmsRequestError(`PMS 요청 실패:${status}${statusText}`.trim());
+    const contentType = response.headers?.get("content-type") || "";
+    const contentTypeDetail = contentType ? ` content-type=${contentType}` : "";
+    throw new PmsRequestError(`PMS 요청 실패:${status}${statusText}${contentTypeDetail}`.trim());
+  }
+
+  const contentType = response.headers?.get("content-type") || "";
+  if (contentType && !isJsonContentType(contentType)) {
+    throw new PmsRequestError("PMS 응답 형식이 올바르지 않습니다: JSON response expected.");
   }
 
   let data: unknown;
@@ -63,4 +70,8 @@ function normalizeGuestRow(row: unknown): Guest {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isJsonContentType(contentType: string): boolean {
+  return /(?:^|[/+])json(?:\b|;)/i.test(contentType);
 }

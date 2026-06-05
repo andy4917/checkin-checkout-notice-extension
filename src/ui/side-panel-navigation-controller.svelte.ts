@@ -1,5 +1,8 @@
 import { loadOtaReservationPreview, fillWingsReservationFromPreview } from "../application/ota-reservation-input.js";
-import { renderAirportVanCopy } from "../application/airport-van-form.js";
+import {
+  normalizeAirportVanFormValues,
+  renderAirportVanCopy,
+} from "../application/airport-van-form.js";
 import { upsertWingsRemarkLine, type WingsRemarkDependencies } from "../application/wings-remark.js";
 import {
   addLaundryRecord,
@@ -11,9 +14,7 @@ import {
   removeLaundryRecord,
   visibleLaundryProgressLog,
 } from "../application/laundry-records.js";
-import {
-  createOperatorErrorMessageTracker,
-} from "../application/operator-error-messages.js";
+import { resolveOperatorErrorMessage, type OperatorErrorKind } from "../application/operator-error-messages.js";
 import { syncGuests } from "../application/sync-guests.js";
 import { resetAllTemplateSettings } from "../application/template-settings.js";
 import { resolveDefaultLanguageFromNationalityFields } from "../domain/language.js";
@@ -36,7 +37,7 @@ import type { OtaReservationInputDependencies, OtaReservationInputPreview } from
 import type { LaundryStorageArea } from "../laundry/storage.js";
 import type { LaundryMoveTarget, LaundryProgressEntry, LaundryRecord } from "../laundry/types.js";
 import type { HomeBottomNavigationItem, HomeNavigationItem, MenuId, MenuItem, MenuTemplateFilter } from "../catalog/menu-routing.js";
-import type { StoredExtensionState, TemplateVariable, UnifiedTemplateDefinition } from "../catalog/template-types.js";
+import type { BranchFormValues, StoredExtensionState, TemplateVariable, UnifiedTemplateDefinition } from "../catalog/template-types.js";
 import type { BranchId, Language, PmsFetch, PmsGuestRecord, TabMode } from "../types.js";
 
 export type SidePanelNavigationControllerDependencies = {
@@ -60,6 +61,12 @@ export type SidePanelNavigationControllerDependencies = {
 };
 
 export type WorkStatusTone = "neutral" | "success" | "error";
+export type HiddenFailureEvidence = Readonly<{
+  kind: OperatorErrorKind;
+  message: string;
+  source: string;
+  visibleStatus: false;
+}>;
 export type BottomPanelState = {
   id: string;
   title: string;
@@ -67,6 +74,94 @@ export type BottomPanelState = {
   mode: TabMode;
 };
 const DEFAULT_LANGUAGE: Language = "KO";
+const TEXT_STATUS_ERROR_KINDS = new Set<OperatorErrorKind>([
+  "otaActiveTab",
+  "wingsReservationWindow",
+  "otaBranchMismatch",
+  "wingsBrowserTab",
+  "wingsRoomInfoWindow",
+  "pmsRequiredValueMissing",
+  "pmsRequestFailed",
+]);
+
+function compactTemplateVariableValues(values: Record<string, string>): Record<string, string> | undefined {
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function compactAirportVanFormValues(values: AirportVanFormValues): AirportVanFormValues | undefined {
+  const normalized = normalizeAirportVanFormValues(values);
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function compactBranchFormValues(values: BranchFormValues): BranchFormValues {
+  const result: BranchFormValues = {};
+  if (values.templateVariableValues && Object.keys(values.templateVariableValues).length > 0) {
+    result.templateVariableValues = values.templateVariableValues;
+  }
+  const airportVanFormValues = compactAirportVanFormValues(values.airportVanFormValues || {});
+  if (airportVanFormValues) {
+    result.airportVanFormValues = airportVanFormValues;
+  }
+  return result;
+}
+
+function setBranchFormValues(
+  state: StoredExtensionState,
+  branchId: BranchId,
+  values: BranchFormValues,
+): StoredExtensionState {
+  const nextBranchFormValues = { ...(state.ui.branchFormValues || {}) };
+  const compactValues = compactBranchFormValues(values);
+  if (Object.keys(compactValues).length > 0) {
+    nextBranchFormValues[branchId] = compactValues;
+  } else {
+    delete nextBranchFormValues[branchId];
+  }
+  return {
+    ...state,
+    ui: {
+      ...state.ui,
+      branchFormValues: Object.keys(nextBranchFormValues).length > 0 ? nextBranchFormValues : undefined,
+    },
+  };
+}
+
+function migrateLegacyUiValuesToBranch(
+  state: StoredExtensionState,
+  branchId: BranchId,
+): { state: StoredExtensionState; migrated: boolean } {
+  const legacyTemplateVariableValues = state.ui.templateVariableValues;
+  const legacyAirportVanFormValues = state.ui.airportVanFormValues;
+  if (legacyTemplateVariableValues === undefined && legacyAirportVanFormValues === undefined) {
+    return { state, migrated: false };
+  }
+
+  const currentBranchValues = state.ui.branchFormValues?.[branchId] || {};
+  const branchValues: BranchFormValues = {
+    templateVariableValues: compactTemplateVariableValues({
+      ...(legacyTemplateVariableValues || {}),
+      ...(currentBranchValues.templateVariableValues || {}),
+    }),
+    airportVanFormValues: compactAirportVanFormValues({
+      ...normalizeAirportVanFormValues(legacyAirportVanFormValues),
+      ...(currentBranchValues.airportVanFormValues || {}),
+    }),
+  };
+
+  const nextState = setBranchFormValues({
+    ...state,
+    ui: {
+      ...state.ui,
+      templateVariableValues: undefined,
+      airportVanFormValues: undefined,
+    },
+  }, branchId, branchValues);
+  return { state: nextState, migrated: true };
+}
+
+function branchFormValues(state: StoredExtensionState, branchId: BranchId): BranchFormValues {
+  return state.ui.branchFormValues?.[branchId] || {};
+}
 
 export function createSidePanelNavigationController(
   dependencies: SidePanelNavigationControllerDependencies,
@@ -81,7 +176,7 @@ export function createSidePanelNavigationController(
   let languageChangeTimer: ReturnType<typeof setTimeout> | null = null;
   let statusMessage = $state("");
   let statusTone = $state<WorkStatusTone>("neutral");
-  const operatorErrorMessages = createOperatorErrorMessageTracker();
+  let hiddenFailureEvidence = $state<HiddenFailureEvidence | null>(null);
   let copiedTemplateId = $state<string | null>(null);
   let otaPreview = $state<OtaReservationInputPreview | null>(null);
   let laundryRecords = $state<LaundryRecord[]>([]);
@@ -95,10 +190,16 @@ export function createSidePanelNavigationController(
   async function mount() {
     try {
       const { state, recovered } = await dependencies.extensionState.readWithRecovery();
-      extensionState = state;
+      let nextState = state;
       if (state.lastBranchId) {
         selectedBranchId = state.lastBranchId;
+        const migration = migrateLegacyUiValuesToBranch(state, state.lastBranchId);
+        nextState = migration.state;
+        if (migration.migrated) {
+          await dependencies.extensionState.writeState(nextState);
+        }
       }
+      extensionState = nextState;
       if (recovered) {
         setStatus("", "neutral");
       }
@@ -123,7 +224,19 @@ export function createSidePanelNavigationController(
     selectedBranchId = validatedBranchId;
     if (selectedBranchId) {
       if (extensionState) {
-        extensionState = { ...extensionState, lastBranchId: selectedBranchId };
+        const migration = migrateLegacyUiValuesToBranch(
+          { ...extensionState, lastBranchId: selectedBranchId },
+          selectedBranchId,
+        );
+        extensionState = migration.state;
+        if (migration.migrated) {
+          try {
+            await dependencies.extensionState.writeState(extensionState);
+          } catch (error) {
+            setErrorStatus(error);
+            return;
+          }
+        }
       }
     }
     clearSelectedPmsRecord();
@@ -183,7 +296,7 @@ export function createSidePanelNavigationController(
   async function copyTemplate(templateId: string) {
     const template = activeTemplates().find((item) => item.id === templateId);
     if (!template) {
-      setStatus("템플릿을 찾지 못했습니다.", "error");
+      setStatus("", "neutral");
       return;
     }
 
@@ -204,7 +317,7 @@ export function createSidePanelNavigationController(
   async function copyHomeTemplate(target: HomeNavigationItem, templateId: string) {
     const template = templatesForHomeNavigationItem(target).find((item) => item.id === templateId);
     if (!template) {
-      setStatus("템플릿을 찾지 못했습니다.", "error");
+      setStatus("", "neutral");
       return;
     }
 
@@ -242,7 +355,7 @@ export function createSidePanelNavigationController(
 
   async function createManualLaundryRecord(itemSummary: string) {
     if (!selectedBranchId) {
-      setStatus("지점을 선택하여주십시오.", "error");
+      setStatus("", "neutral");
       return;
     }
 
@@ -261,7 +374,7 @@ export function createSidePanelNavigationController(
       );
       laundryRecords = [record, ...laundryRecords.filter((item) => item.id !== record.id)];
       laundryVersion += 1;
-      setStatus("세탁 블록을 추가했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -275,7 +388,7 @@ export function createSidePanelNavigationController(
       const record = await moveLaundryRecord(recordId, target, dependencies.laundryStorage, dependencies.dateSource.today());
       laundryRecords = laundryRecords.map((item) => (item.id === record.id ? record : item));
       laundryVersion += 1;
-      setStatus("진행상태를 기록했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -289,7 +402,7 @@ export function createSidePanelNavigationController(
       await removeLaundryRecord(recordId, dependencies.laundryStorage);
       laundryRecords = laundryRecords.filter((item) => item.id !== recordId);
       laundryVersion += 1;
-      setStatus("세탁 블록을 제거했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -306,7 +419,7 @@ export function createSidePanelNavigationController(
         dependencies.laundryStorage,
       );
       laundryVersion += 1;
-      setStatus("진행 기록을 숨겼습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -323,7 +436,7 @@ export function createSidePanelNavigationController(
         dependencies.laundryStorage,
       );
       laundryVersion += 1;
-      setStatus("진행 기록을 제거했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -339,7 +452,7 @@ export function createSidePanelNavigationController(
     if (!item.action) return;
 
     if (!selectedBranchId) {
-      setStatus("지점을 선택하여주십시오.", "error");
+      setStatus("", "neutral");
       return;
     }
 
@@ -398,7 +511,7 @@ export function createSidePanelNavigationController(
     selectedPmsRecord = record;
     if (record) {
       selectedLanguage = resolveDefaultLanguageFromNationalityFields(record.raw);
-      setStatus("객실을 선택했습니다.", "success");
+      setStatus("", "neutral");
     }
   }
 
@@ -413,7 +526,7 @@ export function createSidePanelNavigationController(
         selectedBranchId,
         dependencies.otaReservation,
       );
-      setStatus("예약정보를 가져왔습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       otaPreview = null;
       setErrorStatus(error);
@@ -430,17 +543,12 @@ export function createSidePanelNavigationController(
 
     loading = true;
     try {
-      const result = await fillWingsReservationFromPreview(
+      await fillWingsReservationFromPreview(
         otaPreview,
         selectedBranchId,
         dependencies.otaReservation,
       );
-      setStatus(
-        result.missing.length > 0
-          ? `입력 완료, 누락 ${result.missing.length}개`
-          : "WINGS 입력이 완료되었습니다.",
-        result.missing.length > 0 ? "neutral" : "success",
-      );
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -455,7 +563,47 @@ export function createSidePanelNavigationController(
       const nextState = resetAllTemplateSettings(extensionState);
       await dependencies.extensionState.writeState(nextState);
       extensionState = nextState;
-      setStatus("템플릿 설정을 초기화했습니다.", "success");
+      setStatus("", "neutral");
+    } catch (error) {
+      setErrorStatus(error);
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function updateTemplateOverride(input: {
+    templateId: string;
+    title: string;
+    language: Language;
+    body: string;
+  }) {
+    if (!extensionState) {
+      setStatus("", "neutral");
+      return;
+    }
+
+    const previousOverride = extensionState.templateOverrides[input.templateId] || {};
+    const nextOverride = {
+      ...previousOverride,
+      title: input.title.trim(),
+      languages: {
+        ...(previousOverride.languages || {}),
+        [input.language]: input.body,
+      },
+    };
+    const nextState: StoredExtensionState = {
+      ...extensionState,
+      templateOverrides: {
+        ...extensionState.templateOverrides,
+        [input.templateId]: nextOverride,
+      },
+    };
+
+    loading = true;
+    try {
+      await dependencies.extensionState.writeState(nextState);
+      extensionState = nextState;
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -465,56 +613,80 @@ export function createSidePanelNavigationController(
 
   async function setTemplateVariableValue(variableName: string, value: string) {
     if (!extensionState) {
-      setStatus("저장소를 불러오지 못했습니다.", "error");
+      setStatus("", "neutral");
+      return;
+    }
+    if (!selectedBranchId) {
+      setStatus("", "neutral");
       return;
     }
 
-    const nextValues = { ...templateVariableValues() };
+    const branchId = selectedBranchId;
+    const migratedState = migrateLegacyUiValuesToBranch(extensionState, branchId).state;
+    const currentBranchValues = branchFormValues(migratedState, branchId);
+    const nextTemplateVariableValues = { ...(currentBranchValues.templateVariableValues || {}) };
     if (value.trim().length === 0) {
-      delete nextValues[variableName];
+      delete nextTemplateVariableValues[variableName];
     } else {
-      nextValues[variableName] = value;
+      nextTemplateVariableValues[variableName] = value;
     }
 
-    const nextState: StoredExtensionState = {
-      ...extensionState,
-      ui: {
-        ...extensionState.ui,
-        templateVariableValues: nextValues,
-      },
-    };
+    const nextState = setBranchFormValues(migratedState, branchId, {
+      ...currentBranchValues,
+      templateVariableValues: compactTemplateVariableValues(nextTemplateVariableValues),
+    });
 
-    await dependencies.extensionState.writeState(nextState);
-    extensionState = nextState;
-    copiedTemplateId = null;
-    setStatus("입력값을 저장했습니다.", "success");
+    loading = true;
+    try {
+      await dependencies.extensionState.writeState(nextState);
+      extensionState = nextState;
+      copiedTemplateId = null;
+      hiddenFailureEvidence = null;
+      setStatus("", "neutral");
+    } catch (error) {
+      setHiddenFailureEvidence(error, "template-variable-storage-write");
+    } finally {
+      loading = false;
+    }
   }
 
   async function setAirportVanFormValue(fieldName: keyof AirportVanFormValues, value: string) {
     if (!extensionState) {
-      setStatus("저장소를 불러오지 못했습니다.", "error");
+      setStatus("", "neutral");
+      return;
+    }
+    if (!selectedBranchId) {
+      setStatus("", "neutral");
       return;
     }
 
-    const nextValues: AirportVanFormValues = { ...airportVanFormValues() };
+    const branchId = selectedBranchId;
+    const migratedState = migrateLegacyUiValuesToBranch(extensionState, branchId).state;
+    const currentBranchValues = branchFormValues(migratedState, branchId);
+    const nextAirportVanFormValues: AirportVanFormValues = { ...(currentBranchValues.airportVanFormValues || {}) };
     if (value.trim().length === 0) {
-      delete nextValues[fieldName];
+      delete nextAirportVanFormValues[fieldName];
     } else {
-      nextValues[fieldName] = value.trim() as never;
+      nextAirportVanFormValues[fieldName] = value.trim() as never;
     }
 
-    const nextState: StoredExtensionState = {
-      ...extensionState,
-      ui: {
-        ...extensionState.ui,
-        airportVanFormValues: nextValues,
-      },
-    };
+    const nextState = setBranchFormValues(migratedState, branchId, {
+      ...currentBranchValues,
+      airportVanFormValues: compactAirportVanFormValues(nextAirportVanFormValues),
+    });
 
-    await dependencies.extensionState.writeState(nextState);
-    extensionState = nextState;
-    copiedTemplateId = null;
-    setStatus("입력값을 저장했습니다.", "success");
+    loading = true;
+    try {
+      await dependencies.extensionState.writeState(nextState);
+      extensionState = nextState;
+      copiedTemplateId = null;
+      hiddenFailureEvidence = null;
+      setStatus("", "neutral");
+    } catch (error) {
+      setHiddenFailureEvidence(error, "airport-van-form-storage-write");
+    } finally {
+      loading = false;
+    }
   }
 
   async function copyAirportVanText(target: AirportVanCopyTarget) {
@@ -532,7 +704,11 @@ export function createSidePanelNavigationController(
     const template = activeTemplates().find((item) => item.id === templateId);
     const type = template ? getBuiltInRemarkType(template.id) : null;
     if (!template || !type) {
-      setStatus("리마크 양식을 찾지 못했습니다.", "error");
+      setStatus("", "neutral");
+      return;
+    }
+    if (template.requiresContext === "guestRecord" && !selectedPmsRecord) {
+      setStatus("", "neutral");
       return;
     }
 
@@ -547,7 +723,7 @@ export function createSidePanelNavigationController(
         dependencies.wingsRemark,
       );
       copiedTemplateId = template.id;
-      setStatus("WINGS 리마크에 입력했습니다.", "success");
+      setStatus("", "neutral");
     } catch (error) {
       setErrorStatus(error);
     } finally {
@@ -556,15 +732,31 @@ export function createSidePanelNavigationController(
   }
 
   function setStatus(message: string, tone: WorkStatusTone) {
-    if (tone !== "error") {
-      operatorErrorMessages.reset();
-    }
+    hiddenFailureEvidence = null;
     statusMessage = message;
     statusTone = tone;
   }
 
+  function setHiddenFailureEvidence(error: unknown, source: string) {
+    const resolved = resolveOperatorErrorMessage(error);
+    hiddenFailureEvidence = {
+      kind: resolved.kind,
+      message: resolved.message,
+      source,
+      visibleStatus: false,
+    };
+    statusMessage = "";
+    statusTone = "neutral";
+  }
+
   function setErrorStatus(error: unknown) {
-    statusMessage = operatorErrorMessages.format(error);
+    const resolved = resolveOperatorErrorMessage(error);
+    if (!TEXT_STATUS_ERROR_KINDS.has(resolved.kind)) {
+      setHiddenFailureEvidence(error, "non-text-status-error");
+      return;
+    }
+    hiddenFailureEvidence = null;
+    statusMessage = resolved.message;
     statusTone = "error";
   }
 
@@ -582,6 +774,10 @@ export function createSidePanelNavigationController(
 
   function activeTemplates(): UnifiedTemplateDefinition[] {
     if (!activeMenuId) return [];
+    const menu = getMenu(activeMenuId);
+    if (menu.screenKind === "templateSettings" || menu.screenKind === "formSettings") {
+      return scopedTemplates();
+    }
     const menuTemplates = filterTemplatesForMenu(activeMenuId, scopedTemplates());
     return activeTemplateFilter ? filterTemplatesByFilter(activeTemplateFilter, menuTemplates) : menuTemplates;
   }
@@ -599,11 +795,13 @@ export function createSidePanelNavigationController(
   }
 
   function templateVariableValues(): Record<string, string> {
-    return extensionState?.ui.templateVariableValues || {};
+    if (!extensionState || !selectedBranchId) return {};
+    return branchFormValues(extensionState, selectedBranchId).templateVariableValues || {};
   }
 
   function airportVanFormValues(): AirportVanFormValues {
-    return extensionState?.ui.airportVanFormValues || {};
+    if (!extensionState || !selectedBranchId) return {};
+    return branchFormValues(extensionState, selectedBranchId).airportVanFormValues || {};
   }
 
   function templateValues(): Record<string, string> {
@@ -690,6 +888,7 @@ export function createSidePanelNavigationController(
     loadOtaPreview,
     fillOtaPreview,
     resetTemplateSettings,
+    updateTemplateOverride,
     setTemplateVariableValue,
     setAirportVanFormValue,
     copyAirportVanText,
@@ -742,6 +941,9 @@ export function createSidePanelNavigationController(
     },
     get statusTone() {
       return statusTone;
+    },
+    get hiddenFailureEvidence() {
+      return hiddenFailureEvidence;
     },
     get copiedTemplateId() {
       return copiedTemplateId;

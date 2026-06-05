@@ -1,14 +1,27 @@
 import { EXTENSION_CONFIG } from "../config/app-config.js";
-import { getDefaultSidePanelBehavior } from "./side-panel-policy.js";
+import {
+  getDefaultSidePanelOptions,
+  getDefaultSidePanelBehavior,
+} from "./side-panel-policy.js";
 
-chrome.sidePanel
-  .setPanelBehavior(getDefaultSidePanelBehavior())
-  .catch((error) =>
-    console.error(EXTENSION_CONFIG.sidePanelSetupErrorMessage, error),
-  );
+function reportSidePanelSetupError(error: unknown): void {
+  console.error(EXTENSION_CONFIG.sidePanelSetupErrorMessage, error);
+}
+
+function runSidePanelSetup(setup: Promise<void>): void {
+  setup.catch(reportSidePanelSetupError);
+}
+
+async function ensureSidePanelOptions(): Promise<void> {
+  await chrome.sidePanel.setPanelBehavior(getDefaultSidePanelBehavior());
+  await chrome.sidePanel.setOptions(getDefaultSidePanelOptions());
+}
+
+runSidePanelSetup(ensureSidePanelOptions());
 
 if (chrome.runtime?.onInstalled) {
   chrome.runtime.onInstalled.addListener(() => {
     console.log(EXTENSION_CONFIG.installLogMessage);
+    runSidePanelSetup(ensureSidePanelOptions());
   });
 }

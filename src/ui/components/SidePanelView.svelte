@@ -24,6 +24,9 @@
   let activeShellTitle = $derived(
     renderedMenu?.title || controller.activeMenu?.title || controller.activeBottomPanel?.title || renderedBottomPanel?.title || null,
   );
+  let showingHome = $derived(
+    !renderedMenu && !controller.activeMenu && !controller.activeBottomPanel && !renderedBottomPanel,
+  );
   let shellStatusVisible = $derived(
     !controller.activeMenu && !controller.activeBottomPanel && controller.statusMessage,
   );
@@ -101,7 +104,14 @@
 
 </script>
 
-<main class:home-mode={!controller.activeMenu && !controller.activeBottomPanel} class="app-shell">
+<main
+  class:has-status={shellStatusVisible}
+  class:home-mode={showingHome}
+  class="app-shell"
+  data-hidden-failure-kind={controller.hiddenFailureEvidence?.kind || undefined}
+  data-hidden-failure-source={controller.hiddenFailureEvidence?.source || undefined}
+  data-hidden-failure-visible={controller.hiddenFailureEvidence?.visibleStatus === false ? "false" : undefined}
+>
   <ShellHeader
     activeMenuTitle={activeShellTitle}
     branchPickerEnabled={!homeDrillActive}
@@ -131,6 +141,7 @@
       activeTemplates={controller.activeTemplates}
       homeInlineTemplatesByItemId={controller.homeInlineTemplatesByItemId}
       copiedTemplateId={controller.copiedTemplateId}
+      workRoomContext={controller.workRoomContext}
       hasSelectedPmsRecord={Boolean(controller.selectedPmsRecord)}
       homeBottomNavigation={controller.homeBottomNavigation}
       homeLabels={controller.homeLabels}
@@ -172,6 +183,7 @@
       onSelectPmsRecord={controller.selectPmsGuestRecord}
       onSetAirportVanFormValue={controller.setAirportVanFormValue}
       onSetTemplateVariableValue={controller.setTemplateVariableValue}
+      onUpdateTemplateOverride={controller.updateTemplateOverride}
       onUpsertRoomRemark={controller.upsertRoomRemark}
     />
   {/key}

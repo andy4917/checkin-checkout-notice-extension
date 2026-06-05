@@ -39,8 +39,10 @@
   let motionDirection: "forward" | "backward" | "replace" = "replace";
   let detailBackButton: HTMLButtonElement | null = null;
   let releaseDetailTimer: ReturnType<typeof setTimeout> | null = null;
+  let motionSettleTimer: ReturnType<typeof setTimeout> | null = null;
   let lastReportedDrillState = false;
   let lastReportedDrillTitle = "";
+  let homeSurfaceElement: HTMLElement | null = null;
   type ActionValue<T> = T | (() => T);
 
   function languageLabel(language: Language): string {
@@ -69,6 +71,7 @@
 
   onDestroy(() => {
     clearReleaseDetailTimer();
+    clearMotionSettleTimer();
   });
 
   async function openGroup(groupId: string, triggerButton: HTMLButtonElement) {
@@ -77,19 +80,23 @@
     }
 
     clearReleaseDetailTimer();
+    resetStageScroll();
     lastOpenedGroupButton = triggerButton;
     renderedDetailGroupId = groupId;
     activeGroupId = groupId;
     motionDirection = "forward";
+    scheduleMotionSettle("forward");
     await tick();
     detailBackButton?.focus({ preventScroll: true });
   }
 
   async function goRoot() {
     clearReleaseDetailTimer();
+    resetStageScroll();
     renderedDetailGroupId = activeGroupId;
     activeGroupId = "";
     motionDirection = "backward";
+    scheduleMotionSettle("backward");
     releaseDetailTimer = setTimeout(() => {
       renderedDetailGroupId = "";
       releaseDetailTimer = null;
@@ -100,6 +107,14 @@
 
   function openMenu(target: MenuId | HomeNavigationItem) {
     onOpenMenu(target);
+  }
+
+  function openBottomItem(item: HomeBottomNavigationItem) {
+    if (item.menuId) {
+      onOpenMenu(item.menuId);
+      return;
+    }
+    onOpenBottomItem(item);
   }
 
   function resolveActionValue<T>(value: ActionValue<T>): T {
@@ -128,14 +143,6 @@
     };
   }
 
-  function openBottomItem(item: HomeBottomNavigationItem) {
-    if (item.menuId) {
-      onOpenMenu(item.menuId);
-      return;
-    }
-    onOpenBottomItem(item);
-  }
-
   function getSubmenuPanelId(groupId: string): string {
     return `home-submenu-${groupId}`;
   }
@@ -153,6 +160,37 @@
     releaseDetailTimer = null;
   }
 
+  function clearMotionSettleTimer() {
+    if (!motionSettleTimer) {
+      return;
+    }
+
+    clearTimeout(motionSettleTimer);
+    motionSettleTimer = null;
+  }
+
+  function scheduleMotionSettle(direction: "forward" | "backward") {
+    clearMotionSettleTimer();
+    motionSettleTimer = setTimeout(() => {
+      if (motionDirection === direction) {
+        motionDirection = "replace";
+      }
+      motionSettleTimer = null;
+    }, 700);
+  }
+
+  function resetStageScroll() {
+    const stage = homeSurfaceElement?.closest(".screen-stage");
+    if (stage instanceof HTMLElement) {
+      stage.scrollTop = 0;
+      stage.scrollLeft = 0;
+    }
+    homeSurfaceElement?.querySelectorAll<HTMLElement>(".home-navigation-panel").forEach((panel) => {
+      panel.scrollTop = 0;
+      panel.scrollLeft = 0;
+    });
+  }
+
   function isAccordionGroup(group: HomeNavigationGroup | null): boolean {
     return group?.selectionMode === "accordion";
   }
@@ -162,12 +200,7 @@
   }
 
   function getRenderedDetailItems(group: HomeNavigationGroup): readonly HomeNavigationItem[] {
-    if (!isAccordionGroup(group)) return group.items;
-    const templateItems = group.items.filter((item) => getInlineTemplates(item).length > 0);
-    return [
-      ...templateItems.filter((item) => getInlineTemplates(item).length > 1),
-      ...templateItems.filter((item) => getInlineTemplates(item).length === 1),
-    ];
+    return group.items;
   }
 
   function shouldGroupInlineTemplates(item: HomeNavigationItem): boolean {
@@ -190,7 +223,7 @@
 
 </script>
 
-<section class="home-surface" aria-label={labels.rootLabel}>
+<section bind:this={homeSurfaceElement} class="home-surface" aria-label={labels.rootLabel}>
   <div
     class:backward={motionDirection === "backward"}
     class:detail-retained={!activeGroup && renderedDetailGroup}
@@ -297,8 +330,8 @@
                           <button
                             class="home-template-copy"
                             type="button"
-                            aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
-                            title={copiedTemplateId === template.id ? "복사됨" : "복사"}
+                            aria-label={`${template.title} 복사`}
+                            title="복사"
                             disabled={loading}
                             tabindex={activeGroup ? 0 : -1}
                             use:copyTemplateEvents={{ item, templateId: template.id }}
@@ -308,7 +341,7 @@
                         </article>
                       {/each}
                     {:else}
-                      <p class="home-template-empty">현재 등록된 템플릿 없음</p>
+                      <p class="home-template-empty">등록된 템플릿이 없습니다.</p>
                     {/if}
                   </div>
                 </details>
@@ -322,14 +355,14 @@
                       </span>
                       <span class="home-nav-label">
                         <span class="home-nav-title-row">
-                          <span class="interactive-label">{template.title}</span>
+                          <span class="interactive-label">{item.title}</span>
                         </span>
                       </span>
                       <button
                         class="home-template-copy"
                         type="button"
-                        aria-label={copiedTemplateId === template.id ? `${template.title} 복사됨` : `${template.title} 복사`}
-                        title={copiedTemplateId === template.id ? "복사됨" : "복사"}
+                        aria-label={`${template.title} 복사`}
+                        title="복사"
                         disabled={loading}
                         tabindex={activeGroup ? 0 : -1}
                         use:copyTemplateEvents={{ item, templateId: template.id }}

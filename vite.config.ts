@@ -18,7 +18,9 @@ export default defineConfig({
         background: resolve(import.meta.dirname, "src/background/index.ts"),
       },
       output: {
-        entryFileNames: "assets/[name].js",
+        entryFileNames: (chunkInfo) => (
+          chunkInfo.name === "background" ? "assets/background.js" : "assets/[name]-[hash].js"
+        ),
         chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
       },

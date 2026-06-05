@@ -22,7 +22,7 @@ It is a contract for this repo, not a copy target from the sample repository.
 - Use static `host_permissions` only for product-owned PMS/OTA hosts that are required by current workflows.
 - Permission changes must be source-backed and must update the manifest boundary test before release.
 - Do not add broad host permissions, `activeTab`, content scripts, offscreen documents, or context menus as convenience shortcuts.
-- Keep `tabs` and `scripting` tied to active-tab PMS/OTA/WINGS workflows, not generic browser inspection.
+- Keep `tabs` and `scripting` tied to active-tab OTA/WINGS field workflows, not PMS list fetches or generic browser inspection.
 
 ## Source Ownership
 
@@ -35,6 +35,9 @@ It is a contract for this repo, not a copy target from the sample repository.
 ## Verification
 
 - `npm run verify` is the normal closeout gate when package state allows it.
-- The final frontend proof is the unpacked extension URL, not a Vite or localhost render.
+- The final frontend proof is the user-controlled Google Chrome sidePanel container for the unpacked
+  extension, not a Vite, localhost, or extension-URL page-target render.
+- `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html` page-target checks are
+  supplementary failure detectors only; they do not prove the real Chrome sidePanel frame.
 - The smoke check must fail on wrong extension ID, missing worker, runtime errors, fake fallback data, hidden placeholders, horizontal overflow, and broken route motion.
 - Missing evidence is a blocker; do not replace an unavailable extension smoke with a weaker success claim.

@@ -41,5 +41,5 @@
 
 - Run `npm run verify` after implementation changes.
 - Treat `npm run verify` as the unified extension closeout gate. It includes typecheck, build, tests, side-panel scale inspection, and the actual unpacked-extension smoke path.
-- The smoke path must exercise forward/back route direction, branch popup, settings hub, template editor routing, one service/work route, and absence of horizontal scroll.
+- The smoke path must exercise forward/back route direction, branch popup, bottom-bar settings utility, template editor routing, one service/work route, and absence of horizontal scroll.
 - If the configured extension smoke browser is unavailable, report that blocker directly. Do not replace the proof with a non-extension browser page.

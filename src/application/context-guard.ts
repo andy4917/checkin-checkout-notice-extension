@@ -1,5 +1,6 @@
 import type { TemplateContextRequirement } from "../catalog/template-types.js";
-import { WINGS_BROWSER_TAB_MESSAGE } from "./operator-error-messages.js";
+
+export const PMS_CONTEXT_MESSAGE = "PMS 목록에서 고객정보를 선택해주세요.";
 
 export type WorkContext = {
   isPmsPage: boolean;
@@ -8,7 +9,7 @@ export type WorkContext = {
 
 export type ContextGuardResult =
   | { ok: true }
-  | { ok: false; message: typeof WINGS_BROWSER_TAB_MESSAGE | "고객정보를 열어주십시오" };
+  | { ok: false; message: typeof PMS_CONTEXT_MESSAGE | "고객정보를 열어주십시오" };
 
 export function guardRequiredContext(
   requiresContext: TemplateContextRequirement,
@@ -18,7 +19,7 @@ export function guardRequiredContext(
   if (requiresContext === "pmsPage") {
     return context.isPmsPage
       ? { ok: true }
-      : { ok: false, message: WINGS_BROWSER_TAB_MESSAGE };
+      : { ok: false, message: PMS_CONTEXT_MESSAGE };
   }
   return context.isGuestRecord
     ? { ok: true }

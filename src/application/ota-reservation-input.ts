@@ -87,7 +87,7 @@ function requireOtaPayloadFetcher(
 ): OtaPayloadFetcher {
   if (typeof dependencies?.fetchPayload !== "function") {
     throw new OtaReservationDependencyError(
-      "OTA 예약정보 가져오기 의존성이 연결되지 않았습니다.",
+      "OTA 예약정보 가져오기가 연결되지 않았습니다.",
     );
   }
   return dependencies.fetchPayload;
@@ -98,7 +98,7 @@ function requireWingsReservationFormFiller(
 ): WingsReservationFormFiller {
   if (typeof dependencies?.fillForm !== "function") {
     throw new OtaReservationDependencyError(
-      "WINGS 예약 입력 의존성이 연결되지 않았습니다.",
+      "WINGS 예약 입력이 연결되지 않았습니다.",
     );
   }
   return dependencies.fillForm;

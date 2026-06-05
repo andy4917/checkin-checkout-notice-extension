@@ -41,5 +41,9 @@ export type PmsFetch = (
   ok: boolean;
   status?: number;
   statusText?: string;
+  headers?: {
+    get(name: string): string | null;
+  };
+  text?(): Promise<string>;
   json(): Promise<PmsRowsResponse>;
 }>;

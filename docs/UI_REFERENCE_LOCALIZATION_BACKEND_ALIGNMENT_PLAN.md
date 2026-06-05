@@ -5,6 +5,10 @@ replaces older reference-planning notes. Do not use historical reference screens
 as permission to add sample dashboards, fake workflow data, broad status panels,
 or removed legacy DOM behavior.
 
+For new implementation work, read this document together with
+`docs/PRODUCT_DESIGN_CONTRACT.md` and `docs/BACKEND_CONTRACT_REVIEW.md`. Those
+two documents summarize the current Product Design and backend review gates.
+
 ## Reference Boundary
 
 The current contract is based on user-provided Framer sidebar reference intent,
@@ -19,6 +23,13 @@ The invalid 2026-06-02 generated blueprint contact sheet is not design
 authority. It was generated from summarized repo docs/catalog prompts instead of
 directly using the user-provided screenshots, so it must not be used as a
 submenu or work-surface reference.
+
+For production UI work, the final source visual contract is the deterministic
+per-surface `target.svg` plus `contract.json` under
+`docs/product-surface-targets/<surfaceId>/`. Positive ZIP screenshots and
+accepted ImageGen outputs are reference inputs only; do not copy those bitmaps
+into the repo or treat their text as source authority when it conflicts with the
+catalog/docs contract.
 
 ## Current Product Surface
 
@@ -70,6 +81,16 @@ work management, and template/edit groups open menu screens.
 The 4-language selector appears only for template accordion groups. It must not
 appear in service/work/template management submenu lists.
 
+The redesigned menu-screen submenu contracts are row-count contracts, not loose
+label-presence checks:
+
+- `고객 서비스 관리`: exactly `세탁물 관리`, `매지출 관리`, `공항밴 관리` visible before scroll.
+- `업무 관리`: exactly `객실 정보 리마크`, `NAVER / STATION 예약입력`, `업무보고 양식` visible before scroll.
+- `템플릿 / 양식 편집`: exactly `안내문 편집 / 빠른답변 편집`, `업무 양식 편집` visible before scroll.
+
+In all three, the bottom navigation remains a separate shell footer and must not
+overlap the visible submenu rows.
+
 ## Copy And Status Contract
 
 - Copy success is local to the action button, such as a check icon or copied
@@ -106,9 +127,10 @@ appear in service/work/template management submenu lists.
 | Laundry management | `WorkSurface.svelte`, `laundry-records.ts`, `src/laundry/*` | real storage-backed records only |
 | OTA reservation input | `ota-reservation-input.ts`, `src/ota/*`, `reservation-draft.ts` | source detection, preview, WINGS fill, manual save in WINGS |
 | Airport van management | `airport-van-form.ts` | form values persisted in extension state, copy output only |
-| Room remark memo | `wings-remark.ts`, `domain/remarks.ts` | guarded WINGS remark behavior |
-| Settings hub | `settingsNavigationItems` in `menu-routing.ts`, `WorkSurface.svelte` | real links to template editing and form editing; no empty settings placeholder |
+| Room remark | `wings-remark.ts`, `domain/remarks.ts` | guarded WINGS remark behavior |
+| Bottom-bar settings utility | `settingsUtilityItems`, `settingsNavigationItems` in `menu-routing.ts`, `WorkSurface.svelte` | operation-boundary rows plus shortcuts to existing editor product surfaces; not a duplicate template/form editor menu and not a seventeenth product surface |
 | Template settings | `template-settings.ts`, storage/template schemas | schema-mediated import/export/reset |
+| Sales management | `sales-expense-form.ts`, template renderer | amount/category/detail visual form plus `매지출 보고 복사`; no storage-backed recent expense ledger until a new owner contract exists |
 
 ## Localization Contract
 
@@ -120,7 +142,11 @@ appear in service/work/template management submenu lists.
 ## Backend Alignment Contract
 
 - PMS list/sync uses selected branch and current date filters through PMS owner modules.
-- PMS list UI shows `PMS 조회 중` while loading, then either real records, `PMS 조회 실패`, or the real empty-state label. It must not render `N/A` or other fake field values for missing PMS fields.
+- PMS list/sync does not require a separate browser-login prerequisite in the UI or smoke contract; failure handling stays as PMS list failure/empty/record state.
+- PMS list UI shows `PMS 조회 중` while loading, then either real records, `PMS 연결 확인 필요` with the operator message, or `표시할 PMS 기록이 없습니다.`. It must not render `N/A` or other fake field values for missing PMS fields.
+- Live PMS row success remains unverified until actual PMS `rows` render in the
+  side panel. A PMS `backendFailure` or `empty` state is failure/empty-path
+  evidence only and must not be counted as backend connected.
 - OTA extraction uses actual Naver/Station source detection and normalized payloads.
 - WINGS reservation input fills fields only; the user reviews and saves manually.
 - WINGS remark behavior is separate from reservation creation fill behavior.
@@ -129,19 +155,27 @@ appear in service/work/template management submenu lists.
 
 ## Verification
 
-Use `npm run verify` for the full local contract. It is the unified closeout gate
-for this Chrome extension: typecheck, build, tests, side-panel scale, and actual
-unpacked-extension smoke. The smoke target is
+Use `npm run verify` for the local verification bundle: typecheck, build, tests,
+side-panel scale, and built unpacked-extension smoke. The product acceptance
+target remains the user-controlled Google Chrome profile with the fixed-ID
+unpacked extension loaded at
 `chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html`. It checks
 home root state, branch popup, bottom menu enablement, all home submenu groups,
-settings hub, template/form settings, all service/work reference routes,
+bottom-bar settings utility, template/form editor shortcuts, all service/work reference routes,
 work-report templates, all PMS bottom panels, logo/motion computed style,
 placeholder attributes, horizontal overflow, banned placeholder text, fake PMS
 fallback text, console errors, and runtime errors.
+For `매지출 관리`, smoke coverage requires the amount control, category label, and
+all category chips (`소모품`, `수리`, `식음료`, `기타`) before scroll, plus clipboard
+owner evidence for the rendered report. It does not permit `Save Record`, recent
+expense rows, or fake expense records. For visible
+`placeholder` attributes, smoke collects a global visible-surface list and fails
+on any match.
 
-Vite is build tooling here, not product-surface proof. If Chrome extension
-visual automation is blocked, record the exact blocker and leave that proof
-unverified instead of substituting a Vite-rendered pass.
+Vite and isolated Chromium are build/debug tooling here, not product-surface
+proof. If user Chrome extension visual automation is blocked, record the exact
+blocker and leave that proof unverified instead of substituting a Vite-rendered
+or isolated-browser pass.
 
 Current tests that protect this contract include:
 

@@ -12,14 +12,18 @@ async function createControllerHarness(
     recovered?: boolean;
     readError?: Error;
     branchStorageError?: Error;
+    writeStateError?: Error;
+    withoutWingsRemark?: boolean;
     pmsOk?: boolean;
+    pmsHtmlResponse?: boolean;
   } = {},
 ) {
   Object.assign(globalThis, { $state: <T>(value: T) => value });
   const { createSidePanelNavigationController } = await import("../src/ui/side-panel-navigation-controller.svelte.js");
   let state = normalizeStoredExtensionState(initial);
   const writes: string[] = [];
-  const pmsCalls: Array<{ input: string; body: URLSearchParams }> = [];
+  const wingsRemarkWrites: string[] = [];
+  const pmsCalls: Array<{ input: string; body: URLSearchParams; hasCredentials: boolean }> = [];
   const laundryStore: Record<string, unknown> = {};
 
   const dependencies: SidePanelNavigationControllerDependencies = {
@@ -33,6 +37,7 @@ async function createControllerHarness(
         state = { ...state, lastBranchId: branchId };
       },
       async writeState(nextState: StoredExtensionState) {
+        if (options.writeStateError) throw options.writeStateError;
         state = normalizeStoredExtensionState(nextState);
       },
     },
@@ -57,15 +62,27 @@ async function createControllerHarness(
         throw new Error("not used");
       },
     },
-    wingsRemark: {
-      async readRemark() {
-        return "기존 메모";
-      },
-      async writeRemark() {},
-    },
+    wingsRemark: options.withoutWingsRemark
+      ? undefined
+      : {
+          async readRemark() {
+            return wingsRemarkWrites.at(-1) || "기존 메모";
+          },
+          async writeRemark(nextRemark) {
+            wingsRemarkWrites.push(nextRemark);
+          },
+        },
     pmsGuests: {
       async fetchImpl(input, init) {
-        pmsCalls.push({ input, body: init.body });
+        pmsCalls.push({ input, body: init.body, hasCredentials: init.credentials === "include" });
+        if (options.pmsHtmlResponse) {
+          return {
+            ok: true,
+            headers: { get: (name: string) => (name.toLowerCase() === "content-type" ? "text/html" : null) },
+            text: async () => "<html><body>PMS SAML redirect idp.sanhait.com identity/samlsso</body></html>",
+            json: async () => ({ rows: [{ GUEST_NAME: "Fake" }] }),
+          };
+        }
         if (options.pmsOk === false) {
           return { ok: false, status: 401, statusText: "Unauthorized", json: async () => ({ rows: [] }) };
         }
@@ -96,23 +113,49 @@ async function createControllerHarness(
     controller: createSidePanelNavigationController(dependencies),
     getState: () => state,
     writes,
+    wingsRemarkWrites,
     pmsCalls,
   };
 }
 
-test("recoverable storage normalization is silent, while real storage failure is actionable", async () => {
+test("recoverable storage normalization and generic storage failures do not show shell feedback text", async () => {
   const recovered = await createControllerHarness({ lastBranchId: "coex" }, { recovered: true });
   await recovered.controller.mount();
   assert.equal(recovered.controller.statusMessage, "");
   assert.equal(recovered.controller.statusTone, "neutral");
+  assert.equal(recovered.controller.hiddenFailureEvidence, null);
 
   const failed = await createControllerHarness({}, { readError: new Error("Chrome storage dependency is not available.") });
   await failed.controller.mount();
-  assert.equal(failed.controller.statusTone, "error");
-  assert.equal(
-    failed.controller.statusMessage,
-    "저장소 작업에 실패했습니다. 확장 프로그램 저장 권한과 Chrome 상태를 확인 후 다시 시도해주십시오.",
-  );
+  assert.equal(failed.controller.statusTone, "neutral");
+  assert.equal(failed.controller.statusMessage, "");
+  assert.deepEqual(failed.controller.hiddenFailureEvidence, {
+    kind: "storageCorruption",
+    message: "저장소 작업에 실패했습니다. 확장 프로그램 저장 권한과 Chrome 상태를 확인 후 다시 시도해주십시오.",
+    source: "non-text-status-error",
+    visibleStatus: false,
+  });
+});
+
+test("storage write failures stay hidden from shell text but remain structured evidence", async () => {
+  const storageError = new Error("chrome storage write failed");
+  const templateFailure = await createControllerHarness({ lastBranchId: "coex" }, { writeStateError: storageError });
+  await templateFailure.controller.mount();
+  await templateFailure.controller.setTemplateVariableValue("rentalItemName", "가습기");
+  assert.equal(templateFailure.controller.statusMessage, "");
+  assert.equal(templateFailure.controller.statusTone, "neutral");
+  assert.equal(templateFailure.controller.hiddenFailureEvidence?.kind, "storageCorruption");
+  assert.equal(templateFailure.controller.hiddenFailureEvidence?.source, "template-variable-storage-write");
+  assert.equal(templateFailure.controller.hiddenFailureEvidence?.visibleStatus, false);
+
+  const airportFailure = await createControllerHarness({ lastBranchId: "coex" }, { writeStateError: storageError });
+  await airportFailure.controller.mount();
+  await airportFailure.controller.setAirportVanFormValue("roomNo", "A302");
+  assert.equal(airportFailure.controller.statusMessage, "");
+  assert.equal(airportFailure.controller.statusTone, "neutral");
+  assert.equal(airportFailure.controller.hiddenFailureEvidence?.kind, "storageCorruption");
+  assert.equal(airportFailure.controller.hiddenFailureEvidence?.source, "airport-van-form-storage-write");
+  assert.equal(airportFailure.controller.hiddenFailureEvidence?.visibleStatus, false);
 });
 
 test("home template copy calls clipboard only after required application values exist", async () => {
@@ -129,10 +172,11 @@ test("home template copy calls clipboard only after required application values 
 
   await controller.copyHomeTemplate(quickRental, "quick-rental-item-inquiry");
   assert.equal(writes.length, 0);
-  assert.equal(controller.statusTone, "error");
+  assert.equal(controller.statusTone, "neutral");
+  assert.equal(controller.statusMessage, "");
 
   await controller.setTemplateVariableValue("rentalItemName", "가습기");
-  assert.equal(getState().ui.templateVariableValues?.rentalItemName, "가습기");
+  assert.equal(getState().ui.branchFormValues?.coex?.templateVariableValues?.rentalItemName, "가습기");
   await controller.copyHomeTemplate(quickRental, "quick-rental-item-inquiry");
   assert.equal(controller.statusMessage, "");
   assert.match(writes.at(-1) || "", /가습기/);
@@ -146,8 +190,21 @@ test("PMS bottom navigation proves backend failure and success states without fa
   await failure.controller.mount();
   await failure.controller.openBottomNavigation(checkinItem);
   assert.equal(failure.controller.statusTone, "error");
-  assert.equal(failure.controller.statusMessage, "PMS 조회에 실패했습니다. 로그인 상태와 네트워크를 확인 후 다시 시도해주십시오.");
+  assert.equal(
+    failure.controller.statusMessage,
+    "PMS 조회에 실패했습니다. PMS 응답 형식 또는 네트워크 상태를 확인 후 다시 시도해주십시오.",
+  );
   assert.deepEqual(failure.controller.pmsRecords, []);
+
+  const htmlFailure = await createControllerHarness({ lastBranchId: "coex" }, { pmsHtmlResponse: true });
+  await htmlFailure.controller.mount();
+  await htmlFailure.controller.openBottomNavigation(checkinItem);
+  assert.equal(htmlFailure.controller.statusTone, "error");
+  assert.equal(
+    htmlFailure.controller.statusMessage,
+    "PMS 조회에 실패했습니다. PMS 응답 형식 또는 네트워크 상태를 확인 후 다시 시도해주십시오.",
+  );
+  assert.deepEqual(htmlFailure.controller.pmsRecords, []);
 
   const success = await createControllerHarness({ lastBranchId: "coex" });
   await success.controller.mount();
@@ -172,6 +229,43 @@ test("branch change clears stale PMS and OTA state and writes through storage ow
   assert.equal(controller.selectedPmsRecord, null);
   assert.equal(controller.workRoomContext.selected, false);
   assert.equal(pmsCalls.at(-1)?.body.get("filter[filters][0][value]"), "91");
+  assert.equal(pmsCalls.at(-1)?.hasCredentials, true);
+});
+
+test("room remark WINGS upsert requires selected PMS context and keeps WINGS dependency failure visible", async () => {
+  const checkinItem = homeBottomNavigationItems.find((item) => item.id === "checkin-list");
+  assert.ok(checkinItem);
+
+  const noRecord = await createControllerHarness({ lastBranchId: "coex" });
+  await noRecord.controller.mount();
+  await noRecord.controller.openMenu("ROOM_REMARK_MEMO");
+  await noRecord.controller.setTemplateVariableValue("count", "2");
+  await noRecord.controller.upsertRoomRemark("remark-card-keys");
+  assert.deepEqual(noRecord.wingsRemarkWrites, []);
+  assert.equal(noRecord.controller.statusMessage, "");
+
+  const success = await createControllerHarness({ lastBranchId: "coex" });
+  await success.controller.mount();
+  await success.controller.openBottomNavigation(checkinItem);
+  success.controller.selectPmsGuestRecord(success.controller.pmsVisibleRecords[0].id);
+  await success.controller.openMenu("ROOM_REMARK_MEMO");
+  await success.controller.setTemplateVariableValue("count", "2");
+  await success.controller.upsertRoomRemark("remark-card-keys");
+  assert.equal(success.controller.statusMessage, "");
+  assert.equal(success.wingsRemarkWrites.at(-1), "기존 메모\n\n- 제공 카드키 : 2장");
+
+  await success.controller.setTemplateVariableValue("items", "가습기");
+  await success.controller.upsertRoomRemark("remark-rentals");
+  assert.equal(success.wingsRemarkWrites.at(-1), "기존 메모\n\n- 제공 카드키 : 2장\n\n- 대여물품 : 가습기");
+
+  const dependencyFailure = await createControllerHarness({ lastBranchId: "coex" }, { withoutWingsRemark: true });
+  await dependencyFailure.controller.mount();
+  await dependencyFailure.controller.openBottomNavigation(checkinItem);
+  dependencyFailure.controller.selectPmsGuestRecord(dependencyFailure.controller.pmsVisibleRecords[0].id);
+  await dependencyFailure.controller.openMenu("ROOM_REMARK_MEMO");
+  await dependencyFailure.controller.upsertRoomRemark("remark-card-keys");
+  assert.equal(dependencyFailure.controller.statusTone, "error");
+  assert.equal(dependencyFailure.controller.statusMessage, "WINGS 예약정보창을 연 뒤 다시 실행해주세요.");
 });
 
 test("airport van and laundry UI actions update application state through owners", async () => {
@@ -192,7 +286,7 @@ test("airport van and laundry UI actions update application state through owners
   await controller.setAirportVanFormValue("largeLuggageCount", "1");
   await controller.setAirportVanFormValue("smallLuggageCount", "0");
   await controller.setAirportVanFormValue("paymentMethod", "CARD");
-  assert.equal(getState().ui.airportVanFormValues?.roomNo, "A302");
+  assert.equal(getState().ui.branchFormValues?.coex?.airportVanFormValues?.roomNo, "A302");
 
   await controller.copyAirportVanText("workLog");
   assert.match(writes.at(-1) || "", /\* 공항밴 예약보고/);

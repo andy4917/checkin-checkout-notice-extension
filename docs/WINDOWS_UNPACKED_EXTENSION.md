@@ -39,22 +39,26 @@ npm run verify
 ```
 
 That command builds `dist`, validates the current test contract, checks the
-side-panel scale, and runs `npm run check:extension-smoke`. The smoke check opens
-the built `dist` folder as an unpacked extension in an extension-capable Chromium
-runtime and verifies the actual extension URL:
+side-panel scale, and runs `npm run check:extension-smoke`. Treat that smoke as
+a supplementary failure detector. Product acceptance is the user-controlled
+Google Chrome profile with the fixed-ID unpacked `dist` extension loaded at:
 
 ```text
 chrome-extension://jeidoobjhbnnicfkcdfncheimgdnhmjk/sidepanel.html
 ```
+
+The smoke check can open the built `dist` folder as an unpacked extension in an
+extension-capable Chromium runtime, but that does not replace direct evidence
+from the user-controlled Chrome extension surface.
 
 Set `CHROME_EXTENSION_SMOKE_BROWSER` only when the default local automation
 browser is unavailable. Use a Chrome for Testing or Chromium executable that
 supports `--load-extension`.
 
 Branded Chrome can reject command-line extension loading on some builds. When
-that happens, do not treat a non-extension browser page as product proof; either
-load `dist` manually through `chrome://extensions` or run the smoke check with
-an extension-capable automation browser.
+that happens, do not treat a non-extension browser page or isolated-browser pass
+as product proof; load `dist` manually through `chrome://extensions` and verify
+the fixed-ID user Chrome extension surface.
 
 ## Do Not Rotate
 

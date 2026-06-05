@@ -51,7 +51,7 @@ export const browserSidePanelNavigationDependencies: SidePanelNavigationControll
       writeRemark: writeActiveWingsRemark,
     }),
     pmsGuests: Object.freeze({
-      fetchImpl: requireGlobalFetch(),
+      fetchImpl: fetchPmsWithHostPermissions,
     }),
     dateSource: Object.freeze({
       today() {
@@ -74,8 +74,12 @@ function requireNavigatorClipboard(): Clipboard {
   return navigator.clipboard;
 }
 
+function fetchPmsWithHostPermissions(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  return requireGlobalFetch()(input, init);
+}
+
 function requireGlobalFetch(): typeof fetch {
-  if (!globalThis.fetch) {
+  if (typeof globalThis.fetch !== "function") {
     throw new Error("PMS fetch dependency is not available.");
   }
   return globalThis.fetch.bind(globalThis);

@@ -97,6 +97,13 @@ export type CustomTemplate = TemplateDefinition & {
   builtIn?: false;
 };
 
+export type TemplateVariableValueStore = Record<string, string>;
+export type BranchFormValues = {
+  templateVariableValues?: TemplateVariableValueStore;
+  airportVanFormValues?: AirportVanFormValues;
+};
+export type BranchFormValueStore = Partial<Record<BranchId, BranchFormValues>>;
+
 export type StoredExtensionState = {
   schemaVersion: 1;
   lastBranchId?: BranchId;
@@ -105,7 +112,8 @@ export type StoredExtensionState = {
   ui: {
     lastTab?: TabMode;
     compactMode?: boolean;
-    templateVariableValues?: Record<string, string>;
+    templateVariableValues?: TemplateVariableValueStore;
     airportVanFormValues?: AirportVanFormValues;
+    branchFormValues?: BranchFormValueStore;
   };
 };

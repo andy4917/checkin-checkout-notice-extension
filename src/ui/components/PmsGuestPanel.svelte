@@ -26,8 +26,8 @@
   $: emptyLabel = loading
     ? "PMS 조회 중"
     : statusTone === "error"
-      ? "PMS 조회 실패"
-      : "현재 등록된 PMS 기록 없음";
+      ? "PMS 연결 확인 필요"
+      : "표시할 PMS 기록이 없습니다.";
 </script>
 
 <section class="pms-panel" aria-label={panel.title}>

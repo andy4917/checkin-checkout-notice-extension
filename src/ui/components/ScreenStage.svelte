@@ -14,6 +14,7 @@
   import type { AirportVanCopyTarget, AirportVanFormValues } from "../../application/airport-van-form.js";
   import type { LaundryColumnView } from "../../application/laundry-records.js";
   import type { OtaReservationInputPreview } from "../../application/ota-reservation-input.js";
+  import type { WorkRoomContext } from "../../domain/room-context.js";
   import type { LaundryMoveTarget } from "../../laundry/types.js";
   import type { Language, PmsGuestRecord } from "../../types.js";
   import type { BottomPanelState } from "../side-panel-navigation-controller.svelte.js";
@@ -28,6 +29,7 @@
   export let activeTemplates: readonly UnifiedTemplateDefinition[];
   export let homeInlineTemplatesByItemId: Readonly<Record<string, readonly UnifiedTemplateDefinition[]>>;
   export let copiedTemplateId: string | null;
+  export let workRoomContext: WorkRoomContext;
   export let hasSelectedPmsRecord: boolean;
   export let homeBottomNavigation: readonly HomeBottomNavigationItem[];
   export let homeLabels: HomeNavigationLabels;
@@ -69,6 +71,12 @@
   export let onSelectPmsRecord: (recordId: string) => void;
   export let onSetAirportVanFormValue: (fieldName: keyof AirportVanFormValues, value: string) => void;
   export let onSetTemplateVariableValue: (variableName: string, value: string) => void | Promise<void>;
+  export let onUpdateTemplateOverride: (input: {
+    templateId: string;
+    title: string;
+    language: Language;
+    body: string;
+  }) => void | Promise<void>;
   export let onUpsertRoomRemark: (templateId: string) => void | Promise<void>;
 
 </script>
@@ -94,6 +102,7 @@
         airportVanFormValues={airportVanFormValues}
         templateVariableValues={templateVariableValues}
         templateValues={templateValues}
+        workRoomContext={workRoomContext}
         hasSelectedPmsRecord={hasSelectedPmsRecord}
         requiredManualVariables={requiredManualVariables}
         onSelectLanguage={onSelectLanguage}
@@ -107,6 +116,7 @@
         onResetTemplateSettings={onResetTemplateSettings}
         onOpenMenu={(target) => onOpenMenu(target)}
         onSetTemplateVariableValue={onSetTemplateVariableValue}
+        onUpdateTemplateOverride={onUpdateTemplateOverride}
         onSetAirportVanFormValue={onSetAirportVanFormValue}
         onCopyAirportVanText={onCopyAirportVanText}
         onUpsertRoomRemark={onUpsertRoomRemark}

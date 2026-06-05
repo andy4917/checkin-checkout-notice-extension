@@ -1,7 +1,9 @@
 import { PMS_CONFIG } from "../config/app-config.js";
 import { requireBranch } from "../config/branches.js";
-import { EMPTY_PMS_FILTERS } from "../config/pms-filter-schema.js";
+import { EMPTY_PMS_FILTERS, FIELD_ONLY_PMS_FILTERS } from "../config/pms-filter-schema.js";
 import type { BranchId, TabMode } from "../types.js";
+
+const FIELD_ONLY_PMS_FILTER_SET = new Set<string>(FIELD_ONLY_PMS_FILTERS);
 
 export function buildPmsSearchParams(date: string, mode: TabMode, branchId: BranchId): URLSearchParams {
   const params = new URLSearchParams();
@@ -12,6 +14,8 @@ export function buildPmsSearchParams(date: string, mode: TabMode, branchId: Bran
   params.append("skip", requestDefaults.skip);
   params.append("page", requestDefaults.page);
   params.append("pageSize", requestDefaults.pageSize);
+  params.append("filter[PAGE_ID]", requestDefaults.pageId);
+  params.append("filter[AUTH_PASS_YN]", requestDefaults.authPassYn);
   appendFilter(params, 0, "BSNS_CODE", branch.pms.bsnsCode);
   appendFilter(params, 1, "PROPERTY_NO", branch.pms.propertyNo);
   appendFilter(params, 2, "GUEST_NAME", "");
@@ -31,8 +35,6 @@ export function buildPmsSearchParams(date: string, mode: TabMode, branchId: Bran
   appendFilter(params, 44, "PP_BSNS_CODE", branch.pms.ppBsnsCode);
   params.append("PAGE_ID", requestDefaults.pageId);
   params.append("AUTH_PASS_YN", requestDefaults.authPassYn);
-  params.set("filter[PAGE_ID]", requestDefaults.pageId);
-  params.set("filter[AUTH_PASS_YN]", requestDefaults.authPassYn);
 
   return params;
 }
@@ -53,8 +55,20 @@ function appendEmptyFilters(
   filterNames: readonly string[],
 ): void {
   filterNames.forEach((field, offset) => {
+    if (FIELD_ONLY_PMS_FILTER_SET.has(field)) {
+      appendFieldOnlyFilter(params, startIndex + offset, field);
+      return;
+    }
     appendFilter(params, startIndex + offset, field, "");
   });
+}
+
+function appendFieldOnlyFilter(
+  params: URLSearchParams,
+  index: number,
+  field: string,
+): void {
+  params.append(`filter[filters][${index}][field]`, field);
 }
 
 function appendFilter(

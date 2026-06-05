@@ -7,7 +7,7 @@ export const OPERATION_REPEATED_ERROR_MESSAGE =
 export const OTA_BRANCH_MISMATCH_MESSAGE =
   "불러온 예약정보가 지점과 일치하지 않습니다. 지점 또는 탭을 확인 후 다시 시도해주십시오.";
 export const WINGS_BROWSER_TAB_MESSAGE = "WINGS 브라우저 탭에서 진행하여주십시오.";
-export const WINGS_ROOM_INFO_WINDOW_MESSAGE = "WINGS 객실 정보창을 선택해주세요.";
+export const WINGS_ROOM_INFO_WINDOW_MESSAGE = "WINGS 예약정보창을 연 뒤 다시 실행해주세요.";
 export const STORAGE_CORRUPTION_MESSAGE =
   "저장소 작업에 실패했습니다. 확장 프로그램 저장 권한과 Chrome 상태를 확인 후 다시 시도해주십시오.";
 export const TEMPLATE_LANGUAGE_MISSING_MESSAGE =
@@ -17,7 +17,7 @@ export const REQUIRED_VARIABLE_MISSING_MESSAGE =
 export const PMS_REQUIRED_VALUE_MISSING_MESSAGE =
   "비어있는 PMS 값을 확인 후 다시 시도해주십시오.";
 export const PMS_REQUEST_FAILED_MESSAGE =
-  "PMS 조회에 실패했습니다. 로그인 상태와 네트워크를 확인 후 다시 시도해주십시오.";
+  "PMS 조회에 실패했습니다. PMS 응답 형식 또는 네트워크 상태를 확인 후 다시 시도해주십시오.";
 export const INVALID_WORKFLOW_STEP_MESSAGE = "잘못된 절차입니다.";
 
 export type OperatorErrorKind =
@@ -78,7 +78,7 @@ export function resolveOperatorErrorMessage(error: unknown): OperatorErrorMessag
     return { kind: "pmsRequiredValueMissing", message: PMS_REQUIRED_VALUE_MISSING_MESSAGE, repeatable: false };
   }
   if (/PMS 요청 실패|PMS 응답/.test(message)) {
-    return { kind: "pmsRequestFailed", message: PMS_REQUEST_FAILED_MESSAGE, repeatable: true };
+    return { kind: "pmsRequestFailed", message: PMS_REQUEST_FAILED_MESSAGE, repeatable: false };
   }
   if (/잘못된 절차/.test(message)) {
     return { kind: "invalidWorkflowStep", message: INVALID_WORKFLOW_STEP_MESSAGE, repeatable: false };
