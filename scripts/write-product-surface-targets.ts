@@ -1,102 +1,546 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+
+type SurfaceGroup =
+  | "home"
+  | "customer-guidance"
+  | "quick-reply"
+  | "service-management"
+  | "work-management"
+  | "template-form-editor";
+
+type BackendContract = {
+  owners: string[];
+  boundary: string;
+  successEvidence: string;
+  failureEvidence: string;
+};
+
+type VerticalAnchoringInvariant = {
+  coordinateSpace: string;
+  tolerancePx: number;
+  requiredMeasurements: string[];
+  failureSignals: string[];
+};
 
 type SurfaceContract = {
   surfaceId: string;
+  order: number;
   title: string;
+  group: SurfaceGroup;
   menuPath: string[];
+  catalogEvidence: string[];
   ownerModules: string[];
   storageKeys: string[];
-  actions: string[];
+  primaryActions: string[];
   expectedVisibleState: string;
   loadingState: string;
   emptyState: string;
   errorState: string;
-  forbiddenResidue: string[];
+  statusPolicy: string;
+  hiddenSurfacePolicy: string;
+  backendContract: BackendContract;
+  prohibitedVisibleText: string[];
+  prohibitedStatusText: string[];
+  prohibitedPlaceholders: string[];
+  fixedShellContract: string;
   motionContract: string;
   overflowContract: string;
-  backendVerification: string;
-  smokeRequired: boolean;
-  referenceFiles: string[];
+  verticalAnchoringInvariant: VerticalAnchoringInvariant;
+  expectedImagePath: string;
+  imageGenerationStatus: "expectedImagePresent";
+  smokeCoverage: {
+    required: true;
+    accessPath: string[];
+    assertions: string[];
+  };
+};
+
+type SurfaceDefinition = Omit<
+  SurfaceContract,
+  | "verticalAnchoringInvariant"
+  | "expectedImagePath"
+  | "imageGenerationStatus"
+  | "prohibitedVisibleText"
+  | "prohibitedStatusText"
+  | "prohibitedPlaceholders"
+> & {
+  visualRows: string[];
+  visualControls: string[];
 };
 
 const root = resolve(import.meta.dirname, "..");
-const targetRoot = join(root, "docs", "product-surface-targets");
+const docsRoot = join(root, "docs");
+const targetRoot = join(docsRoot, "product-surface-targets");
+const inventoryPath = join(docsRoot, "product-surface-inventory.md");
 
-const commonForbidden = [
+const prohibitedVisibleText = [
   "N/A",
   "YYYY.MM.DD",
   "HH:MM",
   "The Gangnan",
   "복사되었습니다",
   "저장된 데이터 손상이 발견되었습니다",
-  "placeholder attribute",
-  "fake business data",
+  "현재 설정 항목 없음",
 ];
 
-const surfaces: SurfaceContract[] = [
-  surface("home-root", "홈 루트", ["확장 열기"], ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte"], ["workAssistantState.lastBranchId"], ["그룹 진입", "하단 PMS/설정 진입"], "5개 업무 그룹과 하단 4개 작업이 보이고 지점 미선택 시 PMS 하단 작업만 비활성화된다.", "지점 적용 중 navigation lock만 적용한다.", "해당 없음", "공용 shell status에 실제 오류만 표시한다.", "home detail track uses shared motion tokens; root has no work animation.", "screen-stage/home viewport에서 horizontal overflow가 없어야 한다.", "backend 없음. 하단 PMS action은 지점 선택 전 호출되지 않는다.", true),
-  surface("branch-picker-header-lock", "지점 선택 / 헤더 잠금", ["헤더 로고 버튼"], ["src/ui/components/ShellHeader.svelte", "src/config/branches.ts", "src/ui/side-panel-navigation-controller.svelte.ts"], ["workAssistantState.lastBranchId"], ["지점 popup 열기", "지점 선택 저장"], "로고와 날짜가 유지되고 popup에는 실제 branch option만 보인다.", "지점 저장 중 trigger는 disabled 되지만 로고 opacity/filter는 유지된다.", "지점 미선택 logo state", "저장 실패 시 공용 error status", "disabled logo must keep opacity 1; popup opens/closes without route jump.", "popup과 헤더가 viewport 밖으로 밀리지 않아야 한다.", "chrome.storage.local setLastBranchId 호출과 실패 상태를 검증한다.", true),
-  surface("home-submenu-customer-guidance", "고객 안내문 하위 메뉴", ["홈", "고객 안내문"], ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte"], ["workAssistantState.ui.templateVariableValues"], ["언어 변경", "템플릿 복사"], "체크인/체크아웃/객실/요금 안내 항목과 언어 strip이 보인다.", "언어 변경 또는 복사 중 해당 버튼만 busy/disabled", "템플릿이 없을 때 업무 데이터처럼 보이지 않는 최소 empty", "필수 PMS/clipboard 실패 status", "forward/backward home track transform uses --sidepanel-motion-*.", "detail panel single scroll; labels must not clip.", "clipboard.writeText가 성공해야 copied state가 보인다.", true),
-  surface("home-submenu-quick-replies", "빠른 문의 답변 하위 메뉴", ["홈", "빠른 문의 답변"], ["src/catalog/menu-routing.ts", "src/catalog/template-renderer.ts", "src/ui/components/HomeView.svelte"], ["workAssistantState.ui.templateVariableValues"], ["언어 변경", "문의 답변 복사"], "자주 쓰는 문의 유형과 copy action이 보인다.", "언어 변경 또는 복사 중 해당 버튼만 busy/disabled", "템플릿이 없을 때 최소 empty", "필수 수동값/clipboard 실패 status", "forward/backward home track transform uses --sidepanel-motion-*.", "accordion row와 copy button이 좁은 폭에서 겹치지 않는다.", "renderTemplate required value와 clipboard.writeText 결과를 검증한다.", true),
-  surface("home-submenu-service-management", "고객 서비스 관리 하위 메뉴", ["홈", "고객 서비스 관리"], ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte"], [], ["세탁물/매지출/공항밴 진입"], "세탁물 관리, 매지출 관리, 공항밴 관리 3개 row가 보인다.", "해당 없음", "해당 없음", "해당 없음", "forward/backward home track transform uses --sidepanel-motion-*.", "3개 row가 single column에서 overflow 없이 보인다.", "backend 없음. 각 row가 WorkSurface route로 연결되는지 검증한다.", true),
-  surface("home-submenu-work-management", "업무 관리 하위 메뉴", ["홈", "업무 관리"], ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte"], [], ["객실 정보 메모/NAVER-STATION/업무보고 진입"], "업무 관련 3개 row가 보이고 언어 strip/copy button이 없다.", "해당 없음", "해당 없음", "해당 없음", "forward/backward home track transform uses --sidepanel-motion-*.", "3개 row가 single column에서 overflow 없이 보인다.", "각 row가 owner WorkSurface로 연결되는지 검증한다.", true),
-  surface("home-submenu-template-editor", "템플릿 / 양식 편집 하위 메뉴", ["홈", "템플릿 / 양식 편집"], ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte"], [], ["템플릿 편집 진입", "양식 편집 진입"], "템플릿 편집과 양식 편집 2개 row가 보인다.", "해당 없음", "해당 없음", "해당 없음", "forward/backward home track transform uses --sidepanel-motion-*.", "2개 row와 chevron이 잘리지 않는다.", "각 row가 settings owner surface로 연결되는지 검증한다.", true),
-  surface("customer-guidance", "고객 안내문 템플릿 surface", ["홈", "고객 안내문", "템플릿 항목"], ["src/catalog/template-catalog.ts", "src/catalog/template-renderer.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.templateVariableValues"], ["언어 선택", "입력값 저장", "복사"], "선택된 고객 안내 템플릿 그룹과 실제 copy action이 보인다.", "copy/write 중 버튼 disabled", "템플릿 목록 없음은 최소 empty로만 표현", "필수 PMS/수동값/clipboard 실패 status", "work surface uses data-view-motion direction animation.", "accordion/list/dock이 screen-stage 안에서만 scroll된다.", "renderTemplate와 clipboard.writeText success/failure를 검증한다.", false),
-  surface("quick-reply", "빠른 문의 답변 surface", ["홈", "빠른 문의 답변", "템플릿 항목"], ["src/catalog/template-catalog.ts", "src/catalog/template-renderer.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.templateVariableValues"], ["입력값 저장", "복사"], "문의 답변 템플릿과 필요한 수동 입력만 보인다.", "copy/write 중 버튼 disabled", "템플릿 목록 없음은 최소 empty로만 표현", "필수 수동값/clipboard 실패 status", "work surface uses data-view-motion direction animation.", "input panel과 copy action이 겹치지 않는다.", "renderTemplate와 clipboard.writeText success/failure를 검증한다.", false),
-  surface("service-management", "고객 서비스 관리 route group", ["홈", "고객 서비스 관리"], ["src/catalog/menu-routing.ts"], [], ["세탁물/매지출/공항밴 route"], "하위 메뉴가 각 work owner surface로만 이동한다.", "해당 없음", "해당 없음", "해당 없음", "home submenu forward/back.", "row overflow 없음", "backend 없음.", false),
-  surface("work-management", "업무 관리 route group", ["홈", "업무 관리"], ["src/catalog/menu-routing.ts"], [], ["객실 메모/OTA/업무보고 route"], "하위 메뉴가 각 업무 owner surface로만 이동한다.", "해당 없음", "해당 없음", "해당 없음", "home submenu forward/back.", "row overflow 없음", "backend 없음.", false),
-  surface("template-form-editor-hub", "템플릿 / 양식 편집 route group", ["홈", "템플릿 / 양식 편집"], ["src/catalog/menu-routing.ts"], [], ["템플릿 설정", "양식 설정"], "편집용 두 row만 보인다.", "해당 없음", "해당 없음", "해당 없음", "home submenu forward/back.", "row overflow 없음", "backend 없음.", false),
-  surface("settings-hub", "설정 hub", ["하단", "설정"], ["src/catalog/menu-routing.ts", "src/ui/components/WorkSurface.svelte"], [], ["템플릿 편집 진입", "양식 편집 진입"], "템플릿 편집과 양식 편집 row만 보인다.", "해당 없음", "설정 항목 없음 placeholder 금지", "해당 없음", "work surface uses data-view-motion direction animation.", "settings row가 viewport 폭 안에 들어온다.", "backend 없음.", true),
-  surface("laundry-management", "세탁물 관리", ["홈", "고객 서비스 관리", "세탁물 관리"], ["src/application/laundry-records.ts", "src/laundry/storage.ts", "src/ui/components/WorkSurface.svelte"], ["laundryRecords:v1"], ["세탁물 추가", "세탁/건조/완료 이동", "삭제"], "진행 중, 세탁 예정, 완료 영역과 실제 추가 control이 보인다.", "storage write 중 action disabled", "count 0은 badge로만 보이고 fake room card는 만들지 않는다.", "storage/move 실패 status", "work surface uses data-view-motion direction animation.", "board/cards/dock이 horizontal overflow를 만들지 않는다.", "chrome.storage read/write와 move rule 실패를 검증한다.", true, ["새 폴더/세탁물 관리 screen.png"]),
-  surface("sales-management", "매지출 관리", ["홈", "고객 서비스 관리", "매지출 관리"], ["src/application/sales-expense-form.ts", "src/catalog/template-renderer.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.templateVariableValues"], ["금액 입력", "분류 선택", "상세 입력", "저장/복사"], "금액, 카테고리, 상세, 저장 action이 보인다.", "clipboard/write 중 action disabled", "새 지출 금액 0은 입력 초기값일 뿐 fake record가 아니다.", "필수값/clipboard 실패 status", "work surface uses data-view-motion direction animation.", "amount panel/category chips/detail panel이 clipped 되지 않는다.", "templateValues 저장과 clipboard.writeText를 검증한다.", true, ["새 폴더/매지출관리 screen.png"]),
-  surface("airport-van-management", "공항밴 관리", ["홈", "고객 서비스 관리", "공항밴 관리"], ["src/application/airport-van-form.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.airportVanFormValues"], ["픽업/샌딩 선택", "필드 입력", "업무/고객 문구 복사"], "route, 탑승/항공편/수하물/결제 control과 copy action이 보인다.", "copy/write 중 action disabled", "입력 전 필드는 비어 있고 placeholder value를 만들지 않는다.", "필수값/clipboard 실패 status", "work surface uses data-view-motion direction animation.", "field grid와 dock이 overflow 없이 scroll된다.", "form state 저장, renderAirportVanCopy, clipboard.writeText를 검증한다.", true, ["새 폴더/공항밴 관리 screen.png"]),
-  surface("room-remark-memo", "객실 정보 메모", ["홈", "업무 관리", "객실 정보 메모"], ["src/application/wings-remark.ts", "src/domain/remarks.ts", "src/domain/room-context.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.templateVariableValues"], ["객실 물품 수량 조정", "추가 리마크 입력", "WINGS 리마크 입력"], "객실 선택 상태, 물품 stepper, 추가 리마크, WINGS action이 보인다.", "WINGS write 중 action busy", "객실 미선택은 상태 badge로만 표시한다.", "WINGS tab/room/remark dependency 실패 status", "work surface uses data-view-motion direction animation.", "stepper와 dock이 clipped 되지 않는다.", "active tab remark read/write dependency success/failure를 검증한다.", true, ["새 폴더/객실 리마크 관리 screen.png"]),
-  surface("ota-reservation-input", "NAVER / STATION 예약입력", ["홈", "업무 관리", "NAVER / STATION 예약입력"], ["src/application/ota-reservation-input.ts", "src/ota/*", "src/wings/reservation-draft.ts", "src/ui/components/WorkSurface.svelte"], [], ["예약정보 가져오기", "WINGS 입력"], "source segment, 추출 action, preview/result, WINGS 입력 action이 보인다.", "fetch/fill 중 action disabled", "preview 전에는 fake booking summary를 만들지 않는다.", "active tab/branch/WINGS dependency 실패 status", "work surface uses data-view-motion direction animation.", "preview card와 dock이 overflow 없이 보인다.", "active tab fetchPayload와 fillForm success/failure를 검증한다.", true, ["새 폴더/OTA 예약관리 screen.png"]),
-  surface("work-report-template-list", "업무보고 양식", ["홈", "업무 관리", "업무보고 양식"], ["src/catalog/template-catalog.ts", "src/catalog/template-renderer.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.ui.templateVariableValues"], ["업무보고 템플릿 선택", "복사"], "업무보고 템플릿 accordion과 copy action이 보인다.", "copy/write 중 action disabled", "템플릿 목록 없음은 최소 empty로만 표현", "필수값/clipboard 실패 status", "work surface uses data-view-motion direction animation.", "accordion rows가 clipped 되지 않는다.", "renderTemplate와 clipboard.writeText를 검증한다.", true, ["새 폴더/업무보고 설정 screen.png"]),
-  surface("pms-checkin-list", "체크인 목록", ["하단", "체크인 목록"], ["src/application/sync-guests.ts", "src/pms/client.ts", "src/ui/components/PmsGuestPanel.svelte"], ["workAssistantState.lastBranchId"], ["PMS 조회", "검색", "객실 선택"], "체크인 PMS 목록 또는 명확한 실패/빈 상태가 보인다.", "PMS 조회 중", "현재 등록된 PMS 기록 없음", "PMS 조회 실패와 운영 메시지", "pms panel uses data-view-motion direction animation.", "record rows/search가 horizontal overflow 없이 보인다.", "fetch credentials include POST와 failure path를 검증한다.", true),
-  surface("pms-checkout-list", "체크아웃 목록", ["하단", "체크아웃 목록"], ["src/application/sync-guests.ts", "src/pms/client.ts", "src/ui/components/PmsGuestPanel.svelte"], ["workAssistantState.lastBranchId"], ["PMS 조회", "검색", "객실 선택"], "체크아웃 PMS 목록 또는 명확한 실패/빈 상태가 보인다.", "PMS 조회 중", "현재 등록된 PMS 기록 없음", "PMS 조회 실패와 운영 메시지", "pms panel uses data-view-motion direction animation.", "record rows/search가 horizontal overflow 없이 보인다.", "fetch credentials include POST와 departure filter를 검증한다.", true),
-  surface("pms-room-select", "객실 선택", ["하단", "객실 선택"], ["src/application/sync-guests.ts", "src/domain/room-context.ts", "src/ui/components/PmsGuestPanel.svelte"], ["workAssistantState.lastBranchId"], ["PMS 조회", "객실 선택", "업무 template 값 반영"], "객실 선택용 PMS 목록 또는 명확한 실패/빈 상태가 보인다.", "PMS 조회 중", "현재 등록된 PMS 기록 없음", "PMS 조회 실패와 운영 메시지", "pms panel uses data-view-motion direction animation.", "record rows/search가 horizontal overflow 없이 보인다.", "selected record가 room context/templateValues에 반영되는지 검증한다.", true),
-  surface("template-settings", "템플릿 설정", ["설정", "템플릿 편집"], ["src/application/template-settings.ts", "src/platform/storage-schema.ts", "src/ui/components/WorkSurface.svelte"], ["workAssistantState.templateOverrides", "workAssistantState.customTemplates"], ["초기화 armed", "초기화 실행"], "템플릿 설정 초기화 action과 armed warning만 보인다.", "storage write 중 action disabled", "해당 없음", "storage write/schema 실패 status", "work surface uses data-view-motion direction animation.", "danger action이 clipped 되지 않는다.", "resetAllTemplateSettings와 writeState success/failure를 검증한다.", true, ["새 폴더/탬플릿 설정 세팅 screen.png"]),
-  surface("form-settings", "양식 설정", ["설정", "양식 편집"], ["src/catalog/template-catalog.ts", "src/ui/components/WorkSurface.svelte", "src/platform/storage-schema.ts"], ["workAssistantState.ui.templateVariableValues"], ["필수 입력값 수정"], "필수 manual variable field만 보인다.", "storage write 중 field/action disabled", "필수 입력값이 없으면 fake field를 만들지 않는다.", "storage write/schema 실패 status", "work surface uses data-view-motion direction animation.", "input grid가 horizontal overflow 없이 보인다.", "setTemplateVariableValue와 writeState를 검증한다.", true, ["새 폴더/탬플릿 설정 세팅 screen.png"]),
-  surface("storage-recovery", "저장소 복구 / migration", ["app mount"], ["src/platform/chrome-storage.ts", "src/platform/storage-schema.ts", "src/ui/side-panel-navigation-controller.svelte.ts"], ["workAssistantState"], ["schema mismatch normalize/save", "unrecoverable failure 표시"], "복구 가능한 mismatch는 조용히 기본 state로 저장되고 붉은 복구 배너를 보이지 않는다.", "mount 중", "DEFAULT_EXTENSION_STATE", "실제 storage read/write 실패만 actionable error", "mount should not force route motion.", "shell status가 layout overflow를 만들지 않는다.", "readExtensionStateWithRecovery recovered=true와 write failure를 검증한다.", false),
+const prohibitedStatusText = [
+  "세탁물을 추가했습니다",
+  "진행상태를 기록했습니다",
+  "객실을 선택했습니다",
+  "템플릿 설정을 초기화했습니다",
+  "템플릿을 저장했습니다",
+  "저장소를 불러오지 못했습니다",
+  "지점을 선택하여주십시오",
 ];
 
-function surface(
-  surfaceId: string,
-  title: string,
-  menuPath: string[],
-  ownerModules: string[],
-  storageKeys: string[],
-  actions: string[],
-  expectedVisibleState: string,
-  loadingState: string,
-  emptyState: string,
-  errorState: string,
-  motionContract: string,
-  overflowContract: string,
-  backendVerification: string,
-  smokeRequired: boolean,
-  referenceFiles: string[] = [],
-): SurfaceContract {
-  return {
+const prohibitedPlaceholders = [
+  "visible placeholder attribute",
+  "sample guest, room, branch, reservation, amount, or hotel value",
+  "success text without a successful owner boundary",
+  "WINGS login requirement text",
+  "fake PMS record",
+];
+
+const verticalAnchoringInvariant: VerticalAnchoringInvariant = {
+  coordinateSpace: "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+  tolerancePx: 2,
+  requiredMeasurements: [
+    "non-fullscreen problem-state real Chrome side panel capture",
+    "fullscreen normal-state real Chrome side panel capture",
+    "tab-switch or side-panel-reopen real Chrome side panel capture",
+    "window.innerHeight",
+    "window.visualViewport.height",
+    "document.documentElement.clientHeight",
+    "matchMedia('(max-height: 640px)').matches",
+    "matchMedia('(max-height: 500px)').matches",
+    ".app-shell bounding rect",
+    ".screen-stage bounding rect",
+    ".home-surface or .work-surface bounding rect",
+    ".root-panel or first primary control bounding rect",
+    ".home-fixed-bottom-bar bounding rect",
+  ],
+  failureSignals: [
+    "same surface card top changes across Chrome tab/window state",
+    "same surface menu block top changes across Chrome tab/window state",
+    "footer overlaps central surface",
+    "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+    "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure",
+  ],
+};
+
+const fixedShellContract =
+  "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.";
+const defaultHiddenSurfacePolicy =
+  "Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.";
+
+const homeOwner = ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte", "src/catalog/template-renderer.ts"];
+const workOwner = ["src/catalog/menu-routing.ts", "src/ui/components/WorkSurface.svelte"];
+
+const surfaces: SurfaceDefinition[] = [
+  surface({
+    order: 1,
+    surfaceId: "home",
+    title: "홈",
+    group: "home",
+    menuPath: ["홈"],
+    catalogEvidence: ["homeNavigationGroups", "homeBottomNavigationItems"],
+    ownerModules: ["src/catalog/menu-routing.ts", "src/ui/components/HomeView.svelte", "src/ui/components/SidePanelView.svelte"],
+    storageKeys: ["workAssistantState.lastBranchId"],
+    primaryActions: ["고객 안내문", "빠른 문의 답변", "고객 서비스 관리", "업무 관리", "템플릿 / 양식 편집"],
+    expectedVisibleState: "5개 업무 그룹과 하단 체크인/체크아웃/객실 선택/설정 바가 한 화면 구조로 고정된다.",
+    loadingState: "지점 변경 중에도 로고와 홈 row 좌표는 흔들리지 않는다.",
+    emptyState: "홈은 비어 있는 상태를 만들지 않는다.",
+    errorState: "홈 shell에는 OTA/WINGS 의존 안내가 아닌 일반 성공/오류 status를 띄우지 않는다.",
+    statusPolicy: "No general save/copy/laundry/template/airport-van/room-select status text.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/catalog/menu-routing.ts"], "catalog navigation only", "visible rows match 구조.md", "unknown route remains a catalog error"),
+    fixedShellContract,
+    motionContract: "Root home has no work-surface enter animation; submenu track motion uses catalog-driven direction only.",
+    overflowContract: "Home root row block does not create horizontal overflow or footer overlap.",
+    visualRows: ["고객 안내문", "빠른 문의 답변", "고객 서비스 관리", "업무 관리", "템플릿 / 양식 편집"],
+    visualControls: ["지점 선택", "날짜", "하단 4개 메뉴"],
+    smokeCoverage: smoke(["open side panel"], ["home rows exact 5", "vertical anchoring measured twice in real Chrome side panel"]),
+  }),
+  templateSurface(2, "customer-checkin-notice", "고객 안내문", "체크인 안내문", ["arrival_notice", "prearrival_csm", "prestay_notice", "self_checkin", "early_checkin"]),
+  templateSurface(3, "customer-checkout-notice", "고객 안내문", "체크아웃 안내문", ["cleaning_notice"]),
+  templateSurface(4, "customer-room-notice", "고객 안내문", "객실 관련 안내문", ["room_upgrade", "room_upgrade_closed", "card_key", "laundry_complete", "partner_service"]),
+  templateSurface(5, "customer-fee-notice", "고객 안내문", "각종 요금 관련 안내문", ["parking", "airport_van", "room_sales", "dodine_sales"]),
+  quickSurface(6, "quick-rental-reply", "물품 대여 문의", "rental_item"),
+  quickSurface(7, "quick-lost-item-reply", "분실물 문의", "lost_item"),
+  quickSurface(8, "quick-room-visit-reply", "객실 방문 예정", "room_visit"),
+  surface({
+    order: 9,
+    surfaceId: "laundry-management",
+    title: "세탁물 관리",
+    group: "service-management",
+    menuPath: ["홈", "고객 서비스 관리", "세탁물 관리"],
+    catalogEvidence: ["homeNavigationGroups.service-management.service-laundry"],
+    ownerModules: ["src/application/laundry-records.ts", "src/laundry/storage.ts", ...workOwner],
+    storageKeys: ["laundryRecords:v1"],
+    primaryActions: ["세탁물 추가", "세탁기", "건조기", "완료"],
+    expectedVisibleState: "세탁 진행/예정/완료 상태와 추가 입력 control이 보인다.",
+    loadingState: "storage write 중 관련 action만 disabled.",
+    emptyState: "0 count badge는 가능하지만 가짜 객실 row는 만들지 않는다.",
+    errorState: "일반 세탁 성공/오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Laundry owner state changes are visible in board state only; no general status text.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/laundry-records.ts", "src/laundry/storage.ts"], "chrome.storage laundry state", "record appears or moves in board state", "real storage failure is test evidence, not shell success copy"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Laundry columns scroll inside central surface and never overlap footer.",
+    visualRows: ["진행 중", "세탁물 추가", "세탁 예정", "완료"],
+    visualControls: ["객실 입력", "상태 이동", "제거"],
+    smokeCoverage: smoke(["고객 서비스 관리", "세탁물 관리"], ["board visible", "no general laundry status text", "no footer overlap"]),
+  }),
+  surface({
+    order: 10,
+    surfaceId: "sales-management",
+    title: "매지출 관리",
+    group: "service-management",
+    menuPath: ["홈", "고객 서비스 관리", "매지출 관리"],
+    catalogEvidence: ["homeNavigationGroups.service-management.service-sales"],
+    ownerModules: ["src/application/sales-expense-form.ts", "src/catalog/template-renderer.ts", ...workOwner],
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["금액 입력", "카테고리", "상세", "매지출 보고 복사"],
+    expectedVisibleState: "금액, 카테고리, 상세, 보고 복사 action이 첫 화면에 정렬된다.",
+    loadingState: "copy/write 중 action만 disabled.",
+    emptyState: "금액 0은 입력 초기값이며 가짜 매출 기록을 만들지 않는다.",
+    errorState: "일반 매지출 저장/복사 성공·오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Sales copy/storage feedback stays off shell status unless an OTA/WINGS dependency is involved.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/sales-expense-form.ts", "src/catalog/template-renderer.ts"], "template value and clipboard boundary", "clipboard write receives rendered report", "required values or clipboard failure do not become fake success"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Amount panel and category chips fit before footer without horizontal overflow.",
+    visualRows: ["금액 입력", "카테고리", "소모품", "수리", "식음료", "기타"],
+    visualControls: ["상세 입력", "보고 복사"],
+    smokeCoverage: smoke(["고객 서비스 관리", "매지출 관리"], ["category chips visible before scroll", "no general sales status text"]),
+  }),
+  surface({
+    order: 11,
+    surfaceId: "airport-van-management",
+    title: "공항밴 관리",
+    group: "service-management",
+    menuPath: ["홈", "고객 서비스 관리", "공항밴 관리"],
+    catalogEvidence: ["homeNavigationGroups.service-management.service-airport-van"],
+    ownerModules: ["src/application/airport-van-form.ts", ...workOwner],
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["픽업", "샌딩", "업무 기록 복사", "고객 전달 복사"],
+    expectedVisibleState: "공항밴 이동 경로, 탑승/항공편/수하물/결제 control과 복사 action이 보인다.",
+    loadingState: "copy/write 중 action만 disabled.",
+    emptyState: "입력 전 필드는 값이 비어 있어야 하며 가짜 값으로 채우지 않는다.",
+    errorState: "일반 공항밴 저장/복사 성공·오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Airport-van form feedback is local control state only; no general shell status text.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/airport-van-form.ts"], "stored form and clipboard boundary", "clipboard write receives rendered airport-van text", "missing required fields do not become fake success"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Field groups scroll inside central surface and do not collide with footer.",
+    visualRows: ["픽업", "샌딩", "이동 경로", "탑승 정보", "항공편 정보", "결제수단"],
+    visualControls: ["업무 기록 복사", "고객 전달 복사"],
+    smokeCoverage: smoke(["고객 서비스 관리", "공항밴 관리"], ["route controls visible", "no general airport-van status text"]),
+  }),
+  surface({
+    order: 12,
+    surfaceId: "room-remark",
+    title: "객실 정보 리마크",
+    group: "work-management",
+    menuPath: ["홈", "업무 관리", "객실 정보 리마크"],
+    catalogEvidence: ["homeNavigationGroups.work-management.work-room-remark"],
+    ownerModules: ["src/application/wings-remark.ts", "src/domain/remarks.ts", "src/domain/room-context.ts", ...workOwner],
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["제공 카드키", "대여물품", "추가 리마크", "WINGS 리마크 입력"],
+    expectedVisibleState: "객실 선택 상태, 물품 stepper, 추가 리마크, WINGS 입력 action이 보인다.",
+    loadingState: "WINGS write 중 관련 action busy.",
+    emptyState: "객실 미선택은 상태 badge로만 표시하고 fake room data를 만들지 않는다.",
+    errorState: "WINGS 객실 정보창/리마크 의존 실패 안내만 shell status에 허용된다.",
+    statusPolicy: "Only WINGS dependency notices are allowed for this surface.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/wings-remark.ts", "src/domain/remarks.ts"], "active WINGS remark read/upsert/write", "remark line is written to WINGS room info", "missing WINGS room information window remains a failure state"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Stepper controls and WINGS action remain above footer or scroll inside central surface.",
+    visualRows: ["객실 선택", "제공 카드키", "대여물품", "추가 리마크", "WINGS 리마크 입력"],
+    visualControls: ["수량 조절", "리마크 입력"],
+    smokeCoverage: smoke(["업무 관리", "객실 정보 리마크"], ["room context state visible", "WINGS dependency failure captured when unavailable"]),
+  }),
+  surface({
+    order: 13,
+    surfaceId: "ota-reservation-input",
+    title: "NAVER / STATION 예약입력",
+    group: "work-management",
+    menuPath: ["홈", "업무 관리", "NAVER / STATION 예약입력"],
+    catalogEvidence: ["homeNavigationGroups.work-management.work-ota"],
+    ownerModules: ["src/application/ota-reservation-input.ts", "src/ota/*", "src/wings/reservation-draft.ts", ...workOwner],
+    storageKeys: [],
+    primaryActions: ["예약정보 가져오기", "WINGS 입력"],
+    expectedVisibleState: "NAVER/STATION source, 예약정보 가져오기, 실제 preview, WINGS 입력 action이 보인다.",
+    loadingState: "active tab extraction or WINGS fill 중 action disabled.",
+    emptyState: "preview 전에는 예약 요약 가짜 값을 만들지 않는다.",
+    errorState: "OTA active tab, branch mismatch, WINGS reservation window dependency 안내만 허용된다.",
+    statusPolicy: "OTA/WINGS dependency notices are allowed; generic success text is not.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/ota-reservation-input.ts", "src/ota/*", "src/wings/reservation-draft.ts"], "active tab OTA extraction and WINGS fill", "normalized preview fills WINGS fields", "missing OTA/WINGS dependency remains visible failure"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Preview area and WINGS action scroll inside central surface without footer overlap.",
+    visualRows: ["NAVER", "STATION", "예약정보 가져오기", "추출된 예약정보", "WINGS 입력"],
+    visualControls: ["source segment", "preview rows"],
+    smokeCoverage: smoke(["업무 관리", "NAVER / STATION 예약입력"], ["OTA controls visible", "OTA/WINGS failure is not hidden"]),
+  }),
+  surface({
+    order: 14,
+    surfaceId: "work-report-form",
+    title: "업무보고 양식",
+    group: "work-management",
+    menuPath: ["홈", "업무 관리", "업무보고 양식"],
+    catalogEvidence: ["homeNavigationGroups.work-management.work-report"],
+    ownerModules: ["src/catalog/template-catalog.ts", "src/catalog/template-renderer.ts", ...workOwner],
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["업무보고 템플릿 선택", "복사"],
+    expectedVisibleState: "업무보고 템플릿 목록과 복사 action이 compact list로 보인다.",
+    loadingState: "copy/write 중 action만 disabled.",
+    emptyState: "템플릿 목록 없음은 최소 상태로만 표현하고 업무 데이터처럼 보이지 않는다.",
+    errorState: "일반 업무보고 복사 성공·오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Work-report clipboard feedback stays on control state only.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/catalog/template-catalog.ts", "src/catalog/template-renderer.ts"], "template render and clipboard boundary", "clipboard write receives rendered report", "required values or clipboard failure do not become fake success"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Template rows and copy action fit inside central surface.",
+    visualRows: ["업무 양식", "주야간 업무 보고", "일일업무 보고", "공항밴 예약보고"],
+    visualControls: ["복사 action"],
+    smokeCoverage: smoke(["업무 관리", "업무보고 양식"], ["work report rows visible", "no general copy status text"]),
+  }),
+  surface({
+    order: 15,
+    surfaceId: "notice-reply-editor",
+    title: "안내문 편집 / 빠른답변 편집",
+    group: "template-form-editor",
+    menuPath: ["홈", "템플릿 / 양식 편집", "안내문 편집 / 빠른답변 편집"],
+    catalogEvidence: ["homeNavigationGroups.template-editor.template-edit", "templateEditorMenu"],
+    ownerModules: ["src/application/template-settings.ts", "src/platform/storage-schema.ts", ...workOwner],
+    storageKeys: ["workAssistantState.templateOverrides", "workAssistantState.customTemplates"],
+    primaryActions: ["템플릿 선택", "언어 선택", "저장하기", "초기화"],
+    expectedVisibleState: "안내문/빠른답변 템플릿 선택, 언어, 제목, 본문 편집 controls가 보인다.",
+    loadingState: "storage write 중 save/reset action만 disabled.",
+    emptyState: "템플릿이 없으면 최소 상태만 표시한다.",
+    errorState: "일반 저장 성공/오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Template save/reset feedback must not use shell status text.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/application/template-settings.ts", "src/platform/storage-schema.ts"], "template override storage", "valid override is persisted", "schema/storage failure remains failure evidence without success copy"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Editor fields scroll inside central surface and save action does not overlap footer.",
+    visualRows: ["템플릿", "템플릿 언어", "제목", "본문", "저장하기"],
+    visualControls: ["활성 템플릿", "초기화"],
+    smokeCoverage: smoke(["템플릿 / 양식 편집", "안내문 편집 / 빠른답변 편집"], ["editor controls visible", "no general save status text"]),
+  }),
+  surface({
+    order: 16,
+    surfaceId: "work-form-editor",
+    title: "업무 양식 편집",
+    group: "template-form-editor",
+    menuPath: ["홈", "템플릿 / 양식 편집", "업무 양식 편집"],
+    catalogEvidence: ["homeNavigationGroups.template-editor.form-edit", "formEditorMenu"],
+    ownerModules: ["src/catalog/template-catalog.ts", "src/platform/storage-schema.ts", ...workOwner],
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["필수 입력값", "필수 입력값 수정"],
+    expectedVisibleState: "업무 양식의 수동 입력값 controls만 보이고 가짜 필드를 만들지 않는다.",
+    loadingState: "storage write 중 해당 input만 disabled.",
+    emptyState: "필수 입력값이 없으면 최소 상태만 표시한다.",
+    errorState: "일반 저장 성공/오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Form value persistence feedback must not use shell status text.",
+    hiddenSurfacePolicy: defaultHiddenSurfacePolicy,
+    backendContract: backend(["src/catalog/template-catalog.ts", "src/platform/storage-schema.ts"], "manual variable storage", "valid input value is persisted", "schema/storage failure remains failure evidence without success copy"),
+    fixedShellContract,
+    motionContract: "Work surface enters through data-view-motion contract.",
+    overflowContract: "Input rows fit inside central surface without footer overlap.",
+    visualRows: ["필수 입력값", "체크인 시간", "체크아웃 시간"],
+    visualControls: ["입력값 수정"],
+    smokeCoverage: smoke(["템플릿 / 양식 편집", "업무 양식 편집"], ["form editor controls visible", "no general save status text"]),
+  }),
+];
+
+function surface(definition: SurfaceDefinition): SurfaceDefinition {
+  return definition;
+}
+
+function templateSurface(order: number, surfaceId: string, groupTitle: "고객 안내문", title: string, templateTypes: string[]): SurfaceDefinition {
+  return surface({
+    order,
     surfaceId,
     title,
-    menuPath,
-    ownerModules,
-    storageKeys,
-    actions,
-    expectedVisibleState,
-    loadingState,
-    emptyState,
-    errorState,
-    forbiddenResidue: commonForbidden,
-    motionContract,
-    overflowContract,
-    backendVerification,
-    smokeRequired,
-    referenceFiles,
+    group: "customer-guidance",
+    menuPath: ["홈", groupTitle, title],
+    catalogEvidence: [`homeNavigationGroups.customer-guidance.${surfaceId}`, `templateFilter:${templateTypes.join(",")}`],
+    ownerModules: homeOwner,
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["언어 선택", "템플릿 복사"],
+    expectedVisibleState: `${title} 템플릿 row와 icon-only copy control이 보인다.`,
+    loadingState: "language/copy action만 disabled.",
+    emptyState: "템플릿 없음은 최소 상태로만 표현한다.",
+    errorState: "일반 복사 성공/오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Customer guidance copy feedback stays on the button state only.",
+    hiddenSurfacePolicy: "Customer guidance leaves are 16-surface product surfaces. Missing templates must produce an owner-defined empty state and must not remove the catalog row in HomeView.",
+    backendContract: backend(["src/catalog/template-renderer.ts", "navigator.clipboard"], "template render and clipboard boundary", "clipboard write receives rendered customer guidance text", "required value or clipboard failure does not become fake success"),
+    fixedShellContract,
+    motionContract: "Home detail track uses forward/backward motion; selected leaf keeps stable first-row anchoring.",
+    overflowContract: "Template rows scroll inside the detail panel and do not push the footer.",
+    visualRows: [title, ...templateTypes.slice(0, 4).map((type) => type.replaceAll("_", " "))],
+    visualControls: ["KR", "EN", "JP", "CH", "copy buttons"],
+    smokeCoverage: smoke([groupTitle, title], [`${title} visible`, "copy controls scoped to selected surface", "no general copy status text"]),
+  });
+}
+
+function quickSurface(order: number, surfaceId: string, title: string, templateType: string): SurfaceDefinition {
+  return surface({
+    order,
+    surfaceId,
+    title,
+    group: "quick-reply",
+    menuPath: ["홈", "빠른 문의 답변", title],
+    catalogEvidence: [`homeNavigationGroups.quick-replies.${surfaceId}`, `templateFilter:${templateType}`],
+    ownerModules: homeOwner,
+    storageKeys: ["workAssistantState.ui.branchFormValues"],
+    primaryActions: ["언어 선택", "빠른답변 복사"],
+    expectedVisibleState: `${title} 빠른답변 row와 icon-only copy control이 보인다.`,
+    loadingState: "language/copy action만 disabled.",
+    emptyState: "템플릿 없음은 최소 상태로만 표현한다.",
+    errorState: "일반 복사 성공/오류 문구를 shell status에 띄우지 않는다.",
+    statusPolicy: "Quick reply copy feedback stays on the button state only.",
+    hiddenSurfacePolicy: "Quick reply leaves are 16-surface product surfaces. Missing templates must produce an owner-defined empty state and must not remove the catalog row in HomeView.",
+    backendContract: backend(["src/catalog/template-renderer.ts", "navigator.clipboard"], "template render and clipboard boundary", "clipboard write receives rendered quick-reply text", "required value or clipboard failure does not become fake success"),
+    fixedShellContract,
+    motionContract: "Home detail track uses forward/backward motion; selected leaf keeps stable first-row anchoring.",
+    overflowContract: "Quick-reply rows scroll inside the detail panel and do not push the footer.",
+    visualRows: [title, templateType.replaceAll("_", " ")],
+    visualControls: ["KR", "EN", "JP", "CH", "copy buttons"],
+    smokeCoverage: smoke(["빠른 문의 답변", title], [`${title} visible`, "only three quick-reply leaves exist", "no general copy status text"]),
+  });
+}
+
+function backend(owners: string[], boundary: string, successEvidence: string, failureEvidence: string): BackendContract {
+  return { owners, boundary, successEvidence, failureEvidence };
+}
+
+function smoke(accessPath: string[], assertions: string[]): SurfaceDefinition["smokeCoverage"] {
+  return { required: true, accessPath, assertions };
+}
+
+function contractFor(definition: SurfaceDefinition): SurfaceContract {
+  return {
+    ...definition,
+    expectedImagePath: `docs/product-surface-targets/${definition.surfaceId}/expected.png`,
+    imageGenerationStatus: "expectedImagePresent",
+    verticalAnchoringInvariant,
+    prohibitedVisibleText,
+    prohibitedStatusText,
+    prohibitedPlaceholders,
   };
+}
+
+function writeTarget(definition: SurfaceDefinition): void {
+  const contract = contractFor(definition);
+  const surfaceDir = join(targetRoot, definition.surfaceId);
+  mkdirSync(surfaceDir, { recursive: true });
+  writeFileSync(join(surfaceDir, "contract.json"), `${JSON.stringify(contract, null, 2)}\n`);
+  writeFileSync(join(surfaceDir, "target.svg"), renderSvg(definition));
+  writeFileSync(join(surfaceDir, "notes.md"), renderNotes(contract));
+}
+
+function renderSvg(definition: SurfaceDefinition): string {
+  const rows = definition.visualRows.slice(0, 7);
+  const controls = definition.visualControls.slice(0, 5);
+  const rowMarkup = rows.map((row, index) => {
+    const y = 154 + index * 42;
+    return `<g class="row" transform="translate(34 ${y})">
+        <rect width="332" height="34" rx="4" fill="#ffffff" stroke="#d9dfe7"/>
+        <text x="14" y="22" class="rowText">${escapeXml(row)}</text>
+      </g>`;
+  }).join("\n    ");
+  const controlMarkup = controls.map((control, index) => {
+    const x = 34 + (index % 2) * 170;
+    const y = 480 + Math.floor(index / 2) * 38;
+    return `<g class="control" transform="translate(${x} ${y})">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">${escapeXml(control)}</text>
+      </g>`;
+  }).join("\n    ");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="720" viewBox="0 0 400 720" role="img" aria-labelledby="title desc">
+  <title id="title">${escapeXml(definition.title)}</title>
+  <desc id="desc">surfaceId: ${escapeXml(definition.surfaceId)}. 400px Chrome side panel target with fixed header, central surface, fixed footer, and vertical anchoring invariant.</desc>
+  <style>
+    .label{font:700 12px Arial,sans-serif;fill:#596373}
+    .titleText{font:800 20px Arial,sans-serif;fill:#111827}
+    .rowText{font:700 14px Arial,sans-serif;fill:#111827}
+    .controlText{font:700 12px Arial,sans-serif;fill:#253044}
+    .footerText{font:700 11px Arial,sans-serif;fill:#253044}
+    .small{font:700 10px Arial,sans-serif;fill:#64748b}
+  </style>
+  <rect class="sidepanel" x="0" y="0" width="400" height="720" fill="#f6f8fb"/>
+  <g class="header">
+    <rect x="0" y="0" width="400" height="58" fill="#ffffff" stroke="#dbe1ea"/>
+    <text x="24" y="35" class="titleText">UH SUITE</text>
+    <text x="250" y="24" class="label">지점 선택</text>
+    <text x="250" y="42" class="small">날짜</text>
+  </g>
+  <g class="surface">
+    <rect x="24" y="76" width="352" height="560" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+    <text x="34" y="112" class="label">${escapeXml(definition.menuPath.join(" > "))}</text>
+    <text x="34" y="138" class="titleText">${escapeXml(definition.title)}</text>
+    ${rowMarkup}
+    ${controlMarkup}
+    <text x="34" y="612" class="small">vertical anchoring invariant: app-shell relative top delta within 2px</text>
+  </g>
+  <g class="footer">
+    <rect x="0" y="650" width="400" height="70" fill="#ffffff" stroke="#dbe1ea"/>
+    ${["체크인 목록", "체크아웃 목록", "객실 선택", "설정"].map((label, index) => `<text x="${24 + index * 94}" y="690" class="footerText">${label}</text>`).join("")}
+  </g>
+</svg>
+`;
+}
+
+function renderNotes(contract: SurfaceContract): string {
+  return `# ${contract.title}
+
+- surfaceId: \`${contract.surfaceId}\`
+- menuPath: ${contract.menuPath.join(" > ")}
+- expected image: \`${contract.expectedImagePath}\` (repo-boundary expected image contract)
+- status policy: ${contract.statusPolicy}
+- hidden surface policy: ${contract.hiddenSurfacePolicy}
+- vertical anchoring: ${contract.verticalAnchoringInvariant.coordinateSpace}; tolerance ${contract.verticalAnchoringInvariant.tolerancePx}px.
+- backend boundary: ${contract.backendContract.boundary}
+- smoke access: ${contract.smokeCoverage.accessPath.join(" > ")}
+`;
+}
+
+function writeInventory(): void {
+  const contracts = surfaces.map(contractFor);
+  const rows = contracts.map((contract) => [
+    `\`${contract.surfaceId}\``,
+    contract.title,
+    contract.menuPath.join(" > "),
+    contract.ownerModules.join(", "),
+    contract.backendContract.boundary,
+    contract.statusPolicy,
+    contract.verticalAnchoringInvariant.coordinateSpace,
+    contract.expectedImagePath,
+  ]);
+  const markdown = `# Product Surface Inventory
+
+Source of truth: \`C:\\Users\\anise\\Downloads\\구조.md\`. This inventory intentionally defines 16 product surfaces: one home surface plus 15 menu leaf surfaces.
+
+PMS bottom navigation remains a backend verification surface, but it is not counted as one of the 16 requested product screen images.
+The bottom-bar settings screen is a utility and operation surface. It may link to existing editor product surfaces, but it is not counted as a seventeenth product image.
+
+| surfaceId | 화면명 | path | owner modules | backend boundary | status policy | vertical anchoring | expected image |
+|---|---|---|---|---|---|---|---|
+${rows.map((row) => `| ${row.join(" | ")} |`).join("\n")}
+`;
+  writeFileSync(inventoryPath, markdown);
 }
 
 function escapeXml(value: string): string {
@@ -104,98 +548,18 @@ function escapeXml(value: string): string {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
-function targetSvg(contract: SurfaceContract): string {
-  const lines = [
-    `Path: ${contract.menuPath.join(" > ")}`,
-    `Visible: ${contract.expectedVisibleState}`,
-    `Actions: ${contract.actions.join(", ") || "none"}`,
-    `Loading: ${contract.loadingState}`,
-    `Empty: ${contract.emptyState}`,
-    `Error: ${contract.errorState}`,
-    `Motion: ${contract.motionContract}`,
-    `Overflow: ${contract.overflowContract}`,
-    `Backend: ${contract.backendVerification}`,
-    `Forbidden: ${contract.forbiddenResidue.join(", ")}`,
-  ];
-  const text = lines
-    .map((line, index) => `<text x="34" y="${120 + index * 34}" class="body">${escapeXml(line)}</text>`)
-    .join("\n");
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="620" viewBox="0 0 720 620" role="img" aria-labelledby="title desc">
-  <title id="title">${escapeXml(contract.title)}</title>
-  <desc id="desc">${escapeXml(contract.expectedVisibleState)}</desc>
-  <style>
-    .frame { fill: #fbfbfa; stroke: #111; stroke-width: 2; }
-    .header { fill: #fff; stroke: #dedede; }
-    .panel { fill: #fff; stroke: #e4e4e2; stroke-width: 1.5; }
-    .primary { fill: #111; }
-    .body { font: 18px Arial, sans-serif; fill: #1b1f23; }
-    .title { font: 700 30px Arial, sans-serif; fill: #111; }
-    .meta { font: 15px Arial, sans-serif; fill: #687076; }
-    .button { font: 700 18px Arial, sans-serif; fill: #fff; }
-  </style>
-  <rect x="1" y="1" width="718" height="618" rx="28" class="frame"/>
-  <rect x="24" y="24" width="672" height="78" rx="14" class="header"/>
-  <text x="48" y="72" class="title">${escapeXml(contract.title)}</text>
-  <text x="520" y="72" class="meta">UH SUITE / 2026.06.04</text>
-  <rect x="24" y="122" width="672" height="360" rx="16" class="panel"/>
-${text}
-  <rect x="34" y="510" width="652" height="58" rx="12" class="primary"/>
-  <text x="58" y="546" class="button">${escapeXml(contract.actions[0] || "검증")}</text>
-</svg>
-`;
-}
-
-function notes(contract: SurfaceContract): string {
-  const refs = contract.referenceFiles.length > 0 ? contract.referenceFiles.map((file) => `- ${file}`).join("\n") : "- no direct positive reference file; use repo contract and user negative screenshots.";
-  return `# ${contract.title}
-
-## Reference Files
-
-${refs}
-
-## Intent
-
-${contract.expectedVisibleState}
-
-## Failure Signals
-
-- ${contract.forbiddenResidue.join("\n- ")}
-
-## Verification
-
-${contract.backendVerification}
-`;
-}
-
-function inventoryMarkdown(): string {
-  const rows = surfaces
-    .map((item) =>
-      `| \`${item.surfaceId}\` | ${item.title} | ${item.menuPath.join(" > ")} | ${item.ownerModules.join(", ")} | ${item.storageKeys.join(", ") || "-"} | ${item.actions.join(", ") || "-"} | ${item.expectedVisibleState} | ${item.loadingState} | ${item.emptyState} | ${item.errorState} | ${item.motionContract} | ${item.overflowContract} | ${item.backendVerification} | ${item.smokeRequired ? "yes" : "no"} |`,
-    )
-    .join("\n");
-  return `# Product Surface Inventory
-
-This inventory is generated from the current catalog, UI component, application/domain owner, and Chrome extension contract sources. User problem screenshots are negative references; the ZIP reference images are positive visual direction only for the matching named surfaces.
-
-| surfaceId | 화면명 | 접근 경로 | owner modules | storage keys | 주요 actions | expected visible state | loading state | empty state | error state | motion contract | overflow contract | backend verification | smoke |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-${rows}
-`;
+    .replaceAll("\"", "&quot;");
 }
 
 mkdirSync(targetRoot, { recursive: true });
-writeFileSync(join(root, "docs", "product-surface-inventory.md"), inventoryMarkdown());
-
-for (const contract of surfaces) {
-  const dir = join(targetRoot, contract.surfaceId);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "contract.json"), `${JSON.stringify(contract, null, 2)}\n`);
-  writeFileSync(join(dir, "target.svg"), targetSvg(contract));
-  writeFileSync(join(dir, "notes.md"), notes(contract));
+const surfaceIds = new Set(surfaces.map((surface) => surface.surfaceId));
+for (const entry of readdirSync(targetRoot, { withFileTypes: true })) {
+  if (entry.isDirectory() && !surfaceIds.has(entry.name)) {
+    rmSync(join(targetRoot, entry.name), { recursive: true, force: true });
+  }
 }
-
-console.log(`Wrote ${surfaces.length} product surface targets to ${targetRoot}`);
+for (const definition of surfaces) {
+  writeTarget(definition);
+}
+writeInventory();
+console.log(`wrote ${surfaces.length} product surface targets to ${targetRoot}`);

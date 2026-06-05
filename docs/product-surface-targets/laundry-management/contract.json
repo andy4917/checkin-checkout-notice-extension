@@ -1,43 +1,123 @@
 {
+  "order": 9,
   "surfaceId": "laundry-management",
   "title": "세탁물 관리",
+  "group": "service-management",
   "menuPath": [
     "홈",
     "고객 서비스 관리",
     "세탁물 관리"
   ],
+  "catalogEvidence": [
+    "homeNavigationGroups.service-management.service-laundry"
+  ],
   "ownerModules": [
     "src/application/laundry-records.ts",
     "src/laundry/storage.ts",
+    "src/catalog/menu-routing.ts",
     "src/ui/components/WorkSurface.svelte"
   ],
   "storageKeys": [
     "laundryRecords:v1"
   ],
-  "actions": [
+  "primaryActions": [
     "세탁물 추가",
-    "세탁/건조/완료 이동",
-    "삭제"
+    "세탁기",
+    "건조기",
+    "완료"
   ],
-  "expectedVisibleState": "진행 중, 세탁 예정, 완료 영역과 실제 추가 control이 보인다.",
-  "loadingState": "storage write 중 action disabled",
-  "emptyState": "count 0은 badge로만 보이고 fake room card는 만들지 않는다.",
-  "errorState": "storage/move 실패 status",
-  "forbiddenResidue": [
+  "expectedVisibleState": "세탁 진행/예정/완료 상태와 추가 입력 control이 보인다.",
+  "loadingState": "storage write 중 관련 action만 disabled.",
+  "emptyState": "0 count badge는 가능하지만 가짜 객실 row는 만들지 않는다.",
+  "errorState": "일반 세탁 성공/오류 문구를 shell status에 띄우지 않는다.",
+  "statusPolicy": "Laundry owner state changes are visible in board state only; no general status text.",
+  "hiddenSurfacePolicy": "Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.",
+  "backendContract": {
+    "owners": [
+      "src/application/laundry-records.ts",
+      "src/laundry/storage.ts"
+    ],
+    "boundary": "chrome.storage laundry state",
+    "successEvidence": "record appears or moves in board state",
+    "failureEvidence": "real storage failure is test evidence, not shell success copy"
+  },
+  "fixedShellContract": "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.",
+  "motionContract": "Work surface enters through data-view-motion contract.",
+  "overflowContract": "Laundry columns scroll inside central surface and never overlap footer.",
+  "visualRows": [
+    "진행 중",
+    "세탁물 추가",
+    "세탁 예정",
+    "완료"
+  ],
+  "visualControls": [
+    "객실 입력",
+    "상태 이동",
+    "제거"
+  ],
+  "smokeCoverage": {
+    "required": true,
+    "accessPath": [
+      "고객 서비스 관리",
+      "세탁물 관리"
+    ],
+    "assertions": [
+      "board visible",
+      "no general laundry status text",
+      "no footer overlap"
+    ]
+  },
+  "expectedImagePath": "docs/product-surface-targets/laundry-management/expected.png",
+  "imageGenerationStatus": "expectedImagePresent",
+  "verticalAnchoringInvariant": {
+    "coordinateSpace": "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+    "tolerancePx": 2,
+    "requiredMeasurements": [
+      "non-fullscreen problem-state real Chrome side panel capture",
+      "fullscreen normal-state real Chrome side panel capture",
+      "tab-switch or side-panel-reopen real Chrome side panel capture",
+      "window.innerHeight",
+      "window.visualViewport.height",
+      "document.documentElement.clientHeight",
+      "matchMedia('(max-height: 700px)').matches",
+      "matchMedia('(max-height: 540px)').matches",
+      ".app-shell bounding rect",
+      ".screen-stage bounding rect",
+      ".home-surface or .work-surface bounding rect",
+      ".root-panel or first primary control bounding rect",
+      ".home-fixed-bottom-bar bounding rect"
+    ],
+    "failureSignals": [
+      "same surface card top changes across Chrome tab/window state",
+      "same surface menu block top changes across Chrome tab/window state",
+      "footer overlaps central surface",
+      "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+      "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure"
+    ]
+  },
+  "prohibitedVisibleText": [
     "N/A",
     "YYYY.MM.DD",
     "HH:MM",
     "The Gangnan",
     "복사되었습니다",
     "저장된 데이터 손상이 발견되었습니다",
-    "placeholder attribute",
-    "fake business data"
+    "현재 설정 항목 없음"
   ],
-  "motionContract": "work surface uses data-view-motion direction animation.",
-  "overflowContract": "board/cards/dock이 horizontal overflow를 만들지 않는다.",
-  "backendVerification": "chrome.storage read/write와 move rule 실패를 검증한다.",
-  "smokeRequired": true,
-  "referenceFiles": [
-    "새 폴더/세탁물 관리 screen.png"
+  "prohibitedStatusText": [
+    "세탁물을 추가했습니다",
+    "진행상태를 기록했습니다",
+    "객실을 선택했습니다",
+    "템플릿 설정을 초기화했습니다",
+    "템플릿을 저장했습니다",
+    "저장소를 불러오지 못했습니다",
+    "지점을 선택하여주십시오"
+  ],
+  "prohibitedPlaceholders": [
+    "visible placeholder attribute",
+    "sample guest, room, branch, reservation, amount, or hotel value",
+    "success text without a successful owner boundary",
+    "WINGS login requirement text",
+    "fake PMS record"
   ]
 }

@@ -1,41 +1,120 @@
 {
+  "order": 13,
   "surfaceId": "ota-reservation-input",
   "title": "NAVER / STATION 예약입력",
+  "group": "work-management",
   "menuPath": [
     "홈",
     "업무 관리",
     "NAVER / STATION 예약입력"
   ],
+  "catalogEvidence": [
+    "homeNavigationGroups.work-management.work-ota"
+  ],
   "ownerModules": [
     "src/application/ota-reservation-input.ts",
     "src/ota/*",
     "src/wings/reservation-draft.ts",
+    "src/catalog/menu-routing.ts",
     "src/ui/components/WorkSurface.svelte"
   ],
   "storageKeys": [],
-  "actions": [
+  "primaryActions": [
     "예약정보 가져오기",
     "WINGS 입력"
   ],
-  "expectedVisibleState": "source segment, 추출 action, preview/result, WINGS 입력 action이 보인다.",
-  "loadingState": "fetch/fill 중 action disabled",
-  "emptyState": "preview 전에는 fake booking summary를 만들지 않는다.",
-  "errorState": "active tab/branch/WINGS dependency 실패 status",
-  "forbiddenResidue": [
+  "expectedVisibleState": "NAVER/STATION source, 예약정보 가져오기, 실제 preview, WINGS 입력 action이 보인다.",
+  "loadingState": "active tab extraction or WINGS fill 중 action disabled.",
+  "emptyState": "preview 전에는 예약 요약 가짜 값을 만들지 않는다.",
+  "errorState": "OTA active tab, branch mismatch, WINGS reservation window dependency 안내만 허용된다.",
+  "statusPolicy": "OTA/WINGS dependency notices are allowed; generic success text is not.",
+  "hiddenSurfacePolicy": "Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.",
+  "backendContract": {
+    "owners": [
+      "src/application/ota-reservation-input.ts",
+      "src/ota/*",
+      "src/wings/reservation-draft.ts"
+    ],
+    "boundary": "active tab OTA extraction and WINGS fill",
+    "successEvidence": "normalized preview fills WINGS fields",
+    "failureEvidence": "missing OTA/WINGS dependency remains visible failure"
+  },
+  "fixedShellContract": "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.",
+  "motionContract": "Work surface enters through data-view-motion contract.",
+  "overflowContract": "Preview area and WINGS action scroll inside central surface without footer overlap.",
+  "visualRows": [
+    "NAVER",
+    "STATION",
+    "예약정보 가져오기",
+    "추출된 예약정보",
+    "WINGS 입력"
+  ],
+  "visualControls": [
+    "source segment",
+    "preview rows"
+  ],
+  "smokeCoverage": {
+    "required": true,
+    "accessPath": [
+      "업무 관리",
+      "NAVER / STATION 예약입력"
+    ],
+    "assertions": [
+      "OTA controls visible",
+      "OTA/WINGS failure is not hidden"
+    ]
+  },
+  "expectedImagePath": "docs/product-surface-targets/ota-reservation-input/expected.png",
+  "imageGenerationStatus": "expectedImagePresent",
+  "verticalAnchoringInvariant": {
+    "coordinateSpace": "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+    "tolerancePx": 2,
+    "requiredMeasurements": [
+      "non-fullscreen problem-state real Chrome side panel capture",
+      "fullscreen normal-state real Chrome side panel capture",
+      "tab-switch or side-panel-reopen real Chrome side panel capture",
+      "window.innerHeight",
+      "window.visualViewport.height",
+      "document.documentElement.clientHeight",
+      "matchMedia('(max-height: 700px)').matches",
+      "matchMedia('(max-height: 540px)').matches",
+      ".app-shell bounding rect",
+      ".screen-stage bounding rect",
+      ".home-surface or .work-surface bounding rect",
+      ".root-panel or first primary control bounding rect",
+      ".home-fixed-bottom-bar bounding rect"
+    ],
+    "failureSignals": [
+      "same surface card top changes across Chrome tab/window state",
+      "same surface menu block top changes across Chrome tab/window state",
+      "footer overlaps central surface",
+      "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+      "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure"
+    ]
+  },
+  "prohibitedVisibleText": [
     "N/A",
     "YYYY.MM.DD",
     "HH:MM",
     "The Gangnan",
     "복사되었습니다",
     "저장된 데이터 손상이 발견되었습니다",
-    "placeholder attribute",
-    "fake business data"
+    "현재 설정 항목 없음"
   ],
-  "motionContract": "work surface uses data-view-motion direction animation.",
-  "overflowContract": "preview card와 dock이 overflow 없이 보인다.",
-  "backendVerification": "active tab fetchPayload와 fillForm success/failure를 검증한다.",
-  "smokeRequired": true,
-  "referenceFiles": [
-    "새 폴더/OTA 예약관리 screen.png"
+  "prohibitedStatusText": [
+    "세탁물을 추가했습니다",
+    "진행상태를 기록했습니다",
+    "객실을 선택했습니다",
+    "템플릿 설정을 초기화했습니다",
+    "템플릿을 저장했습니다",
+    "저장소를 불러오지 못했습니다",
+    "지점을 선택하여주십시오"
+  ],
+  "prohibitedPlaceholders": [
+    "visible placeholder attribute",
+    "sample guest, room, branch, reservation, amount, or hotel value",
+    "success text without a successful owner boundary",
+    "WINGS login requirement text",
+    "fake PMS record"
   ]
 }

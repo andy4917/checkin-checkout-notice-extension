@@ -1,44 +1,123 @@
 {
+  "order": 10,
   "surfaceId": "sales-management",
   "title": "매지출 관리",
+  "group": "service-management",
   "menuPath": [
     "홈",
     "고객 서비스 관리",
     "매지출 관리"
   ],
+  "catalogEvidence": [
+    "homeNavigationGroups.service-management.service-sales"
+  ],
   "ownerModules": [
     "src/application/sales-expense-form.ts",
     "src/catalog/template-renderer.ts",
+    "src/catalog/menu-routing.ts",
     "src/ui/components/WorkSurface.svelte"
   ],
   "storageKeys": [
-    "workAssistantState.ui.templateVariableValues"
+    "workAssistantState.ui.branchFormValues"
   ],
-  "actions": [
+  "primaryActions": [
     "금액 입력",
-    "분류 선택",
-    "상세 입력",
-    "저장/복사"
+    "카테고리",
+    "상세",
+    "매지출 보고 복사"
   ],
-  "expectedVisibleState": "금액, 카테고리, 상세, 저장 action이 보인다.",
-  "loadingState": "clipboard/write 중 action disabled",
-  "emptyState": "새 지출 금액 0은 입력 초기값일 뿐 fake record가 아니다.",
-  "errorState": "필수값/clipboard 실패 status",
-  "forbiddenResidue": [
+  "expectedVisibleState": "금액, 카테고리, 상세, 보고 복사 action이 첫 화면에 정렬된다.",
+  "loadingState": "copy/write 중 action만 disabled.",
+  "emptyState": "금액 0은 입력 초기값이며 가짜 매출 기록을 만들지 않는다.",
+  "errorState": "일반 매지출 저장/복사 성공·오류 문구를 shell status에 띄우지 않는다.",
+  "statusPolicy": "Sales copy/storage feedback stays off shell status unless an OTA/WINGS dependency is involved.",
+  "hiddenSurfacePolicy": "Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.",
+  "backendContract": {
+    "owners": [
+      "src/application/sales-expense-form.ts",
+      "src/catalog/template-renderer.ts"
+    ],
+    "boundary": "template value and clipboard boundary",
+    "successEvidence": "clipboard write receives rendered report",
+    "failureEvidence": "required values or clipboard failure do not become fake success"
+  },
+  "fixedShellContract": "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.",
+  "motionContract": "Work surface enters through data-view-motion contract.",
+  "overflowContract": "Amount panel and category chips fit before footer without horizontal overflow.",
+  "visualRows": [
+    "금액 입력",
+    "카테고리",
+    "소모품",
+    "수리",
+    "식음료",
+    "기타"
+  ],
+  "visualControls": [
+    "상세 입력",
+    "보고 복사"
+  ],
+  "smokeCoverage": {
+    "required": true,
+    "accessPath": [
+      "고객 서비스 관리",
+      "매지출 관리"
+    ],
+    "assertions": [
+      "category chips visible before scroll",
+      "no general sales status text"
+    ]
+  },
+  "expectedImagePath": "docs/product-surface-targets/sales-management/expected.png",
+  "imageGenerationStatus": "expectedImagePresent",
+  "verticalAnchoringInvariant": {
+    "coordinateSpace": "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+    "tolerancePx": 2,
+    "requiredMeasurements": [
+      "non-fullscreen problem-state real Chrome side panel capture",
+      "fullscreen normal-state real Chrome side panel capture",
+      "tab-switch or side-panel-reopen real Chrome side panel capture",
+      "window.innerHeight",
+      "window.visualViewport.height",
+      "document.documentElement.clientHeight",
+      "matchMedia('(max-height: 700px)').matches",
+      "matchMedia('(max-height: 540px)').matches",
+      ".app-shell bounding rect",
+      ".screen-stage bounding rect",
+      ".home-surface or .work-surface bounding rect",
+      ".root-panel or first primary control bounding rect",
+      ".home-fixed-bottom-bar bounding rect"
+    ],
+    "failureSignals": [
+      "same surface card top changes across Chrome tab/window state",
+      "same surface menu block top changes across Chrome tab/window state",
+      "footer overlaps central surface",
+      "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+      "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure"
+    ]
+  },
+  "prohibitedVisibleText": [
     "N/A",
     "YYYY.MM.DD",
     "HH:MM",
     "The Gangnan",
     "복사되었습니다",
     "저장된 데이터 손상이 발견되었습니다",
-    "placeholder attribute",
-    "fake business data"
+    "현재 설정 항목 없음"
   ],
-  "motionContract": "work surface uses data-view-motion direction animation.",
-  "overflowContract": "amount panel/category chips/detail panel이 clipped 되지 않는다.",
-  "backendVerification": "templateValues 저장과 clipboard.writeText를 검증한다.",
-  "smokeRequired": true,
-  "referenceFiles": [
-    "새 폴더/매지출관리 screen.png"
+  "prohibitedStatusText": [
+    "세탁물을 추가했습니다",
+    "진행상태를 기록했습니다",
+    "객실을 선택했습니다",
+    "템플릿 설정을 초기화했습니다",
+    "템플릿을 저장했습니다",
+    "저장소를 불러오지 못했습니다",
+    "지점을 선택하여주십시오"
+  ],
+  "prohibitedPlaceholders": [
+    "visible placeholder attribute",
+    "sample guest, room, branch, reservation, amount, or hotel value",
+    "success text without a successful owner boundary",
+    "WINGS login requirement text",
+    "fake PMS record"
   ]
 }

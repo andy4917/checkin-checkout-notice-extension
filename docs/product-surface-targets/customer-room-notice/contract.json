@@ -1,0 +1,124 @@
+{
+  "order": 4,
+  "surfaceId": "customer-room-notice",
+  "title": "객실 관련 안내문",
+  "group": "customer-guidance",
+  "menuPath": [
+    "홈",
+    "고객 안내문",
+    "객실 관련 안내문"
+  ],
+  "catalogEvidence": [
+    "homeNavigationGroups.customer-guidance.customer-room-notice",
+    "templateFilter:room_upgrade,room_upgrade_closed,card_key,laundry_complete,partner_service"
+  ],
+  "ownerModules": [
+    "src/catalog/menu-routing.ts",
+    "src/ui/components/HomeView.svelte",
+    "src/catalog/template-renderer.ts"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.branchFormValues"
+  ],
+  "primaryActions": [
+    "언어 선택",
+    "템플릿 복사"
+  ],
+  "expectedVisibleState": "객실 관련 안내문 템플릿 row와 icon-only copy control이 보인다.",
+  "loadingState": "language/copy action만 disabled.",
+  "emptyState": "템플릿 없음은 최소 상태로만 표현한다.",
+  "errorState": "일반 복사 성공/오류 문구를 shell status에 띄우지 않는다.",
+  "statusPolicy": "Customer guidance copy feedback stays on the button state only.",
+  "hiddenSurfacePolicy": "Customer guidance leaves are 16-surface product surfaces. Missing templates must produce an owner-defined empty state and must not remove the catalog row in HomeView.",
+  "backendContract": {
+    "owners": [
+      "src/catalog/template-renderer.ts",
+      "navigator.clipboard"
+    ],
+    "boundary": "template render and clipboard boundary",
+    "successEvidence": "clipboard write receives rendered customer guidance text",
+    "failureEvidence": "required value or clipboard failure does not become fake success"
+  },
+  "fixedShellContract": "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.",
+  "motionContract": "Home detail track uses forward/backward motion; selected leaf keeps stable first-row anchoring.",
+  "overflowContract": "Template rows scroll inside the detail panel and do not push the footer.",
+  "visualRows": [
+    "객실 관련 안내문",
+    "room upgrade",
+    "room upgrade closed",
+    "card key",
+    "laundry complete"
+  ],
+  "visualControls": [
+    "KR",
+    "EN",
+    "JP",
+    "CH",
+    "copy buttons"
+  ],
+  "smokeCoverage": {
+    "required": true,
+    "accessPath": [
+      "고객 안내문",
+      "객실 관련 안내문"
+    ],
+    "assertions": [
+      "객실 관련 안내문 visible",
+      "copy controls scoped to selected surface",
+      "no general copy status text"
+    ]
+  },
+  "expectedImagePath": "docs/product-surface-targets/customer-room-notice/expected.png",
+  "imageGenerationStatus": "expectedImagePresent",
+  "verticalAnchoringInvariant": {
+    "coordinateSpace": "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+    "tolerancePx": 2,
+    "requiredMeasurements": [
+      "non-fullscreen problem-state real Chrome side panel capture",
+      "fullscreen normal-state real Chrome side panel capture",
+      "tab-switch or side-panel-reopen real Chrome side panel capture",
+      "window.innerHeight",
+      "window.visualViewport.height",
+      "document.documentElement.clientHeight",
+      "matchMedia('(max-height: 700px)').matches",
+      "matchMedia('(max-height: 540px)').matches",
+      ".app-shell bounding rect",
+      ".screen-stage bounding rect",
+      ".home-surface or .work-surface bounding rect",
+      ".root-panel or first primary control bounding rect",
+      ".home-fixed-bottom-bar bounding rect"
+    ],
+    "failureSignals": [
+      "same surface card top changes across Chrome tab/window state",
+      "same surface menu block top changes across Chrome tab/window state",
+      "footer overlaps central surface",
+      "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+      "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure"
+    ]
+  },
+  "prohibitedVisibleText": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "현재 설정 항목 없음"
+  ],
+  "prohibitedStatusText": [
+    "세탁물을 추가했습니다",
+    "진행상태를 기록했습니다",
+    "객실을 선택했습니다",
+    "템플릿 설정을 초기화했습니다",
+    "템플릿을 저장했습니다",
+    "저장소를 불러오지 못했습니다",
+    "지점을 선택하여주십시오"
+  ],
+  "prohibitedPlaceholders": [
+    "visible placeholder attribute",
+    "sample guest, room, branch, reservation, amount, or hotel value",
+    "success text without a successful owner boundary",
+    "WINGS login requirement text",
+    "fake PMS record"
+  ]
+}

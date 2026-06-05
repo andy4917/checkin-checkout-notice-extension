@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="720" viewBox="0 0 400 720" role="img" aria-labelledby="title desc">
+  <title id="title">물품 대여 문의</title>
+  <desc id="desc">surfaceId: quick-rental-reply. 400px Chrome side panel target with fixed header, central surface, fixed footer, and vertical anchoring invariant.</desc>
+  <style>
+    .label{font:700 12px Arial,sans-serif;fill:#596373}
+    .titleText{font:800 20px Arial,sans-serif;fill:#111827}
+    .rowText{font:700 14px Arial,sans-serif;fill:#111827}
+    .controlText{font:700 12px Arial,sans-serif;fill:#253044}
+    .footerText{font:700 11px Arial,sans-serif;fill:#253044}
+    .small{font:700 10px Arial,sans-serif;fill:#64748b}
+  </style>
+  <rect class="sidepanel" x="0" y="0" width="400" height="720" fill="#f6f8fb"/>
+  <g class="header">
+    <rect x="0" y="0" width="400" height="58" fill="#ffffff" stroke="#dbe1ea"/>
+    <text x="24" y="35" class="titleText">UH SUITE</text>
+    <text x="250" y="24" class="label">지점 선택</text>
+    <text x="250" y="42" class="small">날짜</text>
+  </g>
+  <g class="surface">
+    <rect x="24" y="76" width="352" height="560" rx="6" fill="#f8fafc" stroke="#dce3ec"/>
+    <text x="34" y="112" class="label">홈 &gt; 빠른 문의 답변 &gt; 물품 대여 문의</text>
+    <text x="34" y="138" class="titleText">물품 대여 문의</text>
+    <g class="row" transform="translate(34 154)">
+        <rect width="332" height="34" rx="4" fill="#ffffff" stroke="#d9dfe7"/>
+        <text x="14" y="22" class="rowText">물품 대여 문의</text>
+      </g>
+    <g class="row" transform="translate(34 196)">
+        <rect width="332" height="34" rx="4" fill="#ffffff" stroke="#d9dfe7"/>
+        <text x="14" y="22" class="rowText">rental item</text>
+      </g>
+    <g class="control" transform="translate(34 480)">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">KR</text>
+      </g>
+    <g class="control" transform="translate(204 480)">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">EN</text>
+      </g>
+    <g class="control" transform="translate(34 518)">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">JP</text>
+      </g>
+    <g class="control" transform="translate(204 518)">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">CH</text>
+      </g>
+    <g class="control" transform="translate(34 556)">
+        <rect width="154" height="30" rx="4" fill="#eef3f8" stroke="#c8d2df"/>
+        <text x="12" y="20" class="controlText">copy buttons</text>
+      </g>
+    <text x="34" y="612" class="small">vertical anchoring invariant: app-shell relative top delta within 2px</text>
+  </g>
+  <g class="footer">
+    <rect x="0" y="650" width="400" height="70" fill="#ffffff" stroke="#dbe1ea"/>
+    <text x="24" y="690" class="footerText">체크인 목록</text><text x="118" y="690" class="footerText">체크아웃 목록</text><text x="212" y="690" class="footerText">객실 선택</text><text x="306" y="690" class="footerText">설정</text>
+  </g>
+</svg>

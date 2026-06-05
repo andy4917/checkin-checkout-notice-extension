@@ -1,24 +1,10 @@
 # NAVER / STATION 예약입력
 
-## Reference Files
-
-- 새 폴더/OTA 예약관리 screen.png
-
-## Intent
-
-source segment, 추출 action, preview/result, WINGS 입력 action이 보인다.
-
-## Failure Signals
-
-- N/A
-- YYYY.MM.DD
-- HH:MM
-- The Gangnan
-- 복사되었습니다
-- 저장된 데이터 손상이 발견되었습니다
-- placeholder attribute
-- fake business data
-
-## Verification
-
-active tab fetchPayload와 fillForm success/failure를 검증한다.
+- surfaceId: `ota-reservation-input`
+- menuPath: 홈 > 업무 관리 > NAVER / STATION 예약입력
+- expected image: `docs/product-surface-targets/ota-reservation-input/expected.png` (repo-boundary expected image contract)
+- status policy: OTA/WINGS dependency notices are allowed; generic success text is not.
+- hidden surface policy: Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.
+- vertical anchoring: Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.; tolerance 2px.
+- backend boundary: active tab OTA extraction and WINGS fill
+- smoke access: 업무 관리 > NAVER / STATION 예약입력

@@ -1,0 +1,123 @@
+{
+  "order": 12,
+  "surfaceId": "room-remark",
+  "title": "객실 정보 리마크",
+  "group": "work-management",
+  "menuPath": [
+    "홈",
+    "업무 관리",
+    "객실 정보 리마크"
+  ],
+  "catalogEvidence": [
+    "homeNavigationGroups.work-management.work-room-remark"
+  ],
+  "ownerModules": [
+    "src/application/wings-remark.ts",
+    "src/domain/remarks.ts",
+    "src/domain/room-context.ts",
+    "src/catalog/menu-routing.ts",
+    "src/ui/components/WorkSurface.svelte"
+  ],
+  "storageKeys": [
+    "workAssistantState.ui.branchFormValues"
+  ],
+  "primaryActions": [
+    "제공 카드키",
+    "대여물품",
+    "추가 리마크",
+    "WINGS 리마크 입력"
+  ],
+  "expectedVisibleState": "객실 선택 상태, 물품 stepper, 추가 리마크, WINGS 입력 action이 보인다.",
+  "loadingState": "WINGS write 중 관련 action busy.",
+  "emptyState": "객실 미선택은 상태 badge로만 표시하고 fake room data를 만들지 않는다.",
+  "errorState": "WINGS 객실 정보창/리마크 의존 실패 안내만 shell status에 허용된다.",
+  "statusPolicy": "Only WINGS dependency notices are allowed for this surface.",
+  "hiddenSurfacePolicy": "Catalog-owned product surface rows remain visible and reachable regardless of backing data availability; component-local filtering must not hide 구조.md surfaces.",
+  "backendContract": {
+    "owners": [
+      "src/application/wings-remark.ts",
+      "src/domain/remarks.ts"
+    ],
+    "boundary": "active WINGS remark read/upsert/write",
+    "successEvidence": "remark line is written to WINGS room info",
+    "failureEvidence": "missing WINGS room information window remains a failure state"
+  },
+  "fixedShellContract": "400px Chrome side panel width, fixed full-opacity header, one central surface, fixed footer. Header, first content row, and footer top keep stable app-shell-relative coordinates across Chrome tab/window state.",
+  "motionContract": "Work surface enters through data-view-motion contract.",
+  "overflowContract": "Stepper controls and WINGS action remain above footer or scroll inside central surface.",
+  "visualRows": [
+    "객실 선택",
+    "제공 카드키",
+    "대여물품",
+    "추가 리마크",
+    "WINGS 리마크 입력"
+  ],
+  "visualControls": [
+    "수량 조절",
+    "리마크 입력"
+  ],
+  "smokeCoverage": {
+    "required": true,
+    "accessPath": [
+      "업무 관리",
+      "객실 정보 리마크"
+    ],
+    "assertions": [
+      "room context state visible",
+      "WINGS dependency failure captured when unavailable"
+    ]
+  },
+  "expectedImagePath": "docs/product-surface-targets/room-remark/expected.png",
+  "imageGenerationStatus": "expectedImagePresent",
+  "verticalAnchoringInvariant": {
+    "coordinateSpace": "Actual Google Chrome side panel .app-shell coordinate space, not an extension URL tab viewport.",
+    "tolerancePx": 2,
+    "requiredMeasurements": [
+      "non-fullscreen problem-state real Chrome side panel capture",
+      "fullscreen normal-state real Chrome side panel capture",
+      "tab-switch or side-panel-reopen real Chrome side panel capture",
+      "window.innerHeight",
+      "window.visualViewport.height",
+      "document.documentElement.clientHeight",
+      "matchMedia('(max-height: 700px)').matches",
+      "matchMedia('(max-height: 540px)').matches",
+      ".app-shell bounding rect",
+      ".screen-stage bounding rect",
+      ".home-surface or .work-surface bounding rect",
+      ".root-panel or first primary control bounding rect",
+      ".home-fixed-bottom-bar bounding rect"
+    ],
+    "failureSignals": [
+      "same surface card top changes across Chrome tab/window state",
+      "same surface menu block top changes across Chrome tab/window state",
+      "footer overlaps central surface",
+      "extension URL tab viewport evidence is used as release proof without real side-panel evidence",
+      "fullscreen-only evidence is used as release proof for the non-fullscreen side-panel failure"
+    ]
+  },
+  "prohibitedVisibleText": [
+    "N/A",
+    "YYYY.MM.DD",
+    "HH:MM",
+    "The Gangnan",
+    "복사되었습니다",
+    "저장된 데이터 손상이 발견되었습니다",
+    "현재 설정 항목 없음"
+  ],
+  "prohibitedStatusText": [
+    "세탁물을 추가했습니다",
+    "진행상태를 기록했습니다",
+    "객실을 선택했습니다",
+    "템플릿 설정을 초기화했습니다",
+    "템플릿을 저장했습니다",
+    "저장소를 불러오지 못했습니다",
+    "지점을 선택하여주십시오"
+  ],
+  "prohibitedPlaceholders": [
+    "visible placeholder attribute",
+    "sample guest, room, branch, reservation, amount, or hotel value",
+    "success text without a successful owner boundary",
+    "WINGS login requirement text",
+    "fake PMS record"
+  ]
+}

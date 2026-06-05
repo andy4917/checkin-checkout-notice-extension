@@ -71,6 +71,21 @@ export type HomeNavigationItem = {
   templateFilter?: MenuTemplateFilter;
 };
 
+export type SettingsNavigationItem = HomeNavigationItem & {
+  description: string;
+  role: "editorShortcut";
+  surfaceCountPolicy: "linksExistingProductSurface";
+};
+
+export type SettingsUtilityItem = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  ownerModules: readonly string[];
+  surfaceCountPolicy: "utilityNotProductSurface";
+};
+
 export type HomeNavigationGroup = {
   id: string;
   title: string;
@@ -180,21 +195,6 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
         }),
       }),
       Object.freeze({
-        id: "AIRPORT_VAN_MANAGEMENT",
-        title: "공항밴 관리",
-        description: "공항밴 안내와 배차 확인",
-        icon: "airport_shuttle",
-        screenKind: "airportVan",
-        templateFilter: Object.freeze({ kind: "type", typeId: "airport_van" }),
-        home: Object.freeze({
-          sectionId: "room-operations",
-          title: "공항밴 관리",
-          description: "공항밴 안내와 배차 확인",
-          icon: "airport_shuttle",
-          order: 30,
-        }),
-      }),
-      Object.freeze({
         id: "SALES_MANAGEMENT",
         title: "매지출 관리",
         description: "매지출 보고",
@@ -206,20 +206,40 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
           title: "매지출 관리",
           description: "매지출 보고",
           icon: "payments",
-          order: 40,
+          order: 30,
         }),
       }),
       Object.freeze({
+        id: "AIRPORT_VAN_MANAGEMENT",
+        title: "공항밴 관리",
+        description: "공항밴 안내와 배차 확인",
+        icon: "airport_shuttle",
+        screenKind: "airportVan",
+        templateFilter: Object.freeze({ kind: "type", typeId: "airport_van" }),
+        home: Object.freeze({
+          sectionId: "room-operations",
+          title: "공항밴 관리",
+          description: "공항밴 안내와 배차 확인",
+          icon: "airport_shuttle",
+          order: 40,
+        }),
+      }),
+    ]),
+  }),
+  Object.freeze({
+    title: "업무 관리",
+    items: Object.freeze([
+      Object.freeze({
         id: "ROOM_REMARK_MEMO",
-        title: "객실 정보 메모",
-        description: "객실 물품과 메모 작성",
+        title: "객실 정보 리마크",
+        description: "객실 물품과 리마크 작성",
         icon: "bedroom_parent",
         screenKind: "roomRemarkMemo",
         templateFilter: Object.freeze({ kind: "menu" }),
         home: Object.freeze({
           sectionId: "work-forms",
-          title: "객실 정보 메모",
-          description: "객실 물품과 특이사항 메모",
+          title: "객실 정보 리마크",
+          description: "객실 물품과 특이사항 리마크",
           icon: "bedroom_parent",
           order: 10,
         }),
@@ -239,11 +259,6 @@ export const menuGroups: readonly MenuGroup[] = Object.freeze([
           order: 20,
         }),
       }),
-    ]),
-  }),
-  Object.freeze({
-    title: "업무 관리",
-    items: Object.freeze([
       Object.freeze({
         id: "WORK_REPORT",
         title: "업무보고 양식",
@@ -281,8 +296,8 @@ export const settingsMenu: MenuItem = Object.freeze({
 
 export const templateEditorMenu: MenuItem = Object.freeze({
   id: "TEMPLATE_EDITOR",
-  title: "템플릿 편집",
-  description: "템플릿 문구 관리",
+  title: "안내문 편집 / 빠른답변 편집",
+  description: "안내문과 빠른답변 문구 관리",
   icon: "description",
   screenKind: "templateSettings",
   templateFilter: Object.freeze({ kind: "none" }),
@@ -290,8 +305,8 @@ export const templateEditorMenu: MenuItem = Object.freeze({
 
 export const formEditorMenu: MenuItem = Object.freeze({
   id: "FORM_EDITOR",
-  title: "양식 편집",
-  description: "필수 입력값 관리",
+  title: "업무 양식 편집",
+  description: "업무 양식 입력값 관리",
   icon: "edit_note",
   screenKind: "formSettings",
   templateFilter: Object.freeze({ kind: "none" }),
@@ -404,55 +419,6 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
         menuId: "QUICK_REPLY",
         templateFilter: typeFilter("room_visit"),
       }),
-      Object.freeze({
-        id: "quick-breakfast",
-        title: "조식 문의",
-        icon: "restaurant",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("breakfast_inquiry"),
-      }),
-      Object.freeze({
-        id: "quick-invoice",
-        title: "인보이스 문의",
-        icon: "receipt_long",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("invoice_inquiry"),
-      }),
-      Object.freeze({
-        id: "quick-cancellation",
-        title: "체크인 1주이내 취소 문의",
-        icon: "event_busy",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("cancellation_inquiry"),
-      }),
-      Object.freeze({
-        id: "quick-laundry-service",
-        title: "세탁 서비스 문의",
-        icon: "local_laundry_service",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("laundry_service_inquiry"),
-      }),
-      Object.freeze({
-        id: "quick-kakao-connect",
-        title: "카톡 채널 문의 연결",
-        icon: "forum",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("kakao_channel_connect"),
-      }),
-      Object.freeze({
-        id: "quick-kakao-closing",
-        title: "카톡 채널 문의 마무리",
-        icon: "done_all",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("kakao_channel_closing"),
-      }),
-      Object.freeze({
-        id: "quick-nearby-restaurant",
-        title: "근처 식당 문의",
-        icon: "restaurant_menu",
-        menuId: "QUICK_REPLY",
-        templateFilter: typeFilter("nearby_restaurant"),
-      }),
     ]),
   }),
   Object.freeze({
@@ -472,7 +438,7 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     icon: "assignment",
     selectionMode: "menuScreen",
     items: Object.freeze([
-      Object.freeze({ id: "work-room-remark", title: "객실 정보 메모", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
+      Object.freeze({ id: "work-room-remark", title: "객실 정보 리마크", icon: "bedroom_parent", menuId: "ROOM_REMARK_MEMO" }),
       Object.freeze({ id: "work-ota", title: "NAVER / STATION 예약입력", icon: "travel_explore", menuId: "OTA_RESERVATION_INPUT" }),
       Object.freeze({ id: "work-report", title: "업무보고 양식", icon: "summarize", menuId: "WORK_REPORT" }),
     ]),
@@ -483,15 +449,58 @@ export const homeNavigationGroups: readonly HomeNavigationGroup[] = Object.freez
     icon: "design_services",
     selectionMode: "menuScreen",
     items: Object.freeze([
-      Object.freeze({ id: "template-edit", title: "템플릿 편집", icon: "description", menuId: "TEMPLATE_EDITOR" }),
-      Object.freeze({ id: "form-edit", title: "양식 편집", icon: "edit_note", menuId: "FORM_EDITOR" }),
+      Object.freeze({ id: "template-edit", title: "안내문 편집 / 빠른답변 편집", icon: "description", menuId: "TEMPLATE_EDITOR" }),
+      Object.freeze({ id: "form-edit", title: "업무 양식 편집", icon: "edit_note", menuId: "FORM_EDITOR" }),
     ]),
   }),
 ]);
 
-export const settingsNavigationItems: readonly HomeNavigationItem[] = Object.freeze([
-  Object.freeze({ id: "settings-template-edit", title: "템플릿 편집", icon: "description", menuId: "TEMPLATE_EDITOR" }),
-  Object.freeze({ id: "settings-form-edit", title: "양식 편집", icon: "edit_note", menuId: "FORM_EDITOR" }),
+export const settingsUtilityItems: readonly SettingsUtilityItem[] = Object.freeze([
+  Object.freeze({
+    id: "settings-branch-context",
+    title: "지점 선택",
+    description: "헤더 선택값 기준",
+    icon: "domain",
+    ownerModules: Object.freeze(["src/ui/components/ShellHeader.svelte", "src/ui/side-panel-navigation-controller.svelte.ts"]),
+    surfaceCountPolicy: "utilityNotProductSurface",
+  }),
+  Object.freeze({
+    id: "settings-pms-lists",
+    title: "PMS 목록",
+    description: "하단바 목록 조회 경계",
+    icon: "fact_check",
+    ownerModules: Object.freeze(["src/pms/client.ts", "src/ui/components/PmsGuestPanel.svelte"]),
+    surfaceCountPolicy: "utilityNotProductSurface",
+  }),
+  Object.freeze({
+    id: "settings-local-storage",
+    title: "로컬 저장소",
+    description: "템플릿 수정값 보관 경계",
+    icon: "storage",
+    ownerModules: Object.freeze(["src/platform/storage-schema.ts", "src/application/template-settings.ts"]),
+    surfaceCountPolicy: "utilityNotProductSurface",
+  }),
+]);
+
+export const settingsNavigationItems: readonly SettingsNavigationItem[] = Object.freeze([
+  Object.freeze({
+    id: "settings-template-edit",
+    title: "안내문 편집 / 빠른답변 편집",
+    description: "문구 수정 화면으로 이동",
+    icon: "description",
+    menuId: "TEMPLATE_EDITOR",
+    role: "editorShortcut",
+    surfaceCountPolicy: "linksExistingProductSurface",
+  }),
+  Object.freeze({
+    id: "settings-form-edit",
+    title: "업무 양식 편집",
+    description: "입력값 관리 화면으로 이동",
+    icon: "edit_note",
+    menuId: "FORM_EDITOR",
+    role: "editorShortcut",
+    surfaceCountPolicy: "linksExistingProductSurface",
+  }),
 ]);
 
 export const homeBottomNavigationItems: readonly HomeBottomNavigationItem[] = Object.freeze([

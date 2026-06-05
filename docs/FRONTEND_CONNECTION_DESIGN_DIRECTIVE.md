@@ -4,11 +4,20 @@
 
 This Chrome extension is an operations side panel for UH Suite staff. It must reduce repetitive WINGS/PMS work without taking final responsibility away from the user.
 
+Current implementation work must first use:
+
+- `docs/PRODUCT_DESIGN_CONTRACT.md` for Product Design surface and interaction
+  decisions.
+- `docs/UI_SURFACE_STABILITY_CONTRACT.md` for protected shell, home footer,
+  visual rhythm, and adaptive-layout change gates.
+- `docs/BACKEND_CONTRACT_REVIEW.md` for PMS/OTA/WINGS/storage/clipboard backend
+  boundaries.
+
 The frontend is not a marketing page, not a dashboard demo, and not a generic template library. It is a compact work surface for:
 
 - selecting one of three branches: `coex`, `gangnam`, `seolleung`
 - copying branch-scoped guest notices, quick replies, remarks, and work reports
-- loading PMS guest records from the active authenticated WINGS session
+- loading PMS guest records through the PMS host-permission direct POST fetch
 - reading Naver or Station OTA reservation details from the active authenticated browser tab
 - filling available WINGS new-reservation fields, while leaving save/confirmation to a person
 - editing template text and custom entries in extension storage
@@ -133,28 +142,26 @@ Required backend validation before adding bottom-bar features:
 
 The home state is a dense operations menu with no extra explanatory section.
 
-Required top-level groups:
-
-- `고객 커뮤니케이션`
-- `고객 서비스 관리`
-- `업무 관리`
-- `설정`
-
-Required menu items are owned by `menuGroups` and `settingsMenu`:
+Required top-level groups are owned by `homeNavigationGroups`:
 
 1.
 - 고객 안내문
 - 빠른 문의 답변
 2.
 - 세탁물 관리
-- 공항밴 관리
 - 매지출 관리
+- 공항밴 관리
 3.
-- 객실 정보 메모
-- OTA 예약 입력
-- 업무 관리
+- 객실 정보 리마크
+- NAVER / STATION 예약입력
+- 업무보고 양식
 4.
-- 설정
+- 안내문 편집 / 빠른답변 편집
+- 업무 양식 편집
+
+The bottom `설정` action is a separate utility surface. It is not counted as a
+seventeenth product-surface target and must not duplicate the home
+`템플릿 / 양식 편집` submenu as its entire content.
 
 The frontend may visually arrange the groups, but must not route by title/body text heuristics. All menu membership must come from catalog metadata: `menuId`, `typeId`, `branchScope`, `requiresContext`, and `audience`.
 
@@ -181,7 +188,8 @@ Required fail-fast behavior:
 - no branch: `지점을 선택해주세요.`
 - OTA branch mismatch: `올바른 지점이 아닙니다.`
 - WINGS creation form missing: `WINGS 예약생성창을 생성한 뒤 다시 실행해주세요.`
-- storage recovery: `저장소 데이터 손상으로 설정을 초기화했습니다. 다시 설정해주세요.`
+- recoverable storage normalization stays silent in the UI; only unrecoverable storage read/write
+  failure may surface an operator error.
 
 Do not add:
 
@@ -245,7 +253,11 @@ Airport van and sales management are copy-form workflows, not browser automation
 
 - do not add WINGS, PMS, OTA, or external-system automatic input for these menus
 - airport van may display lightweight PMS-derived badges only: `체크인 공항 픽업` for arrival mode and `내일 체크아웃 공항 샌딩` for departure mode
-- sales management remains template-copy only until a real storage/application contract is added
+- sales management may use the amount/category/detail reference grammar, but
+  its backend remains template value plus clipboard output until a real expense
+  ledger storage/application contract is added
+- sales management must not render `Save Record`, recent expense rows, or fake
+  vendor/amount records while that storage contract is absent
 
 ## Room Remark Input
 
@@ -305,9 +317,10 @@ Required editing capabilities:
 
 Required settings navigation:
 
-- the bottom `설정` action opens a real settings hub, not an empty placeholder
-- settings hub rows come from catalog-owned settings navigation data in `src/catalog/menu-routing.ts`
-- current settings hub rows are `템플릿 편집` and `양식 편집`
+- the bottom `설정` action opens a real utility surface, not an empty placeholder
+- operation-boundary rows come from `settingsUtilityItems` in `src/catalog/menu-routing.ts`
+- editor shortcut rows come from `settingsNavigationItems` and link to existing product surfaces
+- current editor shortcut rows are `안내문 편집 / 빠른답변 편집` and `업무 양식 편집`
 - Svelte components may pass the catalog-owned `menuId` through callbacks, but must not hardcode settings route literals in button handlers
 
 Required constraints:
@@ -495,7 +508,8 @@ A frontend implementation following this directive is done only when:
 - the changed UI path is exercised through the actual Svelte side panel entrypoint
 - OTA branch mismatch still fails with `올바른 지점이 아닙니다.`
 - missing WINGS reservation creation form still fails with `WINGS 예약생성창을 생성한 뒤 다시 실행해주세요.`
-- storage root corruption recovery still displays `저장소 데이터 손상으로 설정을 초기화했습니다. 다시 설정해주세요.`
+- recoverable storage root normalization does not display a success/error message in normal UI;
+  unrecoverable storage read/write failure still surfaces an operator error
 - no banned placeholder strings are present in `src`, `dist`, or `tests`
 
 Use direct file, build, and test evidence from the current worktree. Passing scripts are evidence only; they do not replace checking the touched product path and observable failure behavior.
